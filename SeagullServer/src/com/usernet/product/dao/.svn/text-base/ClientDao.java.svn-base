@@ -1,0 +1,140 @@
+package com.usernet.product.dao;
+
+import java.io.RandomAccessFile;
+import java.sql.Timestamp;
+import java.util.Date;
+import java.util.List;
+
+import org.hibernate.Query;
+import org.hibernate.SQLQuery;
+import org.hibernate.Session;
+import org.hibernate.Transaction;
+
+import com.usernet.product.comm.BaseDao;
+import com.usernet.product.comm.HibernateSessionFactory;
+import com.usernet.product.entity.Channel;
+import com.usernet.product.entity.ClientLog;
+import com.usernet.product.entity.ClientModel;
+import com.usernet.product.entity.Implanted;
+import com.usernet.product.entity.Users;
+import com.usernet.product.utils.Md5Token;
+
+public class ClientDao extends BaseDao {
+	
+	public ClientModel getModel(String model){
+		Session session = getSession();
+		Transaction transaction = session.beginTransaction();
+		transaction.begin();
+		String hql = "FROM ClientModel WHERE model = '"+model.trim()+"'";
+		Query query  = session.createQuery(hql);
+		List l = query.list();
+		transaction.commit();
+		if(l!=null&&l.size()>0){
+			return (ClientModel) l.get(0);
+		}
+		return null;
+	}
+	
+	public ClientLog getRepeatImei(String imei){
+		ClientLog log = null; 
+		Session session = HibernateSessionFactory.getSessionFactory().openSession();
+		List list = session.createQuery("FROM ClientLog WHERE imei = '"+imei.trim()+"'").list();
+		if(list!=null&&list.size()>0){
+			log = (ClientLog) list.get(0);
+		}
+		session.close();
+		return log;
+	}
+	
+	public void delLog(Integer id){
+		Transaction tr = null;
+		Session session = getSession();
+		try {
+			tr = session.beginTransaction();
+			
+			StringBuffer sb = new StringBuffer();
+			sb.append("{ call deleteClient_log(?) }");
+			
+			SQLQuery query = session.createSQLQuery(sb.toString());
+			query.setInteger(0, id);
+			query.list();
+			tr.commit();
+		} catch (Exception ex) {
+			tr.rollback();
+			ex.printStackTrace();
+		}
+	}
+	
+	public String updateClientLogChannel(){
+		String message = "批量修改预装IMEI号成功";
+		Transaction tr = null;
+		Session session = getSession();
+		try {
+			tr = session.beginTransaction();
+			StringBuffer sb = new StringBuffer();
+			sb.append("{ call sp_updateClientChannel() }");
+			SQLQuery query = session.createSQLQuery(sb.toString());
+			query.list();
+			tr.commit();
+		} catch (Exception ex) {
+			tr.rollback();
+			ex.printStackTrace();
+			message="出现错误";
+		}
+		return message;
+	}
+	
+	public Implanted getImplantedImei(String imei){
+		Session session = HibernateSessionFactory.getSessionFactory().openSession();
+		Implanted log = null; 
+		List list = session.createQuery("FROM Implanted WHERE imei = '"+imei.trim()+"'").list();
+		if(list!=null&&list.size()>0){
+			log = (Implanted) list.get(0);
+		}
+		session.close();
+		return log;
+	}
+	
+	@SuppressWarnings("resource")
+	public String savaCsvLog(String filesrc,ChannelDao channelDao) throws Exception{
+		String message = "上传成功";
+		RandomAccessFile raf = new RandomAccessFile(filesrc, "r");
+		String s = raf.readLine();
+		s = raf.readLine();
+		if(s!=null){
+			String[] sa = s.split(",");
+			if(sa.length!=5){
+				message = "错误信息：内容格式不正确";
+				raf.close();
+				return message;
+			}
+		}
+		
+		while ((s = raf.readLine()) != null) {
+			s = new String(s.getBytes("iso8859-1"), "utf-8");
+			String[] sa = s.split(",");
+
+			Channel channel = channelDao.checkChannel(0, sa[4]);
+			if (channel == null) {
+				message = "错误信息：找不到渠道号:" + sa[4];
+				break;
+			}
+
+			ClientLog log = getRepeatImei(sa[1]);
+			if (log != null) {
+				log.setChannel(channel);
+				modify(log);
+			} else {
+				Implanted implanted = getImplantedImei(sa[1]);
+				if (implanted == null) {
+					implanted = new Implanted();
+					implanted.setImei(sa[1]);
+					implanted.setChannel(sa[4]);
+					implanted.setTime(new Timestamp(System.currentTimeMillis()));
+					save(implanted);
+				}
+			}
+		}
+		return message;
+	}
+}

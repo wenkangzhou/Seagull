@@ -1,0 +1,372 @@
+package com.usernet.product.web.action;
+
+import java.io.IOException;
+import java.util.Date;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.apache.commons.lang.StringUtils;
+import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionForward;
+import org.apache.struts.action.ActionMapping;
+
+import com.usernet.product.comm.BaseAction;
+import com.usernet.product.entity.AdminLog;
+import com.usernet.product.entity.Channel;
+import com.usernet.product.utils.DateUtils;
+import com.usernet.product.utils.Page;
+import com.usernet.product.utils.PageResult;
+import com.usernet.product.utils.ProductConfig;
+import com.usernet.product.utils.ProductUtils;
+import com.usernet.product.web.form.AdminForm;
+
+/***
+ * 用户
+ * @author tangdehao
+ *
+ */
+public class AdminAction extends BaseAction {
+
+	public ActionForward login(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response)
+			throws IOException {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_INDEX);
+		
+		String loginName = request.getParameter("loginName");
+		String password = ProductUtils.getMD5String(request
+				.getParameter("password"));
+		int ret = channelDao.login(loginName, password);
+		response.setCharacterEncoding("UTF-8");
+		int flag=0;
+		if (ret == -1) {
+			request.setAttribute("error", "用户名或口令不正确");
+			return mapping.findForward("login");
+		}
+		if (ret == -2) {
+			request.setAttribute("error", "用户合同期错误");
+			return mapping.findForward("login");
+		}
+		if (ret == -3) {
+			request.setAttribute("error", "用户合同已过期");
+			return mapping.findForward("login");
+		} else {
+			Channel admin = (Channel) channelDao.getById(Channel.class, ret);
+			if (admin.getType() == 0) {
+				long m = DateUtils
+						.stringToTimestampEnd(admin.getContractTime())
+						.getTime()
+						- System.currentTimeMillis();
+				if (m <= ProductConfig.DAYS_TO_TIME)
+					admin.setOver(2);
+			}
+			if(admin.getType() == 2 )
+				flag=1;
+			request.getSession().setAttribute("admin", admin);
+			// 记录用户登陆记录
+			AdminLog adminLog = new AdminLog(admin.getChannel(), "登陆系统",
+					request.getRemoteAddr());
+			adminLogDao.save(adminLog);
+		}
+		String remember = request.getParameter("remember");
+		Cookie cookieUsername = new Cookie("channel_username", loginName);
+		Cookie cookiePassword = new Cookie("channel_password",request.getParameter("password"));
+		if (StringUtils.isNotEmpty(remember)) {
+
+			// 设置生命周期为1小时，秒为单位
+			cookieUsername.setMaxAge(31536000);
+			// 设置生命周期为1小时，秒为单位
+			cookieUsername.setMaxAge(31536000);
+			response.addCookie(cookieUsername);
+			response.addCookie(cookiePassword);
+		} else {
+
+			// 设置生命周期为1小时，秒为单位
+			cookieUsername.setMaxAge(0);
+			// 设置生命周期为1小时，秒为单位
+			cookieUsername.setMaxAge(0);
+			response.addCookie(cookieUsername);
+			response.addCookie(cookiePassword);
+		}
+		if(flag==1)
+			return mapping.findForward("toshanghu");
+		else
+			return mapping.findForward("success");
+	}
+
+	/***
+	 * 获取最后一次登录的时间
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 * @throws IOException
+	 */
+	public ActionForward lastLoginTime(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response)
+			throws IOException {
+
+		Channel channel = (Channel) request.getSession().getAttribute("admin");
+		AdminLog adminLog = adminLogDao.getLastLogin(channel.getChannel());
+
+		Date date = new Date();
+
+		if (adminLog != null) {
+
+			date = adminLog.getTime();
+		}
+
+		String result = (date.getMonth() + 1) + " 月 " + date.getDate() + " 日 "
+				+ (date.getYear() + 1900) + " 年 " + date.getHours() + ":"
+				+ date.getMinutes() + " 来自 " + request.getRemoteAddr();
+
+		response.setCharacterEncoding("UTF-8");
+		response.getWriter().write(result);
+
+		return null;
+	}
+
+	/***
+	 * 退出
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 * @throws IOException
+	 */
+	public ActionForward logout(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response)
+			throws IOException {
+
+		request.getSession().removeAttribute("admin");
+		return mapping.findForward("login");
+	}
+
+	public ActionForward toHome(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response)
+			throws IOException {
+		int param = Integer.parseInt(request.getParameter("home"));
+		ActionForward action = null;
+		switch (param) {
+		case 0:
+			action = new ActionForward("/log.do?method=toList");
+			break;
+		case 1:
+			action = new ActionForward("/statistics.do?method=toList");
+			break;
+		case 2:
+			action = new ActionForward("/channel.do?method=toList");
+			break;
+		}
+		return action;
+	}
+
+	public ActionForward toPassword(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response)
+			throws IOException {
+
+		return mapping.findForward("password");
+	}
+
+	/** 修改密码 */
+	public ActionForward doPassword(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response)
+			throws IOException {
+
+		String password1 = request.getParameter("password");
+		String password2 = request.getParameter("password1");
+		Channel admin = (Channel) request.getSession().getAttribute("admin");
+		if (!admin.getPassword().equals(ProductUtils.getMD5String(password1))) {
+			request.setAttribute("msg", "原密码不正确");
+			request.setAttribute("return", "admin.do?method=toPassword");
+			return mapping.findForward("password");
+		} else {
+			admin.setPassword(ProductUtils.getMD5String(password2));
+			admin.setPwdtext(password2);
+			if (channelDao.modify(admin)) {
+				request.getSession().setAttribute("admin", admin);
+				request.setAttribute("msg", "修改成功");
+				return mapping.findForward("password");
+			} else {
+				request.setAttribute("msg", "修改失败");
+				return mapping.findForward("password");
+			}
+		}
+	}
+
+	/**
+	 * 用户方案管理
+	 * 
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 * @throws IOException
+	 */
+	public ActionForward userBehavior(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response)
+			throws IOException {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_USER_ACTION);
+		
+		return mapping.findForward("userBehavior");
+	}
+
+	/**
+	 * 增加方案
+	 * 
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 * @throws IOException
+	 */
+	public ActionForward addUserBehavior(ActionMapping mapping,
+			ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) throws IOException {
+
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_USER_ACTION);
+		return mapping.findForward("addUserBehavior");
+	}
+	
+	/**
+	 * 内容
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 * @throws IOException
+	 */
+	public ActionForward content(ActionMapping mapping,
+			ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) throws IOException {
+
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_USER_ACTION);
+		return mapping.findForward("content");
+	}
+
+	/**
+	 * 用户子账户管理
+	 * 
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 * @throws IOException
+	 */
+	public ActionForward subsidiary(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response)
+			throws IOException {
+		AdminForm mForm = (AdminForm) form;
+		PageResult<Channel> result = null;
+		Page page = new Page();
+		String type = request.getParameter("type");
+		if (type == null || type == "") {
+			type = "5";
+		}
+		// 分页信息
+		String pageNo = mForm.getPageNo();
+		String pageSize = mForm.getPageSize();
+		if (pageSize != null)
+			page.setEveryPage(Integer.parseInt(pageSize.trim()));
+		if (pageNo != null)
+			page.setCurrentPage(Integer.parseInt(pageNo.trim()));
+		result = channelDao.getAllChannel(page, mForm.getCode(),
+				Integer.parseInt(type));
+		if (result.getContent() != null) {
+			long curr = System.currentTimeMillis();
+			long m = 0;
+			for (Channel c : result.getContent()) {
+				if (StringUtils.isEmpty(c.getStartTime())) // 无合同开始时间
+					continue;
+				if (StringUtils.isEmpty(c.getContractTime())) // 无合同期限
+					continue;
+				// 合同未开始
+				if (DateUtils.stringToTimestampBegin(c.getStartTime())
+						.getTime() > curr)
+					continue;
+				m = DateUtils.stringToTimestampEnd(c.getContractTime())
+						.getTime() - curr;
+				c.setOver(m > ProductConfig.DAYS_TO_TIME ? 0 : (m <= 0 ? 1 : 2));
+			}
+		}
+		request.setAttribute("typeMet", type);
+		request.setAttribute("form", mForm);
+		request.setAttribute("list", result.getContent());
+		request.setAttribute("page", result.getPage());
+		request.setAttribute("size", result.getSize());
+
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_ACCOUNT_MANAGER);
+		return mapping.findForward("subsidiary");
+	}
+
+	/**
+	 * 添加子用户
+	 * 
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 * @throws IOException
+	 */
+	public ActionForward toSubsidiary(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response)
+			throws IOException {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_ACCOUNT_MANAGER);
+
+		return mapping.findForward("toSubsidiary");
+	}
+
+	public ActionForward AddSubsidiary(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response)
+			throws IOException {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_ACCOUNT_MANAGER);
+
+		String channelName = request.getParameter("channelName");
+		String password = request.getParameter("password");
+		String startTime = request.getParameter("startTime");
+		String contractTime = request.getParameter("contractTime");
+		String type = request.getParameter("type1");
+		Channel channel = new Channel();
+		channel.setChannel(channelName);
+		channel.setPassword(ProductUtils.getMD5String(password));
+		channel.setStartTime(startTime);
+		channel.setContractTime(contractTime);
+		channel.setType(Integer.parseInt(type));
+		channel.setStatus(0);
+		channel.setApplicationName("");
+		channelDao.save(channel);
+
+		return mapping.findForward("toSubsidiary");
+	}
+
+	/***
+	 * 去首页
+	 * 
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 * @throws IOException
+	 */
+	public ActionForward toIndex(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response)
+			throws IOException {
+		super.settingCurrentNavigation(request.getSession(), ProductConfig.PAGE_INDEX);
+		
+		return mapping.findForward("success");
+	}
+}

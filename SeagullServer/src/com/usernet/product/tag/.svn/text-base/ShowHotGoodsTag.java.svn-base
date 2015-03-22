@@ -1,0 +1,105 @@
+package com.usernet.product.tag;
+
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
+
+import javax.servlet.jsp.JspException;
+import javax.servlet.jsp.tagext.TagSupport;
+
+import org.hibernate.Session;
+import org.hibernate.Transaction;
+
+import com.usernet.product.comm.HibernateSessionFactory;
+import com.usernet.product.entity.Software;
+
+public class ShowHotGoodsTag extends TagSupport{
+
+	private static final long serialVersionUID = -4490208945015532162L;
+
+	protected String number = "15";
+	
+	protected String id;
+	
+	protected String channel;
+	
+	protected Iterator<Software> l ;
+	
+	public String getNumber() {
+		return number;
+	}
+
+	public void setNumber(String number) {
+		this.number = number;
+	}
+
+	public String getId() {
+		return id;
+	}
+
+	public void setId(String id) {
+		this.id = id;
+	}
+
+	public String getChannel() {
+		return channel;
+	}
+
+	public void setChannel(String channel) {
+		this.channel = channel;
+	}
+	
+	public int doAfterBody() throws JspException {  
+		if (this.l.hasNext()) {
+		      Software element = this.l.next();
+		      if (element == null)
+		        this.pageContext.removeAttribute(this.id);
+		      else {
+		        this.pageContext.setAttribute(this.id, element);
+		      }
+		      if(element.getIsCommodity()==1&&element.getEnd_panicbuying_time()!=null){
+					Long timen = element.getEnd_panicbuying_time().getTime()-new Date().getTime();
+					this.pageContext.setAttribute("timen", timen);
+			  }
+		      i++;
+		      this.pageContext.setAttribute("ind", i);
+		      return 2;
+		    }
+		    return 0;
+    }  
+  
+    @Override  
+    public int doEndTag() throws JspException {  
+        return super.EVAL_PAGE;//继续执行后面的标签  
+  
+    }  
+    int i=0;
+    @Override  
+    public int doStartTag() throws JspException {  
+    	String hql = "FROM Software where isCommodity=1 and status = 0";
+    	if(this.channel!=null&&!channel.equals("")){
+    		hql = hql+" channel.id="+channel;
+    	}
+    	hql = hql +" order by time desc"; 
+		Session session = HibernateSessionFactory.getSession();
+		Transaction t = session.beginTransaction();
+		List<Software> l = session.createQuery(hql).setFirstResult(0).setMaxResults(Integer.parseInt(number)).list();
+		t.commit();
+		this.l = l.iterator();
+		if (this.l.hasNext()) {
+			Software element = this.l.next();
+		      if (element == null)
+		        this.pageContext.removeAttribute(this.id);
+		      else {
+		        this.pageContext.setAttribute(this.id, element);
+		      }
+		      if(element.getIsCommodity()==1){
+					Long timen = element.getEnd_panicbuying_time().getTime()-new Date().getTime();
+					this.pageContext.setAttribute("timen", timen);
+			  }
+		      this.pageContext.setAttribute("ind", i);
+		      return 2;
+		}
+		return 0;
+    } 
+}

@@ -1,0 +1,166 @@
+package com.usernet.product.web.action;
+
+import java.io.IOException;
+import java.util.Date;
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionForward;
+import org.apache.struts.action.ActionMapping;
+import org.apache.struts.actions.DispatchAction;
+import org.hibernate.Query;
+import org.hibernate.Session;
+
+import com.usernet.product.comm.HibernateSessionFactory;
+import com.usernet.product.dao.ChannelDao;
+import com.usernet.product.dao.CommentDao;
+import com.usernet.product.dao.OrderTabDao;
+import com.usernet.product.dao.PhotoDao;
+import com.usernet.product.dao.SoftwareDao;
+import com.usernet.product.entity.Channel;
+import com.usernet.product.entity.ChannelPv;
+import com.usernet.product.entity.Comment;
+import com.usernet.product.entity.Photo;
+import com.usernet.product.entity.Software;
+import com.usernet.product.utils.BeanFactory;
+import com.usernet.product.utils.DateUtils;
+
+/**
+ * 避免一些登陆验证
+ */
+public class ForwardAction extends DispatchAction {
+
+	private OrderTabDao orderTabDao = new OrderTabDao();
+	
+	/***
+	 *  商品展示列表
+	 */
+	public ActionForward toGoodsList(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response)
+			throws IOException {
+		return mapping.findForward("goods_list");
+	}
+	
+	public ActionForward goodsShow(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response)
+			throws IOException {
+		setGoodsBean(request);
+		return mapping.findForward("goods_show");
+	}
+	
+	public ActionForward taoGoodsView(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response)
+			throws IOException {
+		String idStr = request.getParameter("id");
+		String turl = request.getParameter("turl");
+		
+		request.setAttribute("turl", turl);
+		
+		setGoodsBean(request);
+		CommentDao commentDao = new CommentDao();
+		List<Comment> l = commentDao.getListBySoftId(Integer.parseInt(idStr),1);
+		request.setAttribute("commentList", l);
+		
+		Session session = HibernateSessionFactory.getSessionFactory().openSession();
+		try{
+			String sql1 = "select count(1) from collect_soft where softid = :softid";
+			Query q = session.createSQLQuery(sql1);
+			q.setInteger("softid", Integer.parseInt(idStr));
+			int collect_count = (Integer) q.uniqueResult();
+			request.setAttribute("collect_count", collect_count);
+			
+			String sql2 = "select count(1) from channel_pv where soft_id = :softid";
+			q = session.createSQLQuery(sql2);
+			q.setInteger("softid", Integer.parseInt(idStr));
+			int pv_count = (Integer) q.uniqueResult();
+			request.setAttribute("pv_count", pv_count);
+		}catch (Exception e) {
+			
+		}finally{
+			session.close();
+		}
+		return mapping.findForward("wap_goods_view");
+	}
+	
+	public ActionForward goodsOrInfoShow(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response)
+			throws IOException {
+		Software software = setGoodsBean(request);
+		String readType = request.getParameter("onClickType");
+		if(software.getIsWebContent()==1){
+			
+			response.sendRedirect(software.getUrl());
+		}
+		
+		software.setRemark(software.getRemark().replace("\n", "<br/>").replace(" ", "&nbsp;"));
+		if(software.getIsCommodity()==1){
+			String imei = request.getParameter("imei");
+			String channelStr = request.getParameter("channel");
+			try{
+				Long timen = software.getEnd_panicbuying_time().getTime()-new Date().getTime();
+				request.setAttribute("timen", timen);
+			}catch (Exception e) {
+				request.setAttribute("timen", 0);
+			}
+			
+			if(imei!=null&&!imei.equals("")){
+				ChannelDao cDao = new ChannelDao();
+				Channel channel = cDao.getChannelByChannel(channelStr);
+				
+				ChannelPv pv = new ChannelPv();
+				pv.setImei(imei);
+				pv.setIp(request.getRemoteAddr());
+				pv.setFlag(Integer.valueOf(1));
+				pv.setSoft_id(software.getNewId());
+				pv.setTime(DateUtils.getDate());
+				pv.setChannel(channel);
+				pv.setReadType(readType);
+				cDao.save(pv);
+			}
+			
+			List<String> colorList = orderTabDao.getCommodityColorId(software.getNewId());
+			request.setAttribute("colorList", colorList);
+			
+			request.setAttribute("imei", imei);
+			request.setAttribute("channel", channelStr);
+			
+			String hql = "{ call sp_recommend_favicon(?,?,?)}";
+			Session session = HibernateSessionFactory.getSessionFactory().openSession();
+			try{
+				Query query = session.createSQLQuery(hql);
+				query.setString(0, channelStr);
+				query.setInteger(1, software.getId());
+				query.setString(2, imei);
+				List l = query.list();
+				request.setAttribute("boutique", l);
+			}catch (Exception e) {
+				e.printStackTrace();
+			}finally{
+				session.close();
+			}
+			
+			String down = request.getParameter("down");
+			if("down".equals(down)){
+				return mapping.findForward("downgoods");
+			}
+			
+			return mapping.findForward("newgoods");
+		}
+		
+		return mapping.findForward("goodsOrInfoShow");
+	}
+	
+	@SuppressWarnings("unchecked")
+	private Software setGoodsBean(HttpServletRequest request){
+		String idStr = request.getParameter("id");
+		SoftwareDao softwareDao = (SoftwareDao) BeanFactory.getBean("softwareDao");
+		PhotoDao photoDao = (PhotoDao) BeanFactory.getBean("photoDao");
+		Software goods = (Software) softwareDao.getById(Software.class, Integer.parseInt(idStr));
+		request.setAttribute("goods", goods);
+		List<Photo> photos = photoDao.getAllByHql("from Photo where softId=" + idStr);
+		request.setAttribute("softwarePhoto", photos);
+		return goods;
+	}
+}

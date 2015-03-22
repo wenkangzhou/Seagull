@@ -1,0 +1,102 @@
+package com.usernet.product.dao;
+
+import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.util.Date;
+import java.util.List;
+import org.hibernate.Query;
+import org.hibernate.Session;
+import org.hibernate.Transaction;
+import com.usernet.product.comm.BaseDao;
+import com.usernet.product.comm.HibernateSessionFactory;
+import com.usernet.product.entity.LotteryTicket;
+import com.usernet.product.utils.Page;
+import com.usernet.product.utils.PageResult;
+
+/**
+ * 激活日志信息
+ */
+public class LotteryTicketDao extends BaseDao {
+
+	public String uploadLotteryTicketCsv(String filesrc) throws IOException{
+		String message = "上传成功";
+		RandomAccessFile raf = new RandomAccessFile(filesrc, "r");
+		String s = raf.readLine();
+		if(s!=null){
+			String[] sa = s.split(",");
+			if(sa.length!=2){
+				message = "错误信息：内容格式不正确";
+				raf.close();
+				return message;
+			}
+		}
+		
+		while ((s = raf.readLine()) != null) {
+			s = new String(s.getBytes("iso8859-1"), "utf-8");
+			String[] sa = s.split(",");
+			LotteryTicket lotteryTicket = new LotteryTicket();
+			lotteryTicket.setCardNum("100007"+sa[0]);
+			lotteryTicket.setPassword(sa[1]);
+			
+			this.save(lotteryTicket);
+		}
+		
+		return message;
+	}
+	
+	//领取彩票
+	public LotteryTicket receiveLotteryTicket(String imei){
+		
+		String hql = "FROM LotteryTicket where flag = 0 order by id asc";
+		Session session = HibernateSessionFactory.getSessionFactory().openSession();
+		Query q = session.createQuery(hql);
+		q.setMaxResults(1);
+		LotteryTicket l = (LotteryTicket) q.uniqueResult();
+		
+		if(l!=null){
+			Transaction t = session.beginTransaction();
+			l.setGetTime(new Date());
+			l.setFlag(1);
+			l.setImei(imei);
+			session.update(l);
+			t.commit();
+		}
+		
+		session.close();
+		
+		return l;
+	}
+	
+	//是否领取
+	public LotteryTicket isReceiveByImei(String imei){
+		String hql = "FROM LotteryTicket WHERE imei =:imei";
+		Session session = HibernateSessionFactory.getSessionFactory().openSession();
+		Query q = session.createQuery(hql);
+		q.setString("imei", imei);
+		List l = q.list();
+		session.close();
+		if(l.isEmpty()){
+			return null;
+		}
+		return (LotteryTicket) l.get(0);
+	}
+	
+	//imei号是否有效
+	public boolean isValidByImei(String imei){
+		String hql = "SELECT COUNT(id) FROM Users WHERE loginName =:imei";
+		Session session = HibernateSessionFactory.getSessionFactory().openSession();
+		Query q = session.createQuery(hql);
+		q.setString("imei", imei);
+		Integer l = (Integer) q.uniqueResult();
+		session.close();
+		if(l>0){
+			return true;
+		}
+		return false;
+	}
+	
+	public PageResult<LotteryTicket> getAll(Page page){
+		String hql = "FROM LotteryTicket order by id asc";
+		return super.getAllByPageAndHql(page, hql);
+	}
+}

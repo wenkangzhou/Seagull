@@ -1,0 +1,352 @@
+package com.usernet.product.web.action;
+
+import java.io.IOException;
+import java.sql.Timestamp;
+import java.util.Date;
+import java.util.List;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionForward;
+import org.apache.struts.action.ActionMapping;
+import com.opensymphony.oscache.util.StringUtil;
+import com.usernet.product.comm.BaseAction;
+import com.usernet.product.entity.Channel;
+import com.usernet.product.entity.MessageBoard;
+import com.usernet.product.entity.User;
+import com.usernet.product.utils.Page;
+import com.usernet.product.utils.PageResult;
+import com.usernet.product.utils.ProductConfig;
+import com.usernet.product.web.form.MessageBoardForm;
+
+
+/**
+ * 留言板管理
+ * 
+ * @author Administrator
+ * 
+ */
+public class MessageBoardAction extends BaseAction {
+
+	/**
+	 * 列表
+	 * 
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 */
+	public ActionForward toList(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		MessageBoardForm mForm = (MessageBoardForm) form;
+		PageResult<Object[]> list = null;
+		Page page = new Page();
+		// 分页信息
+		String pageNo = mForm.getPageNo();
+		String pageSize = mForm.getPageSize();
+		if (pageSize != null)
+			page.setEveryPage(Integer.parseInt(pageSize.trim()));
+		if (pageNo != null)
+			page.setCurrentPage(Integer.parseInt(pageNo.trim()));
+		Channel channel = (Channel) request.getSession().getAttribute("admin");
+		//System.out.println("##:"+channel.getId());
+		if (mForm.getChannelId() == null) {
+			mForm.setChannelId(0);
+		}
+		if(channel.getId()!=5)
+		mForm.setChannelId(channel.getId());
+		
+		if (mForm.getType() == null) {
+			mForm.setType(0);
+		}
+		//Integer[] channelIdArray = getChannelsArray(request, channel);
+		List<Channel> channels = getChannel(channel.getId(),channel.getType());//页面上显示的渠道
+		
+		request.setAttribute("channels", channels);
+		list=messageBoardDao.getMainMessage(page,mForm.getNickName(),mForm.getType(),mForm.getChannelId(),mForm.getSearchId());
+		request.setAttribute("form", mForm);
+		request.setAttribute("list", list.getContent());
+		request.setAttribute("page", list.getPage());
+		request.setAttribute("size", list.getSize());
+		return mapping.findForward("toList");
+	}
+	/**
+	 * 修改订单状态
+	 * 
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 */
+	public ActionForward edtMessageStatus(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) throws IOException {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_MEDIA);
+		String status = request.getParameter("key1");
+		String type = request.getParameter("key2");
+		String searchid = request.getParameter("key3");
+		String userid = request.getParameter("key4");
+		if(messageBoardDao.edtMessageStatus(Integer.parseInt(status),Integer.parseInt(type),Integer.parseInt(searchid),Integer.parseInt(userid)))
+		{
+			response.getWriter().print(0);
+		}
+		else
+		{
+			response.getWriter().print(1);
+		}
+		return null;
+	}
+	/**
+	 * 获取发言权限
+	 * 
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 */
+	public ActionForward toGetUserSpeak(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) throws IOException {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_MEDIA);
+		String userid = request.getParameter("userid");
+		User user = (User) messageBoardDao.getById(User.class,Integer.valueOf(userid));
+		response.getWriter().print(user.getSpeak());
+		return null;
+	}	
+	/**
+	 * 获取已读未读状态
+	 * 
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 */
+	public ActionForward toGetReadStatus(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) throws IOException {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_MEDIA);
+		int type = Integer.parseInt(request.getParameter("type"));
+		int searchid = Integer.parseInt(request.getParameter("searchid"));
+		int userid = Integer.parseInt(request.getParameter("userid"));
+		int channelid = Integer.parseInt(request.getParameter("channelid"));
+		int status = messageBoardDao.getReadStatus(type,searchid,userid,channelid);	
+		response.getWriter().print(status);
+		return null;
+	}	
+	/**
+	 * 用户发言权限更改
+	 * 
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 */
+	public ActionForward toEdtUserSpeak(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) throws IOException{
+		String userid = request.getParameter("userid");
+		User user = (User) messageBoardDao.getById(User.class,Integer.valueOf(userid));
+		
+		if(user.getSpeak()==0){
+			user.setSpeak(1);
+		}else{
+			user.setSpeak(0);
+		}
+		if(messageBoardDao.modify(user))
+		{
+			response.getWriter().print(user.getSpeak());
+		}
+		else
+		{
+			response.getWriter().print("lose");
+		}	
+		return null;
+	}
+	/**
+	 * 留言明细页
+	 * 
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 */
+	public ActionForward messageView(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response){
+		try {
+			int type = Integer.parseInt(request.getParameter("type"));
+			int searchid = Integer.parseInt(request.getParameter("searchid"));
+			int userid = Integer.parseInt(request.getParameter("userid"));
+			int from=-1;
+			if(request.getParameter("from")!=null)
+				from = Integer.parseInt(request.getParameter("from"));
+			int channelid = Integer.parseInt(request.getParameter("channelid"));
+			int messagestatus = Integer.parseInt(request.getParameter("messagestatus"));
+			String replay_content = request.getParameter("replay_content");
+			String startDate = request.getParameter("startDate");
+			String endDate = request.getParameter("endDate");
+			
+			request.setAttribute("type", type);
+			request.setAttribute("searchid", searchid);
+			request.setAttribute("userid", userid);
+			request.setAttribute("channelid", channelid);
+			request.setAttribute("messagestatus", messagestatus);		
+			request.setAttribute("from", from);
+			request.setAttribute("replay_content", replay_content);
+			request.setAttribute("startDate", startDate);
+			request.setAttribute("endDate", endDate);
+			if (!StringUtil.isEmpty(startDate)) {
+				startDate = startDate + " 00:00:00";
+			}
+			if (!StringUtil.isEmpty(endDate)) {
+				endDate = endDate + " 23:59:59";
+			}
+					
+			List<MessageBoard> list = messageBoardDao.getMessageInfoList(type,searchid,userid,from,replay_content,startDate,endDate,channelid);			
+			
+			request.setAttribute("result", list);
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}	
+		return mapping.findForward("toInfoList");
+	}
+	/**
+	 * 删除留言
+	 * 
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 * @throws IOException 
+	 */
+	public ActionForward doDel(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) throws IOException{
+		int id = Integer.parseInt(request.getParameter("id"));
+		int type = Integer.parseInt(request.getParameter("type"));
+		int searchid=-1;
+		MessageBoard messageBoard = (MessageBoard) messageBoardDao.getById(MessageBoard.class, id);
+		if(type==0)
+			searchid=messageBoard.getCommodity_id();
+		else
+			searchid=messageBoard.getOrder_id();
+		int userid=messageBoard.getUser().getId();
+		int channelid=messageBoard.getChannel_id();
+		int messagestatus = messageBoard.getMessage_status();
+		messageBoardDao.delete(messageBoard);
+		response.sendRedirect("messageBoard.do?method=messageView&type="+type+"&searchid="+searchid+"&userid="+userid+"&channelid="+channelid+"&messagestatus="+messagestatus+"");
+		return null;
+	}
+	
+	/**
+	 * 去修改
+	 * 
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 */
+	public ActionForward toEdit(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		int id = Integer.parseInt(request.getParameter("id"));
+		int type = Integer.parseInt(request.getParameter("type"));
+		MessageBoard messageBoard = (MessageBoard) messageBoardDao.getById(MessageBoard.class, id);
+		request.setAttribute("type", type);
+		request.setAttribute("item", messageBoard);
+		return mapping.findForward("toEdit");
+	}
+	/**
+	 * 修改
+	 * 
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 * @throws IOException 
+	 */
+	public ActionForward doEdit(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) throws IOException {
+		int id = Integer.parseInt(request.getParameter("id"));
+		int type = Integer.parseInt(request.getParameter("type"));
+		int searchid=-1;
+		String replay_content = request.getParameter("replay_content");	
+		MessageBoard messageBoard = (MessageBoard) messageBoardDao.getById(MessageBoard.class, id);
+		messageBoard.setReplay_time(new Timestamp(new Date().getTime()));
+		messageBoard.setReplay_content(replay_content);
+		if(type==0)
+			searchid=messageBoard.getCommodity_id();
+		else
+			searchid=messageBoard.getOrder_id();
+		int userid = messageBoard.getUser_id();
+		int channelid = messageBoard.getChannel_id();
+		int messagestatus = messageBoard.getMessage_status();
+		messageBoardDao.modify(messageBoard);
+		response.sendRedirect("messageBoard.do?method=messageView&type="+type+"&searchid="+searchid+"&userid="+userid+"&channelid="+channelid+"&messagestatus="+messagestatus+"");
+		return null;
+	}
+
+	/**
+	 * 去新增页面
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 */
+	public ActionForward toAdd(ActionMapping mapping,
+			ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) {
+		int type = Integer.parseInt(request.getParameter("type"));
+		int searchid = Integer.parseInt(request.getParameter("searchid"));
+		int userid = Integer.parseInt(request.getParameter("userid"));
+		int channelid = Integer.parseInt(request.getParameter("channelid"));
+		int messagestatus = Integer.parseInt(request.getParameter("messagestatus"));
+		request.setAttribute("type", type);
+		request.setAttribute("searchid", searchid);
+		request.setAttribute("channelid", channelid);
+		request.setAttribute("messagestatus", messagestatus);
+		request.setAttribute("userid", userid);
+		return mapping.findForward("toAdd");
+	}
+	/**
+	 * 新增
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 * @throws IOException 
+	 */	
+	public ActionForward doAdd(ActionMapping mapping,
+			ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) throws IOException {
+		int type = Integer.parseInt(request.getParameter("type"));
+		int searchid = Integer.parseInt(request.getParameter("searchid"));
+		int userid = Integer.parseInt(request.getParameter("userid"));
+		int channelid = Integer.parseInt(request.getParameter("channelid"));
+		int messagestatus = Integer.parseInt(request.getParameter("messagestatus"));
+		String replay_content = request.getParameter("replay_content");
+		MessageBoard messageBoard = new MessageBoard();
+		messageBoard.setChannel_id(channelid);
+		messageBoard.setUser_id(userid);
+		messageBoard.setMessage_status(messagestatus);
+		messageBoard.setMsg_from(1);
+		messageBoard.setRead_status(0);
+		if(type==0)
+			messageBoard.setCommodity_id(searchid);
+		else
+			messageBoard.setOrder_id(searchid);
+		messageBoard.setReplay_content(replay_content);
+		messageBoard.setReplay_time(new Timestamp(new Date().getTime()));
+		messageBoardDao.save(messageBoard);
+		response.sendRedirect("messageBoard.do?method=messageView&type="+type+"&searchid="+searchid+"&userid="+userid+"&channelid="+channelid+"&messagestatus="+messagestatus+"");
+		return null;
+	}
+
+}

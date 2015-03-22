@@ -1,0 +1,55 @@
+package com.usernet.product.entity;
+
+import java.sql.Timestamp;
+
+public class RecommendBase {
+	private Integer id;
+	
+	private String title;
+	
+	private String msg;
+	
+	private Integer softId;
+
+	private Timestamp time = new Timestamp(System.currentTimeMillis());
+	
+	public Integer getId() {
+		return id;
+	}
+
+	public void setId(Integer id) {
+		this.id = id;
+	}
+
+	public String getTitle() {
+		return title;
+	}
+
+	public void setTitle(String title) {
+		this.title = title;
+	}
+
+	public String getMsg() {
+		return msg;
+	}
+
+	public void setMsg(String msg) {
+		this.msg = msg;
+	}
+
+	public Integer getSoftId() {
+		return softId;
+	}
+
+	public void setSoftId(Integer integer) {
+		this.softId = integer;
+	}
+
+	public Timestamp getTime() {
+		return time;
+	}
+
+	public void setTime(Timestamp time) {
+		this.time = time;
+	}
+}

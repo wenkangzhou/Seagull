@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+"http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+<hibernate-mapping>
+	<class name="com.usernet.product.entity.Role" table="role_tab">
+		<id name="id" type="java.lang.Integer">
+			<column name="id" />
+			<generator class="native" />
+		</id>
+		<property name="role_name" type="java.lang.String">
+			<column name="role_name" />
+		</property>
+		<property name="status" type="java.lang.Integer">
+			<column name="status" />
+		</property>
+		<property name="deleted" type="java.lang.Integer">
+			<column name="deleted" />
+		</property>
+		<property name="isAuthorize" type="java.lang.Integer">
+			<column name="isAuthorize" />
+		</property>
+		<set name="auth" table="role_auth_tab" order-by="auth_id" lazy="false">
+			<key column="role_id"></key>
+			<many-to-many column="auth_id" class="com.usernet.product.entity.Auth"></many-to-many>
+		</set>
+	</class>
+</hibernate-mapping>

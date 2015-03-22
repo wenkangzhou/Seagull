@@ -1,0 +1,100 @@
+package com.usernet.product.web.form;
+
+import com.usernet.product.comm.BaseForm;
+
+public class RecommendForm extends BaseForm {
+
+	private static final long serialVersionUID = 4600572100613149032L;
+
+	private String pageNo;
+
+	private String pageSize;
+	
+	private Integer id;
+	
+	private String title1;
+	
+	private String msg;
+	
+	private String softName;
+	
+	private Integer softId;
+	
+	private String deadline;
+	
+	private String fromWhere;
+
+	public Integer getId() {
+		return id;
+	}
+
+	public void setId(Integer id) {
+		this.id = id;
+	}
+
+	public String getTitle1() {
+		return title1;
+	}
+
+	public void setTitle1(String title1) {
+		this.title1 = title1;
+	}
+
+	public String getMsg() {
+		return msg;
+	}
+
+	public void setMsg(String msg) {
+		this.msg = msg;
+	}
+
+	public Integer getSoftId() {
+		return softId;
+	}
+
+	public void setSoftId(Integer softId) {
+		this.softId = softId;
+	}
+
+	public String getPageNo() {
+		return pageNo;
+	}
+
+	public void setPageNo(String pageNo) {
+		this.pageNo = pageNo;
+	}
+
+	public String getPageSize() {
+		return pageSize;
+	}
+
+	public void setPageSize(String pageSize) {
+		this.pageSize = pageSize;
+	}
+
+	public String getSoftName() {
+		return softName;
+	}
+
+	public void setSoftName(String softName) {
+		this.softName = softName;
+	}
+
+	public String getDeadline() {
+		return deadline;
+	}
+
+	public void setDeadline(String deadline) {
+		this.deadline = deadline;
+	}
+
+	public String getFromWhere() {
+		return fromWhere;
+	}
+
+	public void setFromWhere(String fromWhere) {
+		this.fromWhere = fromWhere;
+	}
+
+	
+}

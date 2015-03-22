@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+"http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+<hibernate-mapping>
+	<class name="com.usernet.product.entity.CommodityColorSize" table="commodity_color_size_tab">
+		<cache usage="read-write" />
+		<id name="id" type="java.lang.Integer">
+			<column name="id" />
+			<generator class="native" />
+		</id>
+		<property name="commodity_id" type="java.lang.Integer">
+			<column name="commodity_id" />
+		</property>
+		<property name="color" type="java.lang.String">
+			<column name="color" />
+		</property>
+		<property name="size" type="java.lang.String">
+			<column name="size" />
+		</property>
+		<property name="inventory" type="java.lang.Integer">
+			<column name="inventory" />
+		</property>
+	</class>
+</hibernate-mapping>
+ 

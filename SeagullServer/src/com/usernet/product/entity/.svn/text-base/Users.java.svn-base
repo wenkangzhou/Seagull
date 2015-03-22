@@ -1,0 +1,141 @@
+package com.usernet.product.entity;
+
+import java.sql.Timestamp;
+
+public class Users implements java.io.Serializable {
+	private static final long serialVersionUID = 3741566638743691413L;
+
+	private Integer id;
+	private String loginName; // 登录名
+	private String password; // 密码
+	private String email; // 邮箱
+	private String tel; // 手机号码或注册IP
+	private String mobile; // 电话
+	private String niceName;// 昵称
+	private Integer status; // 状态：0可用；1不可用
+	private Timestamp time; // 注册时间
+	private Integer flag; // 标识：0普通会员；1开发者
+	private String icon; // 头像
+	private String sex; // 性别
+	private Integer eggs; // 拥有蛋数量
+	private Integer goldEggs; // 拥有金蛋数量
+
+	public Users() {
+	}
+
+	public Users(String niceName) {
+		this.niceName = niceName;
+	}
+
+	public Integer getId() {
+		return this.id;
+	}
+
+	public void setId(Integer id) {
+		this.id = id;
+	}
+
+	public String getLoginName() {
+		return this.loginName;
+	}
+
+	public Integer getFlag() {
+		return flag;
+	}
+
+	public void setFlag(Integer flag) {
+		this.flag = flag;
+	}
+
+	public void setLoginName(String loginName) {
+		this.loginName = loginName;
+	}
+
+	public String getPassword() {
+		return this.password;
+	}
+
+	public void setPassword(String password) {
+		this.password = password;
+	}
+
+	public String getEmail() {
+		return this.email;
+	}
+
+	public void setEmail(String email) {
+		this.email = email;
+	}
+
+	public String getTel() {
+		return this.tel;
+	}
+
+	public void setTel(String tel) {
+		this.tel = tel;
+	}
+
+	public String getMobile() {
+		return mobile;
+	}
+
+	public void setMobile(String mobile) {
+		this.mobile = mobile;
+	}
+
+	public String getNiceName() {
+		return this.niceName;
+	}
+
+	public void setNiceName(String niceName) {
+		this.niceName = niceName;
+	}
+
+	public Integer getStatus() {
+		return this.status;
+	}
+
+	public void setStatus(Integer status) {
+		this.status = status;
+	}
+
+	public Timestamp getTime() {
+		return this.time;
+	}
+
+	public void setTime(Timestamp time) {
+		this.time = time;
+	}
+
+	public String getIcon() {
+		return icon;
+	}
+
+	public void setIcon(String icon) {
+		this.icon = icon;
+	}
+
+	public String getSex() {
+		return sex;
+	}
+
+	public void setSex(String sex) {
+		this.sex = sex;
+	}
+
+	public Integer getEggs() {
+		return eggs;
+	}
+
+	public void setEggs(Integer eggs) {
+		this.eggs = eggs;
+	}
+
+	public Integer getGoldEggs() {
+		return goldEggs;
+	}
+
+	public void setGoldEggs(Integer goldEggs) {
+		this.goldEggs = goldEggs;
+	}
+}

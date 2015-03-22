@@ -1,0 +1,77 @@
+package com.usernet.product.dao;
+
+
+import java.util.List;
+
+import org.apache.commons.lang.StringUtils;
+import org.hibernate.HibernateException;
+import org.hibernate.Query;
+import org.hibernate.Session;
+import org.hibernate.Transaction;
+
+import com.usernet.product.comm.BaseDao;
+import com.usernet.product.entity.Advert;
+import com.usernet.product.utils.Page;
+import com.usernet.product.utils.PageResult;
+
+/**
+ * 广告管理
+ * 
+ * @author tangdehao
+ * 
+ */
+public class AdvertDao extends BaseDao {
+
+	@SuppressWarnings("unchecked")
+	public PageResult<Advert> getPage(Page page, String name, int channelId) {
+
+		StringBuffer sb = new StringBuffer();
+		sb.append("select advert from Advert as advert where advert.id is not null");
+		
+		if(channelId > 0){
+			
+			sb.append(" and advert.channelId = " + channelId);
+		}
+		if(StringUtils.isNotEmpty(name)){
+			
+			sb.append(" and advert.name like '%" + name + "%'");
+		}
+		
+		sb.append(" order by createTime desc");
+		
+		return super.getAllByPageAndHql(page, sb.toString());
+		
+	}
+	
+	@SuppressWarnings("unchecked")
+	public List getAllSoftByName(String softName) {
+		
+		String sql = "select id,name from software where name like '" + softName + "%'";
+		
+		return super.getAllByPageAndSql(sql);
+	}
+	public Integer getSoftId(Integer id,Integer flag) {
+		Session session = getSession();
+		Transaction tr = null;
+		try {
+		tr = session.beginTransaction();
+		String sql = "select id from software where newId = " + id + " and flag = " + flag;
+		
+		Query query = session.createSQLQuery(sql);
+		Object num = query.uniqueResult();
+		tr.commit();
+		if(num == null){
+			return 0;
+		}else{
+			return Integer.valueOf(String.valueOf(num));
+		}
+		} catch (HibernateException e) {
+			if (tr != null) {
+				tr.rollback();
+			}
+			throw e;
+		}
+	}
+	
+
+}

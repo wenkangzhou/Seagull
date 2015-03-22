@@ -1,0 +1,15 @@
+title=\u8BDE\u5BA2\u7F51\u7EDC\u5408\u4F5C\u670D\u52A1\u5E73\u53F0
+charset=UTF-8
+base=http\://localhost\:80/channel/
+#base=http\://apk.592ppc.com/channel/
+cmd_charset=GBK
+develope=Android\u8F6F\u4EF6\u5E02\u573A\u6536\u5F55
+advertImage=/usr/local/tomcat/webapps/client/upload/advert/
+download_path=http\://res.wemedias.com\:8080/client/upload/software/
+images_path=http\://wedanke.com\:8080/client/upload/icon/
+informationImage=/usr/local/tomcat/webapps/client/upload/photo/
+photo_PhysicsPath=/usr/local/tomcat/webapps/client/upload/photo/
+goods_url=http\://c.wedanke.com/channel/ordertab.do?method\=toAdd&goods_id\=
+csv_temp_path=/usr/local/tomcat/webapps/channel/uploadtemp/tempUploadClientLog.csv
+rmi_upload_path=/data/tomcat_filehome/webapps/client/upload/
+rmi_url=114.80.193.40:1099

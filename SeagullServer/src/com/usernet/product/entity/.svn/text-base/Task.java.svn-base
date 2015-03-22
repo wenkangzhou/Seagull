@@ -1,0 +1,94 @@
+package com.usernet.product.entity;
+
+import java.sql.Timestamp;
+
+public class Task implements java.io.Serializable {
+	private static final long serialVersionUID = 4001346167015954626L;
+
+	private Integer id;
+	private String name;
+	private Timestamp expired;
+	private Integer loop;
+	private String descr;
+	private Integer rate;
+	private Double giveMode;
+	private Integer deleted;
+
+	public Task() {
+	}
+
+	public Task(String name, Timestamp expired, Integer loop, String descr, Integer rate, Double giveMode,
+			Integer deleted) {
+		this.name = name;
+		this.expired = expired;
+		this.loop = loop;
+		this.descr = descr;
+		this.rate = rate;
+		this.giveMode = giveMode;
+		this.deleted = deleted;
+	}
+
+	public Integer getId() {
+		return this.id;
+	}
+
+	public void setId(Integer id) {
+		this.id = id;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public Timestamp getExpired() {
+		return expired;
+	}
+
+	public void setExpired(Timestamp expired) {
+		this.expired = expired;
+	}
+
+	public Integer getLoop() {
+		return loop;
+	}
+
+	public void setLoop(Integer loop) {
+		this.loop = loop;
+	}
+
+	public String getDescr() {
+		return descr;
+	}
+
+	public void setDescr(String descr) {
+		this.descr = descr;
+	}
+
+	public Integer getRate() {
+		return rate;
+	}
+
+	public void setRate(Integer rate) {
+		this.rate = rate;
+	}
+
+	public Double getGiveMode() {
+		return giveMode;
+	}
+
+	public void setGiveMode(Double giveMode) {
+		this.giveMode = giveMode;
+	}
+
+	public Integer getDeleted() {
+		return deleted;
+	}
+
+	public void setDeleted(Integer deleted) {
+		this.deleted = deleted;
+	}
+}

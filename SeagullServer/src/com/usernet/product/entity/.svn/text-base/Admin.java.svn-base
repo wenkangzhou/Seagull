@@ -1,0 +1,91 @@
+package com.usernet.product.entity;
+
+import java.sql.Timestamp;
+
+public class Admin implements java.io.Serializable {
+	private static final long serialVersionUID = 4516014800563330612L;
+
+	private Integer id;
+	private String loginName; // 登录名
+	private String password; // 密码
+	private String pwdtext; //明文密码
+	private String email; // 邮箱
+	private Integer status; // 状态：0可用；1不可用
+	private Timestamp time; // 注册时间
+	private Integer flag; // 标识权限：2超级管理员；3普通管理员；4更新人员
+
+	public Admin() {
+	}
+
+	public Admin(String loginName, String password, String email, Integer status) {
+		this.loginName = loginName;
+		this.password = password;
+		this.pwdtext = password;
+		this.email = email;
+		this.status = status;
+	}
+
+	public Timestamp getTime() {
+		return time;
+	}
+
+	public void setTime(Timestamp time) {
+		this.time = time;
+	}
+
+	public Integer getFlag() {
+		return flag;
+	}
+
+	public void setFlag(Integer flag) {
+		this.flag = flag;
+	}
+
+	public Integer getId() {
+		return this.id;
+	}
+
+	public void setId(Integer id) {
+		this.id = id;
+	}
+
+	public String getLoginName() {
+		return this.loginName;
+	}
+
+	public void setLoginName(String loginName) {
+		this.loginName = loginName;
+	}
+
+	public String getPassword() {
+		return this.password;
+	}
+
+	public void setPassword(String password) {
+		this.password = password;
+	}
+
+	public String getPwdtext() {
+		return pwdtext;
+	}
+
+	public void setPwdtext(String pwdtext) {
+		this.pwdtext = pwdtext;
+	}
+
+	public String getEmail() {
+		return this.email;
+	}
+
+	public void setEmail(String email) {
+		this.email = email;
+	}
+
+	public Integer getStatus() {
+		return this.status;
+	}
+
+	public void setStatus(Integer status) {
+		this.status = status;
+	}
+}

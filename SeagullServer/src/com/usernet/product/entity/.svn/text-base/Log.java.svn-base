@@ -1,0 +1,88 @@
+package com.usernet.product.entity;
+
+import java.sql.Timestamp;
+
+/**
+ * 系统安装日志
+ * 
+ * @author Administrator
+ * 
+ */
+public class Log implements java.io.Serializable {
+	private static final long serialVersionUID = 2528266176717099240L;
+	
+	private Integer id;
+	private String tel; // 安装手机号码或IP
+	private String request; // 暂定安装说明
+	private String response; // 返回信息，未使用
+	private Timestamp time; // 安装时间
+	private Integer status; // 状态
+	private Integer flag; // 标识
+
+	public Log() {
+	}
+
+	public Integer getStatus() {
+		return status;
+	}
+
+	public void setStatus(Integer status) {
+		this.status = status;
+	}
+
+	public Integer getFlag() {
+		return flag;
+	}
+
+	public void setFlag(Integer flag) {
+		this.flag = flag;
+	}
+
+	public Log(String tel, String request, String response, Timestamp time) {
+		this.tel = tel;
+		this.request = request;
+		this.response = response;
+		this.time = time;
+	}
+
+	public Integer getId() {
+		return this.id;
+	}
+
+	public void setId(Integer id) {
+		this.id = id;
+	}
+
+	public String getTel() {
+		return this.tel;
+	}
+
+	public void setTel(String tel) {
+		this.tel = tel;
+	}
+
+	public String getRequest() {
+		return this.request;
+	}
+
+	public void setRequest(String request) {
+		this.request = request;
+	}
+
+	public String getResponse() {
+		return this.response;
+	}
+
+	public void setResponse(String response) {
+		this.response = response;
+	}
+
+	public Timestamp getTime() {
+		return this.time;
+	}
+
+	public void setTime(Timestamp time) {
+		this.time = time;
+	}
+
+}

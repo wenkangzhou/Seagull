@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>MORE</title>
+    <link rel="stylesheet" href="css/common.css" >  
+    <link rel="stylesheet" href="css/more.css" >  
+    <link rel="shortcut icon" type="image/x-icon" href="img/sys/fac.png" >
+    <meta name="viewport" content="width=device-width,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  </head>
+  <body>
+    <div id="header"><h2 class="title">SEAGULL</h2></div>
+    <div id="wrapper">
+      <div id="scroller">
+        <div class="container">
+            <div class="main">
+              <ul>
+                    <li style="border-bottom: 1px solid #dedede;" onclick="window.location.href='feedback_Offline.html'">
+                    <span>反馈</span>
+                    <i class="sify-down"></i>
+                    </li>
+                    <div class="isApp">
+                    <li style="border-bottom:1px solid #dedede;" onclick="window.myAndroidJs.cleanCache();">
+                    <span>清除缓存</span>
+                    <i class="sify-down"></i>
+                    </li>
+                    </div>
+                    <li onclick="window.location.href='about_Offline.html'">
+                    <span>关于海鸥</span>
+                    <i class="sify-down"></i>
+                </li>
+              </ul>
+            </div>
+        </div>    
+       </div>  
+    </div>     
+    <script type="text/javascript" src="js/footer_offline.js"></script>
+    <script type="text/javascript" src="js/zepto.js"></script>
+    <script type="text/javascript" src="js/iscroll.js"></script>
+    <script type="text/javascript" src="js/vscroll.js"></script>
+    <script type="text/javascript" src="js/myAndroidJs.js"></script>
+    <script type="text/javascript">
+    $(function(){  
+        $("a").removeClass("active");
+        $("#foot_more").addClass("active");
+        //判断不是客户端则隐藏
+        if(window.myAndroidJs==undefined){
+            $(".isApp").html("");
+            $(".main").css("height","70px");
+        }
+    });  
+    </script>
+  </body>
+</html>

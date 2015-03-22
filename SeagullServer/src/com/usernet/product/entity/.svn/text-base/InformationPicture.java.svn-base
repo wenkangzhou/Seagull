@@ -1,0 +1,57 @@
+package com.usernet.product.entity;
+
+import java.sql.Timestamp;
+
+public class InformationPicture implements java.io.Serializable {
+	
+	private static final long serialVersionUID = 155652668241713987L;
+	
+	private Integer id;
+	private Software software;
+	private String photo;
+	private Timestamp time;
+	private Integer status;
+
+	public InformationPicture() {
+	}
+
+	public Integer getId() {
+		return this.id;
+	}
+
+	public void setId(Integer id) {
+		this.id = id;
+	}
+	
+	public Software getInformation() {
+		return software;
+	}
+
+	public void setInformation(Software software) {
+		this.software = software;
+	}
+
+	public String getPhoto() {
+		return this.photo;
+	}
+
+	public void setPhoto(String photo) {
+		this.photo = photo;
+	}
+
+	public Timestamp getTime() {
+		return this.time;
+	}
+
+	public void setTime(Timestamp time) {
+		this.time = time;
+	}
+
+	public Integer getStatus() {
+		return this.status;
+	}
+
+	public void setStatus(Integer status) {
+		this.status = status;
+	}
+}

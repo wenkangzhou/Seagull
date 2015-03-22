@@ -1,0 +1,53 @@
+package com.usernet.product.web.action;
+
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionForward;
+import org.apache.struts.action.ActionMapping;
+
+import com.usernet.product.comm.BaseAction;
+import com.usernet.product.utils.ProductConfig;
+
+public class UserSoftwareAction extends BaseAction {
+
+	/***
+	 * 统计所有用户安装的应用排名
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 */
+	public ActionForward toUserSoftwareStatistics(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		super.settingCurrentNavigation(request.getSession(), ProductConfig.PAGE_DATA_SERVER);
+		
+		List list = userSoftwareDao.getUserSoftwareInstalledStatistics();
+		
+		request.setAttribute("list",list );
+		return mapping.findForward("userSoftwareStatistics");
+	}
+	
+	/***
+	 * 用户已下载增值应用打开次数
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 */
+	public ActionForward toUserSoftwareOpenNumStatistics(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		super.settingCurrentNavigation(request.getSession(), ProductConfig.PAGE_DATA_SERVER);
+		
+		List list = userSoftwareDao.getUserSoftwareOpenNumStatistics();
+		
+		request.setAttribute("list",list );
+		return mapping.findForward("userSoftwareOpenNumStatistics");
+	}
+	
+}

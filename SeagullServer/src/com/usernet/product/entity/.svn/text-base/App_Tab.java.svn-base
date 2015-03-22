@@ -1,0 +1,151 @@
+package com.usernet.product.entity;
+
+import java.sql.Timestamp;
+
+public class App_Tab implements java.io.Serializable {
+	private static final long serialVersionUID = -6622940433996513438L;
+
+	private Integer id;
+	private String name; // 软件名称
+	private String version_name; // 应用versionName
+	private String code; // 应用versionCode
+	private String sdk; // 支持版本用|隔开
+	private String package_name; // 应用包名
+	private String icon; // 图标，存放路径：日期/名称
+	private String size; // 应用大小
+	private String from_source;// 开发商
+	private String remark; // 应用说明
+	private Integer avg; // 评分：1，2，3，4，5
+	private Integer count; // 下载次数
+	private String download; // 下载地址:日期/名称
+	private Integer status; // 状态0可用1不可用
+	private Integer type_Id; // 类型
+	private Timestamp create_time; // 添加时间或更新时间
+	private Integer channelId;//渠道
+	private Tops_Tab tops_tab;//置顶
+	private Type type;// 所属分类
+	private Integer tag_id;//
+	public Integer getId() {
+		return id;
+	}
+	public void setId(Integer id) {
+		this.id = id;
+	}
+	public String getName() {
+		return name;
+	}
+	public Type getType() {
+		return type;
+	}
+	public void setType(Type type) {
+		this.type = type;
+	}
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public String getVersion_name() {
+		return version_name;
+	}
+	public void setVersion_name(String version_name) {
+		this.version_name = version_name;
+	}
+	public String getCode() {
+		return code;
+	}
+	public void setCode(String code) {
+		this.code = code;
+	}
+	public String getSdk() {
+		return sdk;
+	}
+	public void setSdk(String sdk) {
+		this.sdk = sdk;
+	}
+	public String getPackage_name() {
+		return package_name;
+	}
+	public void setPackage_name(String package_name) {
+		this.package_name = package_name;
+	}
+	public String getIcon() {
+		return icon;
+	}
+	public void setIcon(String icon) {
+		this.icon = icon;
+	}
+	public String getSize() {
+		return size;
+	}
+	public void setSize(String size) {
+		this.size = size;
+	}
+	public String getFrom_source() {
+		return from_source;
+	}
+	public void setFrom_source(String from_source) {
+		this.from_source = from_source;
+	}
+	public String getRemark() {
+		return remark;
+	}
+	public void setRemark(String remark) {
+		this.remark = remark;
+	}
+	public Integer getAvg() {
+		return avg;
+	}
+	public void setAvg(Integer avg) {
+		this.avg = avg;
+	}
+	public Integer getCount() {
+		return count;
+	}
+	public void setCount(Integer count) {
+		this.count = count;
+	}
+	public String getDownload() {
+		return download;
+	}
+	public void setDownload(String download) {
+		this.download = download;
+	}
+	public Integer getStatus() {
+		return status;
+	}
+	public void setStatus(Integer status) {
+		this.status = status;
+	}
+	public Integer getType_Id() {
+		return type_Id;
+	}
+	public void setType_Id(Integer type_Id) {
+		this.type_Id = type_Id;
+	}
+	public Timestamp getCreate_time() {
+		return create_time;
+	}
+	public void setCreate_time(Timestamp create_time) {
+		this.create_time = create_time;
+	}
+	public Integer getChannelId() {
+		return channelId;
+	}
+	public void setChannelId(Integer channelId) {
+		this.channelId = channelId;
+	}
+	public Tops_Tab getTops_tab() {
+		return tops_tab;
+	}
+	public void setTops_tab(Tops_Tab tops_tab) {
+		this.tops_tab = tops_tab;
+	}
+	public Integer getTag_id() {
+		return tag_id;
+	}
+	public void setTag_id(Integer tag_id) {
+		this.tag_id = tag_id;
+	}
+
+	
+}

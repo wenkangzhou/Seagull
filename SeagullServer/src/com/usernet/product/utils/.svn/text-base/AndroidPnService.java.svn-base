@@ -1,0 +1,78 @@
+package com.usernet.product.utils;
+
+import java.util.ArrayList;
+import java.util.List;
+import net.sf.json.JSONObject;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.protocol.HTTP;
+
+public class AndroidPnService {
+	
+	private static DefaultHttpClient httpClient = new DefaultHttpClient();
+	
+	//private static final String SEND_URL = "http://pn.wemedias.com:8180/androidpn/notificationExtend.do";
+	
+	private static final String SEND_URL = "http://192.168.0.50:7001/androidpn/notificationExtend.do";
+	
+	public static void sendToUser(String channel,String title,String msg,String softId,String twoGOR3GisDownload) {
+		
+		HttpPost httpPost = new HttpPost(SEND_URL);
+		try {
+			List<NameValuePair> nvps = new ArrayList<NameValuePair>();
+			nvps.add(new BasicNameValuePair("action", "send"));
+			nvps.add(new BasicNameValuePair("username", ""));
+			nvps.add(new BasicNameValuePair("title", title));
+			nvps.add(new BasicNameValuePair("message", msg));
+			nvps.add(new BasicNameValuePair("channel", channel));
+			nvps.add(new BasicNameValuePair("softId", softId));
+			nvps.add(new BasicNameValuePair("twoGOR3GisDownload", twoGOR3GisDownload));
+			httpPost.setEntity(new UrlEncodedFormEntity(nvps, HTTP.UTF_8));
+			httpClient.execute(httpPost);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} finally {
+			if (!httpPost.isAborted())
+				httpPost.abort();
+		}
+
+	}
+	
+public static void sendByImei(String imei,String title,String msg,String twoGOR3GisDownload) {
+	
+		//HttpPost httpPost = new HttpPost("http://pn.wemedias.com:8180/Androidpn/notification.do?action=send");
+		HttpPost httpPost = new HttpPost("http://192.168.0.50:7001/androidpn/notification.do?action=send");
+		
+		try {
+			List<NameValuePair> nvps = new ArrayList<NameValuePair>();
+			nvps.add(new BasicNameValuePair("broadcast", "N"));
+			nvps.add(new BasicNameValuePair("username", imei));
+			nvps.add(new BasicNameValuePair("title", title));
+			nvps.add(new BasicNameValuePair("message", msg));
+			nvps.add(new BasicNameValuePair("uri", ""));
+			nvps.add(new BasicNameValuePair("twoGOR3GisDownload", twoGOR3GisDownload));
+			httpPost.setEntity(new UrlEncodedFormEntity(nvps, HTTP.UTF_8));
+			httpClient.execute(httpPost);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} finally {
+			if (!httpPost.isAborted())
+				httpPost.abort();
+		}
+
+	}
+	
+	public static void main(String[] args) {
+			//sendToUser("DK0000081","测试", "22");
+			
+			//sendByImei("867746013328992","test","{result:2,msg:'应用推荐:米聊',data:{flag:1,softId:1186,url:\"\",name:\"米聊\",content:\"米聊 5.0.500\n\n新米聊，新开始\n1、126个细节改进；\n2、全新界面；\n3、多人语音通话功能；\n更多改进等待你升级后亲身体验！\n \n米聊是什么？\n \n·  当你觉得发短信太沉重时……\n用米聊，聊天方便又省钱！\n \n·  当你觉得手机打字太麻烦时……\n用米聊，语音对讲超方便！\n \n·  当你觉得寂寞无聊时……\n用米聊，看看附近都有谁在等你！\n \n·  当你觉得生活空虚乏味时……\n用米聊，米世界有各种好玩的小工具让你尝试！\n \n·  当你觉得……\n群聊、涂鸦、附近热点……米聊会不断给你新的惊喜！\n \n米聊就是你移动生活的小伴侣：）\n\n\",download:\"http://wedanke.com/client/upload/software/2012-08-15/f726217eb58c4aefb48d3f67899bdde3.apk\",pushIcon:\"\",phoneNumber:\"null\",url:\"null\",fromSource:\"Android软件市场收录\",isChannel:0,issave:0,existImg:1,time:\"2012-08-15 13:42:49.047\",isCommodity:0,isWebContent:0}}","1");
+			
+		JSONObject json = new JSONObject("data:{}");
+		System.out.println(json.get("a"));
+	}
+}

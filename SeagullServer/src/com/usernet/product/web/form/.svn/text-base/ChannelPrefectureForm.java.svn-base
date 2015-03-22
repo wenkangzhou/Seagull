@@ -1,0 +1,49 @@
+package com.usernet.product.web.form;
+
+import org.apache.struts.upload.FormFile;
+
+import com.usernet.product.comm.BaseForm;
+import com.usernet.product.entity.ChannelPrefecture;
+
+public class ChannelPrefectureForm extends BaseForm{
+	private static final long serialVersionUID = -3969508460010068656L;
+	
+
+	private FormFile img;
+	
+	private String channel;
+	private int key;
+	private String channelNO;
+
+	public String getChannel() {
+		return channel;
+	}
+
+	public void setChannel(String channel) {
+		this.channel = channel;
+	}
+
+	public int getKey() {
+		return key;
+	}
+
+	public void setKey(int key) {
+		this.key = key;
+	}
+
+	public String getChannelNO() {
+		return channelNO;
+	}
+
+	public void setChannelNO(String channelNO) {
+		this.channelNO = channelNO;
+	}
+
+	public void setImg(FormFile img) {
+		this.img = img;
+	}
+
+	public FormFile getImg() {
+		return img;
+	}
+}

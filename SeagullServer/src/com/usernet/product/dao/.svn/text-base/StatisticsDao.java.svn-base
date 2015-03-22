@@ -1,0 +1,124 @@
+package com.usernet.product.dao;
+
+import java.util.List;
+import org.hibernate.Query;
+import org.hibernate.Session;
+import org.hibernate.Transaction;
+
+import com.usernet.product.comm.BaseDao;
+
+/**
+ * 帐单信息
+ * 
+ */
+public class StatisticsDao extends BaseDao {
+
+	@SuppressWarnings("unchecked")
+	public List<Object[]> getList(String softName, String time,String channel) {
+		Session session = getSession();
+		Transaction tr = null;
+		try {
+			tr = session.beginTransaction();
+			
+			StringBuffer sql = new StringBuffer();
+			sql.append("{ call sp_channelStatisticsDetails(?,?,?)}");
+			
+			/*
+			StringBuilder sql = new StringBuilder(
+					"select s.channel,s.name,s.softName,sum(s.downCount) as downCount,s.rate"
+							+ ",isnull(sum(s.money),0) as money,s.id,s.softId,sum(s.downTotal) as downTotal ");
+
+			sql.append(",(select top 1 pp.operate_mode from product_price pp inner join product p on p.id = pp.productid  where p.softid = s.softid and operate_mode is not null) as operate_mode");
+			
+			sql.append(" from (");
+			for (int i = 0; i < time.size(); i++) {
+				if (i > 0)
+					sql.append(" union all ");
+				sql.append(" select a.*,");
+				
+				//临时增加渠道增值应用下载数
+				sql.append("case when (select number from addProduct_DownloadNumber ad where ad.softId = a.softId and ad.channelId in (" + StringUtils.join(channelIds, ",") + ") and  ad.time = '" + time.get(i)[0].substring(0, 7) + "') is not null");
+				sql.append(" then ");
+				sql.append(" (select downTotal from addProduct_DownloadNumber ad where ad.softId = a.softId and ad.channelId in (" + StringUtils.join(channelIds, ",") + ") and  ad.time = '" + time.get(i)[0].substring(0, 7) + "')");
+				//sql.append("   c.downTotal + (((select number from addProduct_DownloadNumber ad where ad.softId = a.softId and ad.channelId in (" + StringUtils.join(channelIds, ",") + ") and  ad.time = '2012-05') - a.originalDownCount ))");
+				sql.append(" else");
+				sql.append("   c.downTotal end downTotal, ");
+				sql.append(" b.price,");
+				
+				sql.append(" case when (select number from addProduct_DownloadNumber ad where ad.softId = a.softId and ad.channelId in (" + StringUtils.join(channelIds, ",") + ") and  ad.time = '" + time.get(i)[0].substring(0, 7) + "') is not null");
+				sql.append(" then");
+				sql.append("(select money from addProduct_DownloadNumber ad where ad.softId = a.softId and ad.channelId in (" + StringUtils.join(channelIds, ",") + ") and  ad.time = '" + time.get(i)[0].substring(0, 7) + "')");
+				//sql.append("   	round(b.price*(a.downCount/(c.downTotal + ((select number from addProduct_DownloadNumber ad where ad.softId = a.softId and ad.channelId in (" + StringUtils.join(channelIds, ",") + ") and  ad.time = '" + time.get(i)[0].substring(0, 7) + "') - a.originalDownCount )))*a.rate/100, 2)");
+				sql.append(" else");
+				sql.append(" 	round(b.price*(a.downCount/c.downTotal)*a.rate/100, 2)");
+				sql.append(" end money");
+				
+				//sql.append("c.downTotal,b.price,round(b.price*(a.downCount/c.downTotal)*a.rate/100, 2)"
+				//		+ " as money");
+				
+				sql.append(" from (select s.channel,s.name,p.id," + rate
+						+ "rate,d.softId,sw.name as softName,");
+				
+				sql.append("case when (select number from addProduct_DownloadNumber ad where ad.softId = d.softId and ad.channelId in (" + StringUtils.join(channelIds, ",") + ") and  ad.time = '" + time.get(i)[0].substring(0, 7) + "') is not null");
+				sql.append("  then");
+				sql.append("  cast( (select number from addProduct_DownloadNumber ad where ad.softId = d.softId and ad.channelId in (" + StringUtils.join(channelIds, ",") + ") and  ad.time = '" + time.get(i)[0].substring(0, 7) + "') - count(*) + count(*) as float) ");
+				sql.append(" else");
+				sql.append(" cast( count(*) as float) ");
+				sql.append(" end downCount,cast( count(*) as float) as originalDownCount ");
+				
+				//sql.append("cast( count(*) as float) downCount");
+				
+				sql.append(" from (select c.channel,c.name,l.imei from channel c,client_log l"
+						+ " where c.id=l.channelId");
+				sql.append(" and c.id in (" + StringUtils.join(channelIds, ",") + ")");
+				sql.append(") s,download d,product p   inner join software sw on sw.id = p.softid   where s.imei=d.imei and d.softId=p.softId");
+				sql.append(" and convert(varchar(100), d.time, 23) between '" + time.get(i)[0]
+						+ "' and '" + time.get(i)[1] + "'");
+				if (StringUtils.isNotEmpty(softName))
+					sql.append(" and d.softName like :softName");
+				sql.append(" group by s.channel,s.name,p.id,d.softId,sw.name) a left join (");
+				sql.append("select * from product_price where time='" + time.get(i)[0].substring(0, 7) + "'");
+				sql.append(") b on a.id=b.productId left join (select softId,cast(count(*) as float) downTotal from download where");
+				sql.append(" convert(varchar(100), time, 23) between '" + time.get(i)[0]
+						+ "' and '" + time.get(i)[1] + "'");
+				if (StringUtils.isNotEmpty(softName))
+					sql.append(" and softName like :softName");
+				sql.append(" group by softId) c on a.softId=c.softId");
+			}
+			sql.append(") s group by s.channel,s.name,s.id,s.rate,s.softId,s.softName order by s.channel");
+*/			Query query = session.createSQLQuery(sql.toString());
+			query.setString(0, time).setString(1,channel).setString(2, softName);
+//			if (StringUtils.isNotEmpty(softName))
+//				query.setString("softName", softName);
+			List<Object[]> list = query.list();
+			tr.commit();
+			return list;
+		} catch (Exception ex) {
+			if (tr != null)
+				tr.rollback();
+			ex.printStackTrace();
+			return null;
+		}
+	}
+	
+	
+		/*
+		public static void main(String[] args) {
+			double sum = 3.15;
+			double a = 20;
+			double b = 0.7;
+			
+			double c = sum/(a*b);
+			
+			for(double j=1;j<353;j++){
+				for(double i=2;i<733;i++){
+					if(i/j==c){
+						System.out.println("下载数:"+i+" 下载总数:"+j);
+					}
+				}
+			}
+		}
+	
+	*/
+	
+}

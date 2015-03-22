@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+"http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+
+<hibernate-mapping>
+	<class name="com.usernet.product.entity.InformationPicture" table="information_picture_tab">
+		<cache usage="nonstrict-read-write" />
+		<id name="id" type="java.lang.Integer">
+			<column name="id" />
+			<generator class="native" />
+		</id>
+		<!--<class="com.usernet.product.entity.Information" not-found="ignore"  -->
+		<many-to-one name="information" >
+			<column name="informationId" />
+		</many-to-one>
+		<property name="photo" type="java.lang.String">
+			<column name="photo" />
+		</property>
+		<property name="time" type="java.sql.Timestamp">
+			<column name="time" />
+		</property>
+		<property name="status" type="java.lang.Integer">
+			<column name="status" />
+		</property>
+	</class>
+</hibernate-mapping>

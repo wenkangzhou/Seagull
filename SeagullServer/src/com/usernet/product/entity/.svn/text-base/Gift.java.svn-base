@@ -1,0 +1,77 @@
+package com.usernet.product.entity;
+
+import java.sql.Timestamp;
+
+public class Gift implements java.io.Serializable {
+	private static final long serialVersionUID = -2412070158884000837L;
+
+	private Integer id;
+	private String caption;
+	private String icon;
+	private Timestamp createTime;
+	private Integer physical;
+	private Integer type;
+
+	public Gift() {
+	}
+	
+	public Gift(Integer id) {
+		this.id = id;
+	}
+
+	public Gift(String caption, String icon, Timestamp createTime, Integer physical, Integer type) {
+		this.caption = caption;
+		this.icon = icon;
+		this.createTime = createTime;
+		this.physical = physical;
+		this.type = type;
+	}
+
+	public Integer getId() {
+		return this.id;
+	}
+
+	public void setId(Integer id) {
+		this.id = id;
+	}
+
+	public String getCaption() {
+		return caption;
+	}
+
+	public void setCaption(String caption) {
+		this.caption = caption;
+	}
+
+	public String getIcon() {
+		return icon;
+	}
+
+	public void setIcon(String icon) {
+		this.icon = icon;
+	}
+
+	public Timestamp getCreateTime() {
+		return createTime;
+	}
+
+	public void setCreateTime(Timestamp createTime) {
+		this.createTime = createTime;
+	}
+
+	public Integer getPhysical() {
+		return physical;
+	}
+
+	public void setPhysical(Integer physical) {
+		this.physical = physical;
+	}
+
+	public Integer getType() {
+		return type;
+	}
+
+	public void setType(Integer type) {
+		this.type = type;
+	}
+}

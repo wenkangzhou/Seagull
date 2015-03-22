@@ -1,0 +1,33 @@
+package com.usernet.product.dao;
+
+import java.util.List;
+
+import com.usernet.product.comm.BaseDao;
+import com.usernet.product.entity.AdvertType;
+import com.usernet.product.utils.Page;
+import com.usernet.product.utils.PageResult;
+
+/***
+ * 广告类型管理
+ * @author tangdehao
+ *
+ */
+public class AdvertTypeDao extends BaseDao{
+
+	@SuppressWarnings("unchecked")
+	public List<AdvertType> getAll() {
+
+		String hql = "from AdvertType";
+
+		return getAllByHql(hql);
+	} 
+	
+	@SuppressWarnings("unchecked")
+	public PageResult<AdvertType> getPage(Page page) {
+
+		String hql = "from AdvertType";
+
+		return super.getAllByPageAndHql(page, hql);
+	}
+	
+}

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+"http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+<hibernate-mapping>
+	<class name="com.usernet.product.entity.Advert" table="advert">
+		<cache usage="read-write" />
+		<id name="id" type="java.lang.Integer">
+			<column name="id" />
+			<generator class="native" />
+		</id>
+		<many-to-one name="channel" class="com.usernet.product.entity.Channel" not-found="ignore">
+			<column name="channelId" />
+		</many-to-one>
+		
+		<property name="name" type="java.lang.String">
+			<column name="name" />
+		</property>
+		<property name="fileName" type="java.lang.String">
+			<column name="fileName" />
+		</property>
+		<property name="toLink" type="java.lang.String">
+			<column name="toLink" />
+		</property>
+		<many-to-one name="advertType" class="com.usernet.product.entity.AdvertType" not-found="ignore" insert="false" update="false">
+			<column name="typeId" />
+		</many-to-one>
+		<property name="remark" type="java.lang.String">
+			<column name="remark" />
+		</property>
+		<property name="createTime" type="java.util.Date">
+			<column name="createTime" />
+		</property>
+		<property name="typeId" type="java.lang.Integer">
+			<column name="typeId" />
+		</property>
+		<property name="flag" type="java.lang.Integer">
+			<column name="flag" />
+		</property>
+		<property name="softId" type="java.lang.Integer" >
+			<column name="softId" />
+		</property>
+		<property name="channelId" type="java.lang.Integer" insert="false" update="false">
+			<column name="channelId" />
+		</property>
+	</class>
+</hibernate-mapping>

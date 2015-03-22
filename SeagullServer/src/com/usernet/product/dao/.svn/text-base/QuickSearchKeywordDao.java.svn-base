@@ -1,0 +1,24 @@
+package com.usernet.product.dao;
+
+import org.apache.commons.lang.StringUtils;
+
+import com.usernet.product.comm.BaseDao;
+import com.usernet.product.entity.QuickSearchKeyword;
+import com.usernet.product.utils.Page;
+import com.usernet.product.utils.PageResult;
+
+public class QuickSearchKeywordDao extends BaseDao {
+
+	@SuppressWarnings("unchecked")
+	public PageResult<QuickSearchKeyword> getAllByPage(Page page,String keyword) {
+		
+		String hql = "from QuickSearchKeyword";
+		if(StringUtils.isNotEmpty(keyword)){
+			
+			hql += " where keyword = '%" + keyword + "%'";
+		}
+		hql +=" order by id desc";
+		return super.getAllByPageAndHql(page,hql);
+	} 
+	
+}

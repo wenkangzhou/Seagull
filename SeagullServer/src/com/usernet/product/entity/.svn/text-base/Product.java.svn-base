@@ -1,0 +1,195 @@
+package com.usernet.product.entity;
+
+public class Product implements java.io.Serializable {
+	private static final long serialVersionUID = 4516014800563330612L;
+
+	private Integer id;
+	private Integer channelId;
+	private Integer softId;
+	private String icon;
+	private String softName;
+	private Double money;
+	private Integer feeType;
+	private Integer calculate;
+	private String manufacturer;
+	private Integer settleType;
+	private String contractTime;
+	private String condition;
+	private String linker;
+	private String phone;
+	private Integer over = 0; // 合同是否过期，0：否；1：是；2：剩余一个月（30天）
+	private Integer isRecommend;
+	private Integer deleted = 0;
+	private String networkType;
+	private Software software;
+
+	public Product() {
+	}
+
+	public Product(Integer id,String icon, String softName, String manufacturer, Integer settleType, Double money, Integer feeType,
+			String contractTime,Integer isRecommend,String networkType,Integer channelId) {
+		this.id = id;
+		this.softName = softName;
+		this.manufacturer = manufacturer;
+		this.settleType = settleType;
+		this.money = money;
+		this.feeType = feeType;
+		this.contractTime = contractTime;
+		this.isRecommend = isRecommend;
+		this.networkType = networkType;
+		this.channelId = channelId;
+		this.icon = icon;
+	}
+
+	public Integer getId() {
+		return id;
+	}
+
+	public void setId(Integer id) {
+		this.id = id;
+	}
+
+	public Integer getSoftId() {
+		return softId;
+	}
+
+	public void setSoftId(Integer softId) {
+		this.softId = softId;
+	}
+
+	public String getSoftName() {
+		return softName;
+	}
+
+	public void setSoftName(String softName) {
+		this.softName = softName;
+	}
+
+	public Double getMoney() {
+		return money;
+	}
+
+	public void setMoney(Double money) {
+		this.money = money;
+	}
+
+	public Integer getFeeType() {
+		return feeType;
+	}
+
+	public void setFeeType(Integer feeType) {
+		this.feeType = feeType;
+	}
+
+	public Integer getCalculate() {
+		return calculate;
+	}
+
+	public void setCalculate(Integer calculate) {
+		this.calculate = calculate;
+	}
+
+	public String getManufacturer() {
+		return manufacturer;
+	}
+
+	public void setManufacturer(String manufacturer) {
+		this.manufacturer = manufacturer;
+	}
+
+	public Integer getSettleType() {
+		return settleType;
+	}
+
+	public void setSettleType(Integer settleType) {
+		this.settleType = settleType;
+	}
+
+	public String getContractTime() {
+		return contractTime;
+	}
+
+	public void setContractTime(String contractTime) {
+		this.contractTime = contractTime;
+	}
+
+	public String getCondition() {
+		return condition;
+	}
+
+	public void setCondition(String condition) {
+		this.condition = condition;
+	}
+
+	public String getLinker() {
+		return linker;
+	}
+
+	public void setLinker(String linker) {
+		this.linker = linker;
+	}
+
+	public String getPhone() {
+		return phone;
+	}
+
+	public void setPhone(String phone) {
+		this.phone = phone;
+	}
+
+	public Integer getOver() {
+		return over;
+	}
+
+	public void setOver(Integer over) {
+		this.over = over;
+	}
+
+	public Integer getIsRecommend() {
+		return isRecommend;
+	}
+
+	public void setIsRecommend(Integer isRecommend) {
+		this.isRecommend = isRecommend;
+	}
+
+	public String getNetworkType() {
+		return networkType;
+	}
+
+	public void setNetworkType(String networkType) {
+		this.networkType = networkType;
+	}
+	public Integer getChannelId() {
+		return channelId;
+	}
+
+	public void setChannelId(Integer channelId) {
+		this.channelId = channelId;
+	}
+
+	public Software getSoftware() {
+		return software;
+	}
+
+	public void setSoftware(Software software) {
+		this.software = software;
+	}
+
+	public String getIcon() {
+		return icon;
+	}
+
+	public void setIcon(String icon) {
+		this.icon = icon;
+	}
+
+	public Integer getDeleted() {
+		return deleted;
+	}
+
+	public void setDeleted(Integer deleted) {
+		this.deleted = deleted;
+	}
+	
+}

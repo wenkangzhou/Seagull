@@ -1,0 +1,264 @@
+package com.usernet.product.web.action;
+
+import java.io.IOException;
+import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.commons.lang.StringUtils;
+import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionForward;
+import org.apache.struts.action.ActionMapping;
+import com.usernet.product.comm.BaseAction;
+import com.usernet.product.entity.App_Tab;
+import com.usernet.product.entity.Channel;
+import com.usernet.product.entity.ClientPushMessage;
+import com.usernet.product.entity.Information_Tab;
+import com.usernet.product.entity.MessagePush;
+import com.usernet.product.entity.Software;
+import com.usernet.product.entity.Type;
+import com.usernet.product.utils.Page;
+import com.usernet.product.utils.PageResult;
+import com.usernet.product.utils.ProductConfig;
+import com.usernet.product.web.form.MessagePushForm;
+
+public class MessagePushAction extends BaseAction {
+
+	private static SimpleDateFormat sdf = new SimpleDateFormat(
+			"yyyy-MM-dd HH:mm");
+
+	public ActionForward toMessagePush(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		super.settingCurrentNavigation(request.getSession(), ProductConfig.PAGE_MEDIA);
+		
+		Channel admin = (Channel) request.getSession().getAttribute("admin");
+		List<Channel> channels = channelDao.getAll(admin.getType() == 0 ? admin
+				.getId() : null);
+		if (channels == null)
+			channels = new ArrayList<Channel>();
+		channels.add(0, admin);
+
+		String channelId = request.getParameter("channelId");
+		if(StringUtils.isNotEmpty(channelId)){
+			
+			request.setAttribute("channelId", Integer.valueOf(channelId));
+		}
+		request.setAttribute("channels", channels);
+		return mapping.findForward("add");
+	}
+
+	/***
+	 * 记录推送出去的消息
+	 * 
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 */
+	public ActionForward save(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		super.settingCurrentNavigation(request.getSession(), ProductConfig.PAGE_MEDIA);
+		
+		MessagePushForm mForm = (MessagePushForm) form;
+		MessagePush messagePush = mForm.getMessagePush();
+		Channel channel = (Channel) request.getSession().getAttribute("admin");
+
+		messagePush.setChannelId(channel.getId());
+		messagePush.setCreateTime(sdf.format(new Date()));
+		messagePushDao.save(messagePush);
+
+		return mapping.findForward("other");
+	}
+
+	/**
+	 * 曾经发送过的消息
+	 * 
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 */
+	public ActionForward toList(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		super.settingCurrentNavigation(request.getSession(), ProductConfig.PAGE_MEDIA);
+		
+		MessagePushForm mForm = (MessagePushForm) form;
+		PageResult<MessagePush> result = null;
+		Page page = new Page();
+		// 分页信息
+		String pageNo = mForm.getPageNo();
+		String pageSize = mForm.getPageSize();
+		if (pageSize != null)
+			page.setEveryPage(Integer.parseInt(pageSize.trim()));
+		if (pageNo != null)
+			page.setCurrentPage(Integer.parseInt(pageNo.trim()));
+
+		Channel admin = (Channel) request.getSession().getAttribute("admin");
+
+		if (mForm.getChannelId() == null) {
+
+			mForm.setChannelId(admin.getId());
+		}
+
+		result = messagePushDao.getPage(page, mForm.getChannelId());
+
+		request.setAttribute("form", mForm);
+		request.setAttribute("list", result.getContent());
+		request.setAttribute("page", result.getPage());
+		request.setAttribute("size", result.getSize());
+
+		return mapping.findForward("list");
+	}
+
+	/** 删除推送的消息记录 **/
+	public ActionForward toDelete(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		super.settingCurrentNavigation(request.getSession(), ProductConfig.PAGE_MEDIA);
+		
+		MessagePushForm mForm = (MessagePushForm) form;
+
+		if (mForm.getId() != 0) {
+
+			MessagePush advert = new MessagePush();
+			advert.setId(mForm.getId());
+			advertDao.delete(advert);
+		}
+
+		return toList(mapping, form, request, response);
+	}
+
+	/***
+	 * androidpn 在线用户查看
+	 * 
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 */
+	public ActionForward toOnlineUser(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		super.settingCurrentNavigation(request.getSession(), ProductConfig.PAGE_ADVERT_PUT_MANAGER);
+		
+		String channelIdStr = request.getParameter("channelId");
+		Channel admin = (Channel) request.getSession().getAttribute("admin");
+		List<Channel> channels = getChannel(admin.getId(),admin.getType());//页面上显示的渠道
+		
+		if(admin.getType()==0){
+			channelIdStr = String.valueOf(admin.getId());
+		}
+		request.setAttribute("channels", channels);
+		request.setAttribute("channelId", channelIdStr);
+		return mapping.findForward("onlineUser");
+	}
+	
+	/** 推送资讯 **/
+	public ActionForward toPushInformation(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		super.settingCurrentNavigation(request.getSession(), ProductConfig.PAGE_MEDIA);
+		
+		MessagePushForm mForm = (MessagePushForm) form;
+		Channel admin = (Channel) request.getSession().getAttribute("admin");
+		List<Channel> channels = getChannel(admin.getId(),admin.getType());//页面上显示的渠道
+		
+		/**以下为获取渠道*/
+		Integer[] channelIdArray = getChannelsArray(request, admin);
+		/**获取渠道结束*/
+
+		// 查询条件
+		String softName = mForm.getSoftName();
+		int typeId = mForm.getTypeIds();
+		PageResult<Information_Tab> result = null;
+		Page page = new Page();
+		// 分页信息
+		String pageNo = mForm.getPageNo();
+		String pageSize = mForm.getPageSize();
+		if (pageSize != null) {
+			page.setEveryPage(Integer.parseInt(pageSize.trim()));
+		}
+		if (pageNo != null) {
+			page.setCurrentPage(Integer.parseInt(pageNo.trim()));
+		}
+
+		result = productDao.getAllInformationByParams(page, softName,channelIdArray);
+		List<Type> typeList = typeDao.getAll(-1);
+		request.setAttribute("form", mForm);
+		request.setAttribute("channels", channels);
+		request.setAttribute("typeList", typeList);
+		request.setAttribute("list", result.getContent());
+		request.setAttribute("page", result.getPage());
+		request.setAttribute("size", result.getSize());
+		
+		return mapping.findForward("pushInformation");
+	}
+	
+	/** 软件列表显示  **/
+	public ActionForward toPushSoft(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		super.settingCurrentNavigation(request.getSession(), ProductConfig.PAGE_MEDIA);		
+		MessagePushForm mForm = (MessagePushForm) form;
+		Channel admin = (Channel) request.getSession().getAttribute("admin");
+		List<Channel> channels = getChannel(admin.getId(),admin.getType());//页面上显示的渠道		
+		/**以下为获取渠道*/
+		Integer[] channelIdArray = getChannelsArray(request, admin);
+		/**获取渠道结束*/		
+		// 查询条件
+		String softName = mForm.getSoftName();
+		int typeId = mForm.getTypeIds();
+		PageResult<App_Tab> result = null;
+		Page page = new Page();
+		// 分页信息
+		String pageNo = mForm.getPageNo();
+		String pageSize = mForm.getPageSize();
+		if (pageSize != null) {
+			page.setEveryPage(Integer.parseInt(pageSize.trim()));
+		}
+		if (pageNo != null) {
+			page.setCurrentPage(Integer.parseInt(pageNo.trim()));
+		}
+		result = productDao.getAllByParams(page, softName, typeId,new Integer[]{1,2},channelIdArray);
+		List<Type> typeList = typeDao.getAll(-1);
+		request.setAttribute("form", mForm);
+		request.setAttribute("channels", channels);
+		request.setAttribute("typeList", typeList);
+		request.setAttribute("list", result.getContent());
+		request.setAttribute("page", result.getPage());
+		request.setAttribute("size", result.getSize());
+		return mapping.findForward("pushSoft");
+	}
+	
+	/***
+	 * 保存推送出去的消息  使客户端可以获取列表
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 * @throws IOException 
+	 */
+	public ActionForward savePushMessage(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) throws IOException {
+		
+		MessagePushForm mForm = (MessagePushForm) form;
+		
+		ClientPushMessage cpm = new ClientPushMessage();
+		Software sw = (Software)softwareDao.getById(Software.class, mForm.getSoftId());
+		cpm.setSoftware(sw);
+		cpm.setTime(new Timestamp(System.currentTimeMillis()));
+		
+		int i = messagePushDao.save(cpm);
+		
+		response.setCharacterEncoding("UTF-8");
+		response.getWriter().write(String.valueOf(i));
+		
+		return null;
+	}
+
+}

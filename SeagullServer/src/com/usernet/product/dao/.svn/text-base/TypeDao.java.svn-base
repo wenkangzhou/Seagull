@@ -1,0 +1,73 @@
+package com.usernet.product.dao;
+
+import java.util.List;
+
+import org.hibernate.HibernateException;
+import org.hibernate.Query;
+import org.hibernate.Session;
+import org.hibernate.Transaction;
+
+import com.usernet.product.comm.BaseDao;
+import com.usernet.product.entity.Type;
+import com.usernet.product.utils.Page;
+import com.usernet.product.utils.PageResult;
+
+public class TypeDao extends BaseDao {
+
+	@SuppressWarnings("unchecked")
+	public List<Type> getAll(int flag) {
+		String hql = "from Type";
+		if (flag != -1) {
+			if (flag == 0)
+				hql += " where flag!=4";
+			else
+				hql += " where flag=" + flag;
+		}
+		hql += " order by sort";
+		return super.getAllByHql(hql);
+	}
+
+	@SuppressWarnings("unchecked")
+	public PageResult<Type> getAllByPage(Page page) {
+		String hql = "from Type order by sort";
+		return super.getAllByPageAndHql(page, hql);
+	}
+
+	/*
+	 * 条件查询
+	 */
+	@SuppressWarnings("unchecked")
+	public PageResult<Type> getAllByParams(Page page, String name, int flag) {
+		String hql = "from Type where 1=1 ";
+		if (name != null && !"".equals(name.trim())) {
+			hql += " and (name like '%" + name + "%' or pinyin like '%"
+					+ name.toLowerCase() + "%')";
+		}
+		if (flag != -1) {
+			hql += " and flag=" + flag;
+		}
+		hql += " order by sort";
+		return super.getAllByPageAndHql(page, hql);
+	}
+
+	public int getCount() {
+		Session session = getSession();
+		Transaction tr = null;
+		String hql = "select count(*) from Type";
+		try {
+			tr = session.beginTransaction();
+			Query query = session.createQuery(hql);
+			Object num = query.uniqueResult();
+			tr.commit();
+			if (num instanceof Number) {
+				return ((Number) num).intValue();
+			}
+		} catch (HibernateException e) {
+			if (tr != null) {
+				tr.rollback();
+			}
+		}
+		return 0;
+
+	}
+}

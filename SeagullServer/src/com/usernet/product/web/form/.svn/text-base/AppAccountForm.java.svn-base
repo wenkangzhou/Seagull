@@ -1,0 +1,90 @@
+package com.usernet.product.web.form;
+
+import com.usernet.product.comm.BaseForm;
+import com.usernet.product.entity.Product;
+
+public class AppAccountForm extends BaseForm{
+
+	private static final long serialVersionUID = -291241583880765691L;
+
+	private Integer id;
+	
+	private Product product = new Product();
+	
+	private String time;
+	
+	private Double money;
+	
+	private Integer isSettlement;
+	
+	private String pageNo;
+	
+	private String pageSize;
+	
+	private Integer productId;
+
+	public Integer getId() {
+		return id;
+	}
+
+	public void setId(Integer id) {
+		this.id = id;
+	}
+
+	public Product getProduct() {
+		return product;
+	}
+
+	public void setProduct(Product product) {
+		this.product = product;
+	}
+
+	public String getTime() {
+		return time;
+	}
+
+	public void setTime(String time) {
+		this.time = time;
+	}
+
+	public Double getMoney() {
+		return money;
+	}
+
+	public void setMoney(Double money) {
+		this.money = money;
+	}
+
+	public Integer getIsSettlement() {
+		return isSettlement;
+	}
+
+	public void setIsSettlement(Integer isSettlement) {
+		this.isSettlement = isSettlement;
+	}
+
+	public String getPageNo() {
+		return pageNo;
+	}
+
+	public void setPageNo(String pageNo) {
+		this.pageNo = pageNo;
+	}
+
+	public String getPageSize() {
+		return pageSize;
+	}
+
+	public void setPageSize(String pageSize) {
+		this.pageSize = pageSize;
+	}
+
+	public Integer getProductId() {
+		return productId;
+	}
+
+	public void setProductId(Integer productId) {
+		this.productId = productId;
+	}
+
+}

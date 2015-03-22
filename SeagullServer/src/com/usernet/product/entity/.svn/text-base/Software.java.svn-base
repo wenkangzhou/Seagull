@@ -1,0 +1,513 @@
+package com.usernet.product.entity;
+
+import java.sql.Timestamp;
+import java.util.Set;
+
+public class Software implements java.io.Serializable {
+	private static final long serialVersionUID = -6622940433996513438L;
+
+	private Integer id;
+	private Type type;// 所属分类
+	private String name; // 软件名称
+	private String version; // 应用versionName
+	private String code; // 应用versionCode
+	private String username; // 添加人登录名
+	private String sdk; // 支持版本用|隔开
+	private String package_; // 应用包名
+	private String icon; // 图标，存放路径：日期/名称
+	private Integer recommend; // 排列顺序，推荐应用使用，默认5000
+	private Integer tops; // 不推荐和不顶置：0推荐：1；顶置：2
+	private Timestamp time; // 添加时间或更新时间
+	private String size; // 应用大小
+	private String develope;// 开发商
+	private String remark; // 应用说明
+	private Integer avg; // 评分：1，2，3，4，5
+	private Integer share; // 是否免费0免费1收费
+	private Double money; // 收费金额
+	private Integer count; // 下载次数
+	private String download; // 下载地址:日期/名称
+	private String pinyin; // 拼音搜索，全小写
+	private String tag; // 标签
+	private String res; // 分享内容
+	private Integer status; // 状态0可用1不可用
+	private Resources resources; // 所属主题
+	private Integer okCount; // 顶
+	private Integer cancleCount; // 踩
+	private Channel channel;
+	private String pushIcon; //用于推送应用到手机上显示的ICON
+	private String fileHashCode; //文件哈希码
+	private Long fileSize;//文件大小
+	private Integer isWebContent = 0;
+	
+	private Set<Tag> tagkey;
+	
+	private Double original_price;//原价
+	private Double current_price;//现价
+	private Double discount;//折扣
+	private Integer isCommodity = 0;//是否为商品
+	private Integer isPanicBuying = 0;//是否抢购
+	private Timestamp start_panicbuying_time;//开始抢购时间
+	private Timestamp end_panicbuying_time;//结束抢购时间
+	private Integer inventory; //库存
+	private Integer newId; //关联id
+	private Integer flag; //关联类别
+	private String thumbnail;
+	private Double expressFree;//快递费
+	private Integer tag_id;
+	
+	public Integer getTag_id() {
+		return tag_id;
+	}
+
+	public void setTag_id(Integer tag_id) {
+		this.tag_id = tag_id;
+	}
+
+	public Integer getNewId() {
+		return newId;
+	}
+
+	public void setNewId(Integer newId) {
+		this.newId = newId;
+	}
+
+	public Integer getFlag() {
+		return flag;
+	}
+
+	public void setFlag(Integer flag) {
+		this.flag = flag;
+	}
+
+	public String getPhoneNumber() {
+		return phoneNumber;
+	}
+
+	public void setPhoneNumber(String phoneNumber) {
+		this.phoneNumber = phoneNumber;
+	}
+
+	public String getUrl() {
+		return url;
+	}
+
+	public void setUrl(String url) {
+		this.url = url;
+	}
+
+	private Integer channelId;
+	public Integer getChannelId() {
+		return channelId;
+	}
+
+	public void setChannelId(Integer channelId) {
+		this.channelId = channelId;
+	}
+
+	private String phoneNumber;
+	private String url;
+
+	public Software() {
+	}
+
+	public Software(Integer id, String icon) {
+		this.id = id;
+		this.icon = icon;
+	}
+
+	public Software(Integer id, String name, String icon) {
+		this.id = id;
+		this.name = name;
+		this.icon = icon;
+	}
+
+	public Software(Integer id, String name, int count, int avg, String icon) {
+		this.id = id;
+		this.name = name;
+		this.count = count;
+		this.avg = avg;
+		this.icon = icon;
+	}
+
+	public Software(Integer id, String name, String icon, String size, int avg,
+			Timestamp time, int count, String remark) {
+		this.id = id;
+		this.name = name;
+		this.icon = icon;
+		this.size = size;
+		this.avg = avg;
+		this.time = time;
+		this.count = count;
+		this.remark = remark;
+	}
+
+	public Software(Integer id, String name, String version, String code,
+			String sdk, String icon, String package1, String develope,
+			Integer avg, Integer share, Double money) {
+		this.id = id;
+		this.name = name;
+		this.version = version;
+		this.code = code;
+		this.sdk = sdk;
+		this.package_ = package1;
+		this.icon = icon;
+		this.develope = develope;
+		this.avg = avg;
+		this.share = share;
+		this.money = money;
+	}
+
+	public Software(Integer id, String name, String icon, String develope,
+			Integer avg) {
+		this.id = id;
+		this.name = name;
+		this.icon = icon;
+		this.develope = develope;
+		this.avg = avg;
+	}
+
+	public Resources getResources() {
+		return resources;
+	}
+
+	public void setResources(Resources resources) {
+		this.resources = resources;
+	}
+
+	public String getUsername() {
+		return username;
+	}
+
+	public void setUsername(String username) {
+		this.username = username;
+	}
+
+	public Integer getId() {
+		return this.id;
+	}
+
+	public void setId(Integer id) {
+		this.id = id;
+	}
+
+	public Type getType() {
+		return this.type;
+	}
+
+	public String getSdk() {
+		return sdk;
+	}
+
+	public void setSdk(String sdk) {
+		this.sdk = sdk;
+	}
+
+	public void setType(Type type) {
+		this.type = type;
+	}
+
+	public String getName() {
+		return this.name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public String getVersion() {
+		return this.version;
+	}
+
+	public void setVersion(String version) {
+		this.version = version;
+	}
+
+	public String getCode() {
+		return this.code;
+	}
+
+	public void setCode(String code) {
+		this.code = code;
+	}
+
+	public String getPackage_() {
+		return this.package_;
+	}
+
+	public void setPackage_(String package_) {
+		this.package_ = package_;
+	}
+
+	public String getIcon() {
+		return this.icon;
+	}
+
+	public void setIcon(String icon) {
+		this.icon = icon;
+	}
+
+	public Integer getRecommend() {
+		return this.recommend;
+	}
+
+	public void setRecommend(Integer recommend) {
+		this.recommend = recommend;
+	}
+
+	public Integer getTops() {
+		return this.tops;
+	}
+
+	public void setTops(Integer tops) {
+		this.tops = tops;
+	}
+
+	public Timestamp getTime() {
+		return this.time;
+	}
+
+	public void setTime(Timestamp time) {
+		this.time = time;
+	}
+
+	public String getSize() {
+		return this.size;
+	}
+
+	public void setSize(String size) {
+		this.size = size;
+	}
+
+	public String getDevelope() {
+		return this.develope;
+	}
+
+	public void setDevelope(String develope) {
+		this.develope = develope;
+	}
+
+	public String getRemark() {
+		return this.remark;
+	}
+
+	public void setRemark(String remark) {
+		this.remark = remark;
+	}
+
+	public Integer getAvg() {
+		return this.avg;
+	}
+
+	public void setAvg(Integer avg) {
+		this.avg = avg;
+	}
+
+	public Integer getShare() {
+		return this.share;
+	}
+
+	public void setShare(Integer share) {
+		this.share = share;
+	}
+
+	public Double getMoney() {
+		return this.money;
+	}
+
+	public void setMoney(Double money) {
+		this.money = money;
+	}
+
+	public Integer getCount() {
+		return this.count;
+	}
+
+	public void setCount(Integer count) {
+		this.count = count;
+	}
+
+	public String getDownload() {
+		return this.download;
+	}
+
+	public void setDownload(String download) {
+		this.download = download;
+	}
+
+	public String getPinyin() {
+		return this.pinyin;
+	}
+
+	public void setPinyin(String pinyin) {
+		this.pinyin = pinyin;
+	}
+
+	public String getTag() {
+		return this.tag;
+	}
+
+	public void setTag(String tag) {
+		this.tag = tag;
+	}
+
+	public String getRes() {
+		return this.res;
+	}
+
+	public void setRes(String res) {
+		this.res = res;
+	}
+
+	public Integer getStatus() {
+		return this.status;
+	}
+
+	public void setStatus(Integer status) {
+		this.status = status;
+	}
+
+	public Integer getOkCount() {
+		return okCount;
+	}
+
+	public void setOkCount(Integer okCount) {
+		this.okCount = okCount;
+	}
+
+	public Integer getCancleCount() {
+		return cancleCount;
+	}
+
+	public void setCancleCount(Integer cancleCount) {
+		this.cancleCount = cancleCount;
+	}
+
+	public Channel getChannel() {
+		return channel;
+	}
+
+	public void setChannel(Channel channel) {
+		this.channel = channel;
+	}
+
+	public String getPushIcon() {
+		return pushIcon;
+	}
+
+	public void setPushIcon(String pushIcon) {
+		this.pushIcon = pushIcon;
+	}
+
+	public Double getOriginal_price() {
+		return original_price;
+	}
+
+	public void setOriginal_price(Double original_price) {
+		this.original_price = original_price;
+	}
+
+	public Double getCurrent_price() {
+		return current_price;
+	}
+
+	public void setCurrent_price(Double current_price) {
+		this.current_price = current_price;
+	}
+
+	public Double getDiscount() {
+		return discount;
+	}
+
+	public void setDiscount(Double discount) {
+		this.discount = discount;
+	}
+
+	public Integer getIsCommodity() {
+		return isCommodity;
+	}
+
+	public void setIsCommodity(Integer isCommodity) {
+		this.isCommodity = isCommodity;
+	}
+
+	public Integer getIsPanicBuying() {
+		return isPanicBuying;
+	}
+
+	public void setIsPanicBuying(Integer isPanicBuying) {
+		this.isPanicBuying = isPanicBuying;
+	}
+
+	public Timestamp getStart_panicbuying_time() {
+		return start_panicbuying_time;
+	}
+
+	public void setStart_panicbuying_time(Timestamp start_panicbuying_time) {
+		this.start_panicbuying_time = start_panicbuying_time;
+	}
+
+	public Timestamp getEnd_panicbuying_time() {
+		return end_panicbuying_time;
+	}
+
+	public void setEnd_panicbuying_time(Timestamp end_panicbuying_time) {
+		this.end_panicbuying_time = end_panicbuying_time;
+	}
+
+	public Integer getInventory() {
+		return inventory;
+	}
+
+	public void setInventory(Integer inventory) {
+		this.inventory = inventory;
+	}
+
+	public Set<Tag> getTagkey() {
+		return tagkey;
+	}
+
+	public void setTagkey(Set<Tag> tagkey) {
+		this.tagkey = tagkey;
+	}
+
+	public Integer getIsWebContent() {
+		return isWebContent;
+	}
+
+	public void setIsWebContent(Integer isWebContent) {
+		this.isWebContent = isWebContent;
+	}
+	
+	public String getFileHashCode() {
+		return fileHashCode;
+	}
+
+	public void setFileHashCode(String fileHashCode) {
+		this.fileHashCode = fileHashCode;
+	}
+
+	public Long getFileSize() {
+		return fileSize;
+	}
+
+	public void setFileSize(Long fileSize) {
+		this.fileSize = fileSize;
+	}
+
+	public void setThumbnail(String thumbnail) {
+		this.thumbnail = thumbnail;
+	}
+
+	public String getThumbnail() {
+		return thumbnail;
+	}
+
+	public Double getExpressFree() {
+		return expressFree;
+	}
+
+	public void setExpressFree(Double expressFree) {
+		this.expressFree = expressFree;
+	}
+	
+}

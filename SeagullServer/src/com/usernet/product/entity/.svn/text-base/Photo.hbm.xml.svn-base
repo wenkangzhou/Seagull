@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+"http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+
+<hibernate-mapping>
+	<class name="com.usernet.product.entity.Photo" table="photo">
+		<cache usage="nonstrict-read-write" />
+		<id name="id" type="java.lang.Integer">
+			<column name="id" />
+			<generator class="native" />
+		</id>
+		<property name="photo" type="java.lang.String">
+			<column name="photo" />
+		</property>
+		<property name="time" type="java.sql.Timestamp">
+			<column name="time" />
+		</property>
+		<property name="status" type="java.lang.Integer">
+			<column name="status" />
+		</property>
+		<property name="softId" type="java.lang.Integer">
+			<column name="softId" />
+		</property>
+		<property name="flag" type="java.lang.Integer">
+			<column name="flag" />
+		</property>
+	</class>
+</hibernate-mapping>

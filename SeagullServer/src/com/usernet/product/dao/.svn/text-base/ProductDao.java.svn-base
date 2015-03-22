@@ -1,0 +1,434 @@
+package com.usernet.product.dao;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
+
+import org.apache.commons.lang.StringUtils;
+import org.hibernate.Query;
+import org.hibernate.Session;
+import org.hibernate.Transaction;
+
+import com.usernet.product.comm.BaseDao;
+import com.usernet.product.entity.App_Tab;
+import com.usernet.product.entity.Channel;
+import com.usernet.product.entity.Commodity_Tab;
+import com.usernet.product.entity.InformationPicture;
+import com.usernet.product.entity.Information_Tab;
+import com.usernet.product.entity.Photo;
+import com.usernet.product.entity.Product;
+import com.usernet.product.entity.ProductPrice;
+import com.usernet.product.entity.Software;
+import com.usernet.product.entity.Type;
+import com.usernet.product.utils.DateUtils;
+import com.usernet.product.utils.Page;
+import com.usernet.product.utils.PageResult;
+import com.usernet.product.utils.ProductConfig;
+
+/**
+ * 增值产品信息
+ */
+public class ProductDao extends BaseDao {
+	private static SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+
+	@SuppressWarnings("unchecked")
+	public Integer saveChannel(Channel channel) {
+		Session session = getSession();
+		Transaction tr = null;
+		try {
+			int id = 0;
+			tr = session.beginTransaction();
+			String hql = "from Channel where type=0 and channel=:channel";
+			Query query = session.createQuery(hql);
+			query.setString("channel", channel.getChannel());
+			List<Channel> list = query.list();
+			if (!list.isEmpty())
+				return list.get(0).getId();
+			id = Integer.parseInt(String.valueOf(session.save(channel)));
+			tr.commit();
+			return id;
+		} catch (Exception ex) {
+			if (tr != null)
+				tr.rollback();
+			ex.printStackTrace();
+			return 0;
+		}
+	}
+	
+	/****
+	 * 查询所有公共增值产品
+	 * @return
+	 */
+	public List<Product> getPublicProductList(){
+		
+		String hql = "from Product where channelId is null and deleted = 0";
+		return super.getAllByHql(hql);
+	}
+
+	@SuppressWarnings("unchecked")
+	public PageResult<Product> getPage(Page page, String name,
+			String manufacturer, Integer status,Integer[] channel,Integer isRecommend,Integer[] channelId) {
+		String hql = "select new Product(p.id,s.icon,s.name,p.manufacturer,p.settleType,p.money,p.feeType,p.contractTime,p.isRecommend,p.networkType,p.channelId)"
+				+ " from Product p,Software s where p.softId=s.id and p.deleted=0";
+		if (StringUtils.isNotEmpty(name))
+			hql += " and s.name like '%" + name + "%'";
+		if (StringUtils.isNotEmpty(manufacturer))
+			hql += " and p.manufacturer like '%" + manufacturer + "%'";
+		if (status != -1) {
+			if (status == 1) {
+				hql += " and p.contractTime < '" + format.format(new Date())
+						+ "'";
+			} else if (status == 2) {
+				hql += " and p.contractTime <= '"
+						+ format.format(new Date(System.currentTimeMillis()
+								+ ProductConfig.DAYS_TO_TIME))
+						+ "' and p.contractTime > '"
+						+ format.format(new Date()) + "'";
+			} else if (status == 0) {
+				hql += " and p.contractTime >= '" + format.format(new Date())
+						+ "'";
+			}
+		}
+		if (channel != null && channel[0] != null) {
+
+			hql+=(" and p.softId = " + channel[0]);
+
+			for (int i = 1; i < channel.length; i++) {
+
+				hql+=(" OR p.softId = " + channel[i]);
+			}
+		}
+		if(isRecommend != null){
+			hql += " and p.isRecommend=" + isRecommend;
+		}
+		if (channelId != null && channelId[0] != null) {
+			hql+=(" and p.channelId = " + channelId[0]);
+			for (int i = 1; i < channelId.length; i++) {
+				hql+=(" OR p.channelId = " + channelId[i]);
+			}
+		}
+			hql += " order by p.id";
+		return super.getAllByPageAndHql(page, hql);
+	}
+	@SuppressWarnings("unchecked")
+	public PageResult<ProductPrice> getPricePage(Page page, Integer productId,
+			int year) {
+		String hql = "from ProductPrice where productId=" + productId;
+		if (year > 0)
+			hql += " and time like '" + year + "-%'";
+		hql += " order by time desc";
+		return super.getAllByPageAndHql(page, hql);
+	}
+	@SuppressWarnings("unchecked")
+	public PageResult<Software> getAllByPage(Page page,Integer[] flags) {
+		String hql = "select software from Software as software where software.id is not null ";		
+		if(flags != null && flags.length > 0){		
+			hql += "  and (software.type.flag=" + flags[0];
+			for(int i = 1;i< flags.length;i++){			
+				hql += " or software.type.flag = " + flags[i];
+			}
+			hql += ")";
+		}	
+		hql += " order by time desc,recommend asc";
+		return super.getAllByPageAndHql(page, hql);
+	}
+	
+	/*
+	 * 根据条件查询(应用名称,所属分类,是否顶置,是否收费,是否可用)
+	 */
+	@SuppressWarnings("unchecked")
+	public PageResult<Software> getAllBySoftware(Page page, String softName,
+			int typeId, int resId,Integer[] flags,Integer[] channelId) {
+		String hql = "from Software as software where status=0";
+		if (softName != null && !"".equals(softName.trim())) {
+			
+			hql += " and (software.name like '%" + softName + "%' or software.pinyin like '%" + softName + "%')";
+		}
+		
+		if (typeId != -1) {
+			
+			hql += " and software.type.id=" + typeId;
+		}
+		if (resId != -1) {
+			
+			hql += " and software.resources.id=" + resId;
+		}
+		
+		if(flags != null && flags.length > 0){
+			
+			hql += " and (software.type.flag=" + flags[0];
+			for(int i = 1;i< flags.length;i++){
+				
+				hql += " or software.type.flag = " + flags[i];
+			}
+			hql += ")";
+		}
+		
+		if(channelId != null && channelId.length > 0){
+			
+			hql += " and (software.channel.id =" + channelId[0];
+			for(int i = 1;i< channelId.length;i++){
+				
+				hql += " or software.channel.id = " + channelId[i];
+			}
+			hql += ")";
+		}
+		
+		hql += " order by time desc,recommend asc";
+		return super.getAllByPageAndHql(page, hql);
+	}
+	/*
+	 * 取得商品或资讯列表
+	 */
+	@SuppressWarnings("unchecked")
+	public PageResult<Software> getGoodsOrInfo(Page page, String softName,String type) {
+		
+		String hql = "from Software as software where status=0 and software.type.flag= 7 and software.isCommodity = " + type;
+		
+		if (softName != null && !"".equals(softName.trim())) {
+			hql += " and software.name like '%" + softName + "%'";
+		}
+		
+		hql += " order by time desc,recommend asc";
+
+		return super.getAllByPageAndHql(page, hql);
+	}
+	
+	@SuppressWarnings("unchecked")
+	public PageResult<App_Tab> getAllByParams(Page page, String softName,
+			int typeId,Integer[] flags,Integer[] channelId) {
+		
+		String hql = "from App_Tab as a where status=0";
+		if (softName != null && !"".equals(softName.trim())) {
+			
+			hql += " and (a.name like '%" + softName + "%')";
+		}
+		
+		if (typeId != -1) {
+			
+			hql += " and a.type.id=" + typeId;
+		}
+		
+		if(flags != null && flags.length > 0){
+			
+			hql += " and (a.type.flag=" + flags[0];
+			for(int i = 1;i< flags.length;i++){
+				
+				hql += " or a.type.flag = " + flags[i];
+			}
+			hql += ")";
+		}
+		
+		if(channelId != null && channelId.length > 0){
+			
+			hql += " and (a.channelId =" + channelId[0];
+			for(int i = 1;i< channelId.length;i++){
+				
+				hql += " or a.channelId = " + channelId[i];
+			}
+			hql += ")";
+		}
+		
+		hql += " order by create_time desc";
+		return super.getAllByPageAndHql(page, hql);
+	}
+	/*
+	 * 根据条件查询(应用名称,所属分类,是否顶置,是否收费,是否可用)
+	 */
+	@SuppressWarnings("unchecked")
+	public PageResult<Information_Tab> getAllInformationByParams(Page page, String softName,Integer[] channelId) {
+		
+		String hql = "from Information_Tab as a where 1=1";
+		if (softName != null && !"".equals(softName.trim())) {	
+			hql += " and (a.title like '%" + softName + "%')";
+		}	
+		if(channelId != null && channelId.length > 0){
+			
+			hql += " and (a.channelId =" + channelId[0];
+			for(int i = 1;i< channelId.length;i++){
+				
+				hql += " or a.channelId = " + channelId[i];
+			}
+			hql += ")";
+		}
+		
+		hql += " order by create_time desc";
+		return super.getAllByPageAndHql(page, hql);
+	}
+	/*
+	 * 取得资讯列表
+	 */
+	@SuppressWarnings("unchecked")
+	public PageResult<Information_Tab> getInfo(Page page, String softName,String type) {
+		
+		String hql = "from Information_Tab as a where 1=1";
+		
+		if (softName != null && !"".equals(softName.trim())) {
+			hql += " and a.title like '%" + softName + "%'";
+		}
+		
+		hql += " order by create_time desc";
+
+		return super.getAllByPageAndHql(page, hql);
+	}
+	/*
+	 * 取得商品或资讯列表
+	 */
+	@SuppressWarnings("unchecked")
+	public PageResult<Commodity_Tab> getGoods(Page page, String softName,String type) {
+		
+		String hql = "from Commodity_Tab as a where 1=1";
+		
+		if (softName != null && !"".equals(softName.trim())) {
+			hql += " and a.name like '%" + softName + "%'";
+		}
+		
+		hql += " order by create_time desc";
+
+		return super.getAllByPageAndHql(page, hql);
+	}	
+	@SuppressWarnings("unchecked")
+	public boolean checkPrice(Integer productId, String time, Integer priceId) {
+		String hql = "from ProductPrice where productId=" + productId
+				+ " and time='" + time + "'";
+		if (priceId != null && priceId.intValue() != 0)
+			hql += " and id!=" + priceId;
+		List list = getAllByHql(hql);
+		if (list != null && list.size() > 0)
+			return true;
+		return false;
+	}
+
+	public int checkProductIsExist(int softId) {
+
+		String hql = "select count(*) from Product where softId = " + softId;
+		return (Integer) this.getAllByHql(hql).get(0);
+	}
+	
+	//查询渠道增值产品下载趋势
+	public List getProductDownloadTrend(String[] channelIdArray,String softName){
+		
+		StringBuilder sql = new StringBuilder();
+		sql.append("select d.formatTime,count(*) as downloadCount");
+		sql.append(" from view_download d");
+		sql.append(" inner join product p on p.softid = d.softid");
+		sql.append(" inner join client_log cl on cl.imei = d.imei");
+		
+		sql.append(" where d.imei is not null ");
+		if (channelIdArray != null && channelIdArray[0] != null) {
+			sql.append(" and (cl.channelId=" + channelIdArray[0]);
+			for (int i = 1; i < channelIdArray.length; i++) {
+				sql.append(" OR cl.channelId = " + channelIdArray[i]);
+			}
+			sql.append(")");
+		}
+		
+		sql.append(" group by d.formatTime");
+		sql.append(" order by formatTime desc");
+		
+		return super.getAllByPageAndSql(sql.toString());
+	}
+
+	/*
+	 * 统计增值产品的下载次数
+	 */
+	@SuppressWarnings("unchecked")
+	public List<Software> getAllByStatistics(Integer[] channelId,String softName, String startTime, String endTime) {
+		
+		StringBuilder sql = new StringBuilder();
+		sql.append("select s.name,count(d.id) as downloadCount from download d ");
+		sql.append(" inner join software s on s.id = d.softid ");
+		sql.append(" inner join product p on p.softid = s.id ");
+		
+		if(channelId != null){
+			
+			sql.append(" inner join client_log cl on cl.imei = d.imei");
+			sql.append(" inner join channel c on c.id = cl.channelId");
+		}
+		
+		sql.append(" where s.name is not null ");
+		
+		if(StringUtils.isNotEmpty(softName)){
+		
+			sql.append(" and s.name like '%" + softName + "%'");
+		}
+		
+		if(StringUtils.isNotEmpty(startTime) && StringUtils.isEmpty(endTime)){
+			
+			sql.append(" and d.time between '" + DateUtils.stringToTimestampBegin(startTime) + "' and '" + DateUtils.getDateFomat("type:DT") + "'");
+		}else if(StringUtils.isNotEmpty(startTime) && StringUtils.isNotEmpty(endTime)){
+			
+			sql.append(" and d.time between '" + DateUtils.stringToTimestampBegin(startTime) + "' and '" + DateUtils.stringToTimestamp(endTime) + "'");
+		}
+		
+		if(channelId != null && channelId.length > 0){
+			
+			sql.append(" and (c.id =" + channelId[0]);
+			for(int i = 1;i< channelId.length;i++){
+				
+				sql.append(" or c.id = " + channelId[i]);
+			}
+			sql.append(")");
+		}
+		
+		sql.append(" group by s.name order by downloadCount desc");
+		return super.getAllByPageAndSql(sql.toString());
+	}
+	
+	/**
+	 * 查询
+	 * @return
+	 */
+	@SuppressWarnings("unchecked")
+	public List<Software> getAll(Integer[] channelId){
+		String hql = "from Software";
+		if (channelId != null && channelId.length > 0) {
+
+			hql += " where channelId=" + channelId[0];
+
+			for (int i = 1; i < channelId.length; i++) {
+
+				hql += " OR channelId = " + channelId[i];
+				}
+		}
+		return getAllByHql(hql);
+	}
+
+	@SuppressWarnings("unchecked")
+	public List<Photo> getByImgId(Integer id,Integer flag){
+		String hql = "from Photo where softId="+id+" and flag="+flag+"";
+		return getAllByHql(hql);
+	}
+	
+	@SuppressWarnings("unchecked")
+	public PageResult<Software> getAllByPageInformation(Page page,int flag) {
+		String hql = " from Software as s where s.type.flag=" + flag + " order by time desc";
+		return super.getAllByPageAndHql(page, hql);
+	}
+	
+	@SuppressWarnings("unchecked")
+	public PageResult<Information_Tab> getPage(Page page,String name ,Integer[] channelId) {
+		String hql = " from Information_Tab  where 1=1";
+		
+		if(name!=null){
+			hql += " and title like '%"+ name +"%'";
+		}
+		
+		if(channelId!=null&&channelId.length>0){
+			hql += " and ( channelId=" + channelId[0];
+			for (int i = 1; i < channelId.length; i++) {
+
+				hql += " OR channelId = " + channelId[i];
+			}
+			hql +=")";
+		}
+		hql += " order by create_time desc"; 
+		System.out.print(hql);
+		return super.getAllByPageAndHql(page, hql);
+	}
+	
+	public boolean updateInformationImg(String  img,Integer id) {
+		String sql = "update  Information_Tab set icon= '"+img+"'  where id="+id+"";
+		return save(sql);
+	}
+}

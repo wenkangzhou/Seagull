@@ -1,0 +1,117 @@
+package com.usernet.product.tag;
+
+import java.io.IOException;
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
+
+import javax.servlet.jsp.JspException;
+import javax.servlet.jsp.tagext.TagSupport;
+
+/***
+ * 此标签用于 渠道未出帐页面  计算激活数与  总金额  
+ * 使用isGetTotal区分
+ * @author tangdehao
+ *
+ */
+public class IsNumberTld extends TagSupport {
+
+	private static final long serialVersionUID = -5826928167972055217L;
+
+	protected String money;
+
+	protected String price;
+
+	protected String rate;
+	
+	protected String isGetTotal;
+
+	public String getMoney() {
+		return money;
+	}
+
+	public void setMoney(String money) {
+		this.money = money;
+	}
+
+	public String getPrice() {
+		return price;
+	}
+
+	public void setPrice(String price) {
+		this.price = price;
+	}
+
+	public String getRate() {
+		return rate;
+	}
+
+	public void setRate(String rate) {
+		this.rate = rate;
+	}
+
+	public String getIsGetTotal() {
+		return isGetTotal;
+	}
+
+	public void setIsGetTotal(String isGetTotal) {
+		this.isGetTotal = isGetTotal;
+	}
+
+	/***
+	 * 保留两位小数
+	 * @param number
+	 * @param n
+	 * @return
+	 */
+	public Double numberFormat(double number) {
+		
+		DecimalFormat formater = new DecimalFormat();
+
+		 formater.setMaximumFractionDigits(2);
+		 formater.setGroupingSize(0);
+		 formater.setRoundingMode(RoundingMode.FLOOR);
+		 
+		return Double.valueOf(formater.format(number));
+	}
+
+	@Override
+	public int doStartTag() throws JspException {
+		
+		try {
+
+			Double m = Double.valueOf(money);
+			Double p = Double.valueOf(price);
+			Double r = Double.valueOf(rate) / 100;
+
+			int active = (int)Math.rint((m / p / r));
+			
+			//如果是计算金额
+			if(isGetTotal.equals("1")){
+				
+				String totalMoney = String.valueOf(this.numberFormat(active * p * r));
+				this.pageContext.setAttribute("price", totalMoney);
+				this.pageContext.getOut().write(totalMoney); 
+			}else{
+				
+				this.pageContext.setAttribute("active", active);
+				this.pageContext.getOut().write(String.valueOf(active));
+			}
+			
+		} catch (Exception e) {
+			
+			this.pageContext.setAttribute("price", 0);
+			this.pageContext.setAttribute("active", 0);
+
+			try {
+
+				this.pageContext.getOut().write("0");
+			} catch (IOException e1) {
+
+			}
+		}
+
+		return this.EVAL_PAGE;
+	}
+
+}

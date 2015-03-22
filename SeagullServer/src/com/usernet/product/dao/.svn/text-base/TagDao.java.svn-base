@@ -1,0 +1,98 @@
+package com.usernet.product.dao;
+
+import java.util.List;
+
+import org.apache.commons.lang.StringUtils;
+import org.hibernate.Query;
+import org.hibernate.Session;
+import org.hibernate.criterion.Projections;
+
+import com.usernet.product.comm.BaseDao;
+import com.usernet.product.entity.Tag;
+import com.usernet.product.utils.Page;
+import com.usernet.product.utils.PageResult;
+
+public class TagDao extends BaseDao{
+	
+	@SuppressWarnings("unchecked")
+	public PageResult<Tag> getAllByPage(Page page,String name) {
+		
+		String hql = "from Tag where parent is null";
+		if(StringUtils.isNotEmpty(name)){
+			
+			hql += " and t_name like '%" + name + "%'";
+		}
+		hql += " order by time desc";
+		return super.getAllByPageAndHql(page,hql);
+	} 
+	
+	public boolean isRepeatByName(String name,Integer channelId){
+		boolean repeat = false;
+		String sql = "select id from Tag where t_name = '"+ name.trim() +"'";
+		if(channelId!=null){
+			sql = sql + " and channelId = "+channelId;
+		}
+		List l = this.getAllByHql(sql);
+		if(!l.isEmpty()){
+			repeat = true;
+		}
+		return repeat;
+	}
+	
+	public Tag getTagByName(String name){
+		String hql = "FROM Tag where t_name = '"+ name +"'";
+		List l = this.getAllByHql(hql);
+		Tag t = null;
+		if(l!=null&&!l.isEmpty()){
+			t = (Tag) l.get(0);
+		}
+		return t;
+	}
+	
+	//获取老客户端标签
+	public List<Tag> getAllTag(){
+		String hql = "FROM Tag where isOld = 1";
+		List l = this.getAllByHql(hql);
+		return l;
+	}
+	
+	//获取二级分类列表
+	@SuppressWarnings("unchecked")
+	public PageResult<Tag> getSubTagByPage(Page page,Integer channelId) {
+		String hql = "from Tag where parent is not null and channel is not null";
+		if(channelId!=null){
+			hql = hql+" and channel.id="+channelId;
+		}
+		hql += " order by time desc";
+		return super.getAllByPageAndHql(page,hql);
+	}
+	
+
+	public List<Tag> getTag(Integer channelId){
+		String hql = "from Tag where parent is null and isOld = 1";
+		if(channelId!=null){
+			hql = hql+"  and channel.id="+channelId;
+		}
+		hql += " order by time desc";
+		List l = this.getAllByHql(hql);
+		return l;
+	}
+	
+	/**获取新客户端一级分类*/
+	public List<Tag> getParentTag(Integer channelId){
+		String hql = "from Tag where parent is null and isOld != 1";
+		if(channelId!=null){
+			hql = hql+"  and channel.id="+channelId;
+		}
+		hql += " order by time desc";
+		List l = this.getAllByHql(hql);
+		return l;
+	}
+	
+	//获取二级分类列表
+	@SuppressWarnings("unchecked")
+	public List getSubTagByParent(Integer parentId) {
+		String hql = "from Tag where parent.id = "+parentId;
+		return super.getAllByHql(hql);
+	}
+}

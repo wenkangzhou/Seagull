@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans>
+	<bean name="channelDao" class="com.usernet.product.dao.ChannelDao" />
+	<bean name="statisticsDao" class="com.usernet.product.dao.StatisticsDao" />
+	<bean name="logDao" class="com.usernet.product.dao.LogDao" />
+	<bean name="productDao" class="com.usernet.product.dao.ProductDao" />
+	<bean name="typeDao" class="com.usernet.product.dao.TypeDao" />
+	<bean name="resourcesDao" class="com.usernet.product.dao.ResourcesDao" />
+	<bean name="photoDao" class="com.usernet.product.dao.PhotoDao" />
+	<bean name="advertDao" class="com.usernet.product.dao.AdvertDao" />
+	<bean name="advertTypeDao" class="com.usernet.product.dao.AdvertTypeDao" />
+	<bean name="messagePushDao" class="com.usernet.product.dao.MessagePushDao" />
+	<bean name="adminLogDao" class="com.usernet.product.dao.AdminLogDao" />
+	<bean name="userSoftwareDao" class="com.usernet.product.dao.UserSoftwareDao" />
+	<bean name="appAccountDao" class="com.usernet.product.dao.AppAccountDao" />
+	<bean name="informationPictureDao" class="com.usernet.product.dao.InformationPictureDao" />
+	<bean name="softwareDao" class="com.usernet.product.dao.SoftwareDao" />
+	<bean name="recommendDao" class="com.usernet.product.dao.RecommendDao" />
+	<bean name="channelPvDao" class="com.usernet.product.dao.ChannelPvDao" />
+	<bean name="subscriberDao" class="com.usernet.product.dao.SubscriberDao" />
+	<bean name="orderTabDao" class="com.usernet.product.dao.OrderTabDao" />
+	<bean name="goodsDao" class="com.usernet.product.dao.GoodsDao" />
+	<bean name="clientDao" class="com.usernet.product.dao.ClientDao" />
+	<bean name="tagDao" class="com.usernet.product.dao.TagDao" />
+	<bean name="microBlogUserDao" class="com.usernet.product.dao.MicroBlogUserDao" />
+	<bean name="quickSearchKeywordDao" class="com.usernet.product.dao.QuickSearchKeywordDao" />
+	<bean name="configBaseDao" class="com.usernet.product.dao.ConfigBaseDao" />
+	<bean name="pushDao" class="com.usernet.product.dao.PushDao" />
+	<bean name="searchDao" class="com.usernet.product.dao.SearchDao" />
+	<bean name="clientPushMessageDao" class="com.usernet.product.dao.ClientPushMessageDao" />
+	<bean name="appTabDao" class="com.usernet.product.dao.AppTabDao" />
+	<bean name="messageBoardDao" class="com.usernet.product.dao.MessageBoardDao" />
+</beans>

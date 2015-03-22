@@ -1,0 +1,37 @@
+package com.usernet.product.entity;
+
+
+public class Tops_Tab implements java.io.Serializable {
+	private static final long serialVersionUID = -6622940433996513438L;
+
+	private Integer id;
+	private Integer tops; // 置顶顺序
+	private Integer newId;//关联id
+	private Integer flag;//类别 1：商品 2：资讯 3：应用
+	public Integer getId() {
+		return id;
+	}
+	public void setId(Integer id) {
+		this.id = id;
+	}
+	public Integer getTops() {
+		return tops;
+	}
+	public void setTops(Integer tops) {
+		this.tops = tops;
+	}
+	public Integer getNewId() {
+		return newId;
+	}
+	public void setNewId(Integer newId) {
+		this.newId = newId;
+	}
+	public Integer getFlag() {
+		return flag;
+	}
+	public void setFlag(Integer flag) {
+		this.flag = flag;
+	}
+
+	
+}

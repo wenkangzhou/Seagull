@@ -1,0 +1,56 @@
+ .jqDrag {
+    width: 100%;
+    cursor: move;
+  }
+  .jqDnR {
+      z-index: 3;
+      position: relative;
+      width: 180px;
+      font-size: 0.77em;
+      color: #618d5e;
+      margin: 5px 10px 10px 10px;
+      padding: 2px;
+      background-color: #EEE;
+      border: 1px solid #CCC;
+  }
+  body {
+      background: url(me.jpg) fixed center center #fff no-repeat;
+      background-size: cover;/*一句话搞定全屏*/
+      overflow: hidden;
+  }
+  #about{
+    width: 460px;
+    position: absolute;
+    margin-top: 300px;
+    padding: 10px 20px;
+    text-align: left;
+    font-size: 14px;
+    background: #fff;
+    background: rgba(255,255,255,0.8);
+    border-radius: 10px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    text-shadow: 0 1px 0 rgba(255,255,255,0.5);
+  }
+  #me {
+    text-align: center;
+    font-family: 'Righteous';
+    font-weight: normal;
+    font-size: 20px;
+    line-height: 1;
+  }
+  #wrapper{
+    position: absolute;
+    left: 10%;
+  }
+  #avatar-w i#tip {
+    width: 95px;
+    height: 36px;
+    position: absolute;
+    left: 170px;
+    font-size: 18px;
+    text-align: right;
+    color: #fff;
+    z-index: 4;
+    background: url(../../img/index/arrow.png) left 6px no-repeat;
+    text-shadow: 0 0 2px rgba(0,0,0,0.8);
+  }

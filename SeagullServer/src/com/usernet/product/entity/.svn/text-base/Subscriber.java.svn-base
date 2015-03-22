@@ -1,0 +1,154 @@
+package com.usernet.product.entity;
+
+import java.io.Serializable;
+
+/***
+ * 订阅者类别数据表
+ * @author tangdehao
+ *
+ */
+public class Subscriber implements Serializable{
+
+	private static final long serialVersionUID = -4838421124887511564L;
+
+	private Integer id;
+	
+	private Channel channel;
+	
+	private Users user;
+	
+	private Integer musicStatus;
+	
+	private Integer musicPv;
+	
+	private Integer appStatus;
+	
+	private Integer appPv;
+	
+	private Integer gameStatus;
+	
+	private Integer gamePv;
+	
+	private Integer informationStatus;
+	
+	private Integer informationPv;
+	
+	private Integer themeStatus;
+	
+	private Integer themePv;
+	
+	private String imei;
+
+	public Integer getId() {
+		return id;
+	}
+
+	public void setId(Integer id) {
+		this.id = id;
+	}
+
+	public Channel getChannel() {
+		return channel;
+	}
+
+	public void setChannel(Channel channel) {
+		this.channel = channel;
+	}
+
+	public Users getUser() {
+		return user;
+	}
+
+	public void setUser(Users user) {
+		this.user = user;
+	}
+
+	public Integer getMusicStatus() {
+		return musicStatus;
+	}
+
+	public void setMusicStatus(Integer musicStatus) {
+		this.musicStatus = musicStatus;
+	}
+
+	public Integer getMusicPv() {
+		return musicPv;
+	}
+
+	public void setMusicPv(Integer musicPv) {
+		this.musicPv = musicPv;
+	}
+
+	public Integer getAppStatus() {
+		return appStatus;
+	}
+
+	public void setAppStatus(Integer appStatus) {
+		this.appStatus = appStatus;
+	}
+
+	public Integer getAppPv() {
+		return appPv;
+	}
+
+	public void setAppPv(Integer appPv) {
+		this.appPv = appPv;
+	}
+
+	public Integer getGameStatus() {
+		return gameStatus;
+	}
+
+	public void setGameStatus(Integer gameStatus) {
+		this.gameStatus = gameStatus;
+	}
+
+	public Integer getGamePv() {
+		return gamePv;
+	}
+
+	public void setGamePv(Integer gamePv) {
+		this.gamePv = gamePv;
+	}
+
+	public Integer getInformationStatus() {
+		return informationStatus;
+	}
+
+	public void setInformationStatus(Integer informationStatus) {
+		this.informationStatus = informationStatus;
+	}
+
+	public Integer getInformationPv() {
+		return informationPv;
+	}
+
+	public void setInformationPv(Integer informationPv) {
+		this.informationPv = informationPv;
+	}
+
+	public Integer getThemeStatus() {
+		return themeStatus;
+	}
+
+	public void setThemeStatus(Integer themeStatus) {
+		this.themeStatus = themeStatus;
+	}
+
+	public Integer getThemePv() {
+		return themePv;
+	}
+
+	public void setThemePv(Integer themePv) {
+		this.themePv = themePv;
+	}
+
+	public String getImei() {
+		return imei;
+	}
+
+	public void setImei(String imei) {
+		this.imei = imei;
+	}
+
+}

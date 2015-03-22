@@ -1,0 +1,39 @@
+package com.usernet.product.web.form;
+
+import com.usernet.product.comm.BaseForm;
+
+public class QuickSearchKeywordForm extends BaseForm {
+
+	private static final long serialVersionUID = -6427890040831622007L;
+
+	private String pageNo;
+
+	private String pageSize;
+	
+	private String keyword;
+
+	public String getPageNo() {
+		return pageNo;
+	}
+
+	public void setPageNo(String pageNo) {
+		this.pageNo = pageNo;
+	}
+
+	public String getPageSize() {
+		return pageSize;
+	}
+
+	public void setPageSize(String pageSize) {
+		this.pageSize = pageSize;
+	}
+
+	public String getKeyword() {
+		return keyword;
+	}
+
+	public void setKeyword(String keyword) {
+		this.keyword = keyword;
+	}
+
+}

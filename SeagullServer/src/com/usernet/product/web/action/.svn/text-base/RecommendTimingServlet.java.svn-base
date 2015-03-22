@@ -1,0 +1,49 @@
+package com.usernet.product.web.action;
+
+import java.io.IOException;
+import java.sql.SQLException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.hibernate.HibernateException;
+import org.hibernate.Session;
+import org.hibernate.Transaction;
+
+import com.opensymphony.oscache.util.StringUtil;
+import com.usernet.product.comm.HibernateSessionFactory;
+
+public class RecommendTimingServlet extends HttpServlet{
+
+	protected void doGet(HttpServletRequest request, HttpServletResponse resp)
+			throws ServletException, IOException {
+		System.out.println("定时推荐任务启动");
+		SimpleDateFormat nyrsfm = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		String nowtime = nyrsfm.format(new Date());
+		Integer showFrequency = 1;
+		if(!StringUtil.isEmpty(request.getParameter("showFrequency"))){
+			showFrequency = Integer.parseInt(request.getParameter("showFrequency"));
+		}else{
+			return;
+		}
+		
+		String sql = "update dbo.recommend_message set time = '"+nowtime+ "' where showFrequency = "+showFrequency+" and deadline>'"+nowtime +"'";
+		
+		Session session = HibernateSessionFactory.getSession();
+		Transaction tr = session.beginTransaction();
+		tr.begin();
+		try {
+			session.connection().createStatement().executeUpdate(sql);
+		} catch (HibernateException e) {
+			e.printStackTrace();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		tr.commit();
+		System.out.println("定时推荐任务结束");
+	}
+}

@@ -1,0 +1,114 @@
+package com.usernet.product.web.action;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionForward;
+import org.apache.struts.action.ActionMapping;
+
+import com.usernet.product.comm.BaseAction;
+import com.usernet.product.entity.AdvertType;
+import com.usernet.product.utils.Page;
+import com.usernet.product.utils.PageResult;
+import com.usernet.product.utils.ProductConfig;
+import com.usernet.product.web.form.AdvertTypeForm;
+
+public class AdvertTypeAction extends BaseAction {
+
+	/** 增加广告类型页面 **/
+	public ActionForward toAdd(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+
+		super.settingCurrentNavigation(request.getSession(), ProductConfig.PAGE_SYSTEM_MANAGER);
+		
+		return mapping.findForward("add");
+	}
+
+	/** 增加广告类型 **/
+	public ActionForward save(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		AdvertTypeForm mForm = (AdvertTypeForm) form;
+
+		AdvertType advertType = mForm.getAdvertType();
+
+		advertDao.save(advertType);
+
+		super.settingCurrentNavigation(request.getSession(), ProductConfig.PAGE_ACCOUNT_MANAGER);
+		return mapping.findForward("other");
+	}
+
+	/** 修改广告类型 **/
+	public ActionForward toUpdate(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		AdvertTypeForm mForm = (AdvertTypeForm) form;
+		AdvertType advertType = mForm.getAdvertType();
+
+		AdvertType oldAdvertType = (AdvertType) advertTypeDao.getById(
+				AdvertType.class, advertType.getId());
+		oldAdvertType.setName(advertType.getName());
+
+		advertDao.modify(oldAdvertType);
+
+		super.settingCurrentNavigation(request.getSession(), ProductConfig.PAGE_ACCOUNT_MANAGER);
+		return mapping.findForward("other");
+	}
+
+	/** 查询广告类型 **/
+	public ActionForward toList(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+
+		AdvertTypeForm mForm = (AdvertTypeForm) form;
+		PageResult<AdvertType> result = null;
+		Page page = new Page();
+		// 分页信息
+		String pageNo = mForm.getPageNo();
+		String pageSize = mForm.getPageSize();
+		if (pageSize != null)
+			page.setEveryPage(Integer.parseInt(pageSize.trim()));
+		if (pageNo != null)
+			page.setCurrentPage(Integer.parseInt(pageNo.trim()));
+
+		result = advertTypeDao.getPage(page);
+
+		request.setAttribute("form", mForm);
+		request.setAttribute("list", result.getContent());
+		request.setAttribute("page", result.getPage());
+		request.setAttribute("size", result.getSize());
+
+		super.settingCurrentNavigation(request.getSession(), ProductConfig.PAGE_ACCOUNT_MANAGER);
+		return mapping.findForward("list");
+	}
+
+	/** 去编辑广告类型页面 **/
+	public ActionForward toEdit(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		AdvertTypeForm mForm = (AdvertTypeForm) form;
+
+		if (mForm.getId() != null)
+
+			mForm.setAdvertType((AdvertType) advertTypeDao.getById(
+					AdvertType.class, mForm.getId()));
+
+		request.setAttribute("advertType", mForm.getAdvertType());
+		
+		super.settingCurrentNavigation(request.getSession(), ProductConfig.PAGE_ACCOUNT_MANAGER);
+		return mapping.findForward("edit");
+	}
+
+	/** 删除广告类型 **/
+	public ActionForward toDelete(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		AdvertTypeForm mForm = (AdvertTypeForm) form;
+
+		if (mForm.getId() != 0) {
+
+			AdvertType advertType = new AdvertType();
+			advertType.setId(mForm.getId());
+			advertTypeDao.delete(advertType);
+		}
+
+		return toList(mapping, form, request, response);
+	}
+
+}

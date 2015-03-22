@@ -1,0 +1,57 @@
+package com.usernet.product.web.form;
+
+import com.usernet.product.comm.BaseForm;
+
+public class MicroBlogUserForm extends BaseForm{
+	private static final long serialVersionUID = -6427890040831622007L;
+
+	private Integer id;
+	
+	private String pageNo;
+
+	private String pageSize;
+	
+	private String name;
+
+	private String[] tag_id;
+	
+	public String getPageNo() {
+		return pageNo;
+	}
+
+	public void setPageNo(String pageNo) {
+		this.pageNo = pageNo;
+	}
+
+	public String getPageSize() {
+		return pageSize;
+	}
+
+	public void setPageSize(String pageSize) {
+		this.pageSize = pageSize;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public String[] getTag_id() {
+		return tag_id;
+	}
+
+	public void setTag_id(String[] tag_id) {
+		this.tag_id = tag_id;
+	}
+
+	public Integer getId() {
+		return id;
+	}
+
+	public void setId(Integer id) {
+		this.id = id;
+	}
+}

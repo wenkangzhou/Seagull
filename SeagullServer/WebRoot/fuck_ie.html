@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>SORRY</title>
+<script src="js/jquery.js"></script>
+<script type="text/javascript">
+$(function(){
+		 function state1(){
+			 $(".rotate").removeClass("r2"); 
+			 $(".rotate").addClass("r1");
+			 setTimeout(state2,90);
+		 }
+		function state2(){	   
+		     $(".rotate").removeClass("r1");
+		     $(".rotate").addClass("r2"); 
+			 setTimeout(state1,90);
+		}
+		state1();	
+})
+</script>
+<style>
+body{
+	background:rgb(82, 82, 82);
+}
+p{
+	display: none;
+}
+.tips{
+	width:650px;
+	margin:110px auto 0;
+	font-family:Verdana, Geneva, sans-serif;
+	color:#FFC;
+	font-size:26px;
+}
+
+.dock{
+	margin:90px auto 0;
+	width:500px; 
+}
+
+.rotate{
+	width:70px;
+	height:70px;
+	margin:20px 10px;
+	z-index:1;
+}
+
+.r1{
+	 -moz-transform:rotate(-3deg);
+    -webkit-transform:rotate(-3deg);
+	-o-transform:rotate(-3deg);
+}
+
+.r2{
+	 -moz-transform:rotate(2deg);
+    -webkit-transform:rotate(2deg);
+	-o-transform:rotate(2deg);
+}
+</style>
+</head>
+<body>
+<h1 class="tips">Tip: Please use the browser like chrome，firefox or safari</h1>
+<div class="dock">
+      <img src="img/index/Chrome.png" class="rotate" alt="icon"/>
+      <img src="img/index/Firefox.png" class="rotate" alt="icon"/>
+      <img src="img/index/Opera.png" class="rotate" alt="icon"/>
+      <img src="img/index/Safari.png" class="rotate" alt="icon"/>
+</div>
+</body>
+</html>

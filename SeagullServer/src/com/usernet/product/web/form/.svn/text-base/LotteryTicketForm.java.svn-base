@@ -1,0 +1,39 @@
+package com.usernet.product.web.form;
+
+import org.apache.struts.upload.FormFile;
+
+import com.usernet.product.comm.BaseForm;
+
+public class LotteryTicketForm extends BaseForm {
+	private static final long serialVersionUID = 4451729817495441435L;
+	private String pageNo;
+	private String pageSize;
+
+	private String  imei;
+	private FormFile file;
+	
+	public String getPageNo() {
+		return pageNo;
+	}
+	public void setPageNo(String pageNo) {
+		this.pageNo = pageNo;
+	}
+	public String getPageSize() {
+		return pageSize;
+	}
+	public void setPageSize(String pageSize) {
+		this.pageSize = pageSize;
+	}
+	public FormFile getFile() {
+		return file;
+	}
+	public void setFile(FormFile file) {
+		this.file = file;
+	}
+	public void setImei(String imei) {
+		this.imei = imei;
+	}
+	public String getImei() {
+		return imei;
+	}
+}

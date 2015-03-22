@@ -1,0 +1,48 @@
+package com.usernet.product.web.action;
+
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.commons.lang.StringUtils;
+import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionForward;
+import org.apache.struts.action.ActionMapping;
+
+import com.usernet.product.comm.BaseAction;
+import com.usernet.product.utils.DateUtils;
+import com.usernet.product.utils.ProductConfig;
+import com.usernet.product.web.form.SearchForm;
+
+public class SearchAction extends BaseAction{
+
+	public ActionForward toList(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response)
+			throws Exception {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_DATA_SERVER);
+		SearchForm mForm = (SearchForm) form;
+
+		String startTime = request.getParameter("startTime");
+		String endTime = request.getParameter("endTime");
+		
+		String sql = "select count(search) as count,search from dbo.search ";
+		
+		if (StringUtils.isNotEmpty(startTime) && StringUtils.isEmpty(endTime)) {
+			sql = sql +" where convert(varchar(100), time, 23) between '"+ startTime + "' and '" + DateUtils.getDate() + "'";
+		} else if (StringUtils.isNotEmpty(startTime)
+				&& StringUtils.isNotEmpty(endTime)) {
+			sql = sql +" where convert(varchar(100), time, 23) between '"+ startTime + "' and '" + endTime + "'";
+		}
+		sql = sql + " group by search order by count desc";
+		List l  = searchDao.getAllByPageAndSql(sql);
+		
+		request.setAttribute("startTime", startTime);
+		request.setAttribute("endTime", endTime);
+		
+		request.setAttribute("form", mForm);
+		request.setAttribute("list", l);
+		return mapping.findForward("list");
+	}
+}

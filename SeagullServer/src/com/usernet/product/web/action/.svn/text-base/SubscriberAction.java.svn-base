@@ -1,0 +1,63 @@
+package com.usernet.product.web.action;
+
+import java.io.IOException;
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.commons.lang.StringUtils;
+import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionForward;
+import org.apache.struts.action.ActionMapping;
+
+import com.usernet.product.comm.BaseAction;
+import com.usernet.product.entity.Channel;
+import com.usernet.product.tools.BaseCache;
+
+public class SubscriberAction extends BaseAction {
+
+	private BaseCache baseCache = new BaseCache("channelSubscriberPv", 10800);
+
+	/***
+	 * 获取渠道底下的用户订阅的不同类型数据PV点击数
+	 * 
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 * @throws IOException
+	 */
+	public ActionForward getSubscriberPv(ActionMapping mapping,
+			ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) throws IOException {
+
+		Channel channel = (Channel) request.getSession().getAttribute("admin");
+		Integer[] channelIdArray = getChannelIdArray(request, channel);
+
+		String result = "";
+
+		result = (String) baseCache.get("channelSubscriberPvData_"
+				+ channel.getId());
+
+		if (StringUtils.isEmpty(result)) {
+
+			List list = subscriberDao.findSubscriberPvSum(channelIdArray);
+			if (list != null && list.size() > 0) {
+
+				Object[] obj = (Object[]) list.get(0);
+				result = "{infoPv:" + obj[0] + ",goodsPv:" + obj[1] +"}";
+
+				baseCache.put("channelSubscriberPvData_" + channel.getId(),
+						result);
+			}
+		}
+
+		response.setCharacterEncoding("UTF-8");
+		response.getWriter().write(result);
+
+		return null;
+	}
+
+}

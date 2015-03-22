@@ -1,0 +1,87 @@
+package com.usernet.product.web.form;
+
+import org.apache.struts.upload.FormFile;
+
+import com.usernet.product.comm.BaseForm;
+
+public class SoftwareForm extends BaseForm {
+
+	private static final long serialVersionUID = 1L;
+
+	private FormFile icon;
+	private String pageNo;
+	private String pageSize;
+
+	private String softName; // 应用名称
+	private int typeIds = -1; // 所属分类
+	private int isTops = -1; // 是否顶置
+	private int isUsed = 0; // 是否可用  默认搜索可用的数据
+	private int channelId = 0;//渠道号
+	
+	
+	public int getChannelId() {
+		return channelId;
+	}
+
+	public void setChannelId(int channelId) {
+		this.channelId = channelId;
+	}
+
+	public String getSoftName() {
+		return softName;
+	}
+
+	public void setSoftName(String softName) {
+		this.softName = softName;
+	}
+
+	public int getTypeIds() {
+		return typeIds;
+	}
+
+	public void setTypeIds(int typeId) {
+		this.typeIds = typeId;
+	}
+
+	public int getIsTops() {
+		return isTops;
+	}
+
+	public void setIsTops(int isTops) {
+		this.isTops = isTops;
+	}
+
+	public int getIsUsed() {
+		return isUsed;
+	}
+
+	public void setIsUsed(int isUsed) {
+		this.isUsed = isUsed;
+	}
+
+	public String getPageNo() {
+		return pageNo;
+	}
+
+	public void setPageNo(String pageNo) {
+		this.pageNo = pageNo;
+	}
+
+	public String getPageSize() {
+		return pageSize;
+	}
+
+	public FormFile getIcon() {
+		return icon;
+	}
+
+	public void setIcon(FormFile icon) {
+		this.icon = icon;
+	}
+
+	public void setPageSize(String pageSize) {
+		this.pageSize = pageSize;
+	}
+
+
+}

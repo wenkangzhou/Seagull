@@ -1,0 +1,51 @@
+package com.usernet.product.entity;
+
+public class TaskGift implements java.io.Serializable {
+	private static final long serialVersionUID = -2798687702977380338L;
+	
+	private Integer id;
+	private Integer taskId;
+	private Gift gift;
+	private Integer count;
+
+	public TaskGift() {
+	}
+
+	public TaskGift(Integer taskId, Gift gift, Integer count) {
+		this.taskId = taskId;
+		this.gift = gift;
+		this.count = count;
+	}
+
+	public Integer getId() {
+		return this.id;
+	}
+
+	public void setId(Integer id) {
+		this.id = id;
+	}
+
+	public Integer getTaskId() {
+		return taskId;
+	}
+
+	public void setTaskId(Integer taskId) {
+		this.taskId = taskId;
+	}
+
+	public Gift getGift() {
+		return gift;
+	}
+
+	public void setGift(Gift gift) {
+		this.gift = gift;
+	}
+
+	public Integer getCount() {
+		return count;
+	}
+
+	public void setCount(Integer count) {
+		this.count = count;
+	}
+}

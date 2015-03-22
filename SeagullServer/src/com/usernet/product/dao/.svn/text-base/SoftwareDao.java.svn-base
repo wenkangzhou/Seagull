@@ -1,0 +1,327 @@
+package com.usernet.product.dao;
+
+import java.util.List;
+
+import org.hibernate.Query;
+import org.hibernate.Session;
+import org.hibernate.Transaction;
+
+import com.usernet.product.comm.BaseDao;
+import com.usernet.product.entity.CommodityColorSize;
+import com.usernet.product.entity.CommodityDetailedTab;
+import com.usernet.product.entity.Software;
+import com.usernet.product.entity.Type;
+import com.usernet.product.utils.Page;
+import com.usernet.product.utils.PageResult;
+
+public class SoftwareDao extends BaseDao {
+
+	/*
+	 * @SuppressWarnings("unchecked") public PageResult<Software> getPage(Page
+	 * page) { String hql =
+	 * "select s from Software s  where s.type.flag = 7 order by time desc";
+	 * return super.getAllByPageAndHql(page, hql); }
+	 */
+
+	public Type getTypeByName(String name) {
+
+		String hql = " FROM Type  where name='" + name + "'";
+
+		return (Type) super.getAllByHql(hql).get(0);
+	}
+
+	@SuppressWarnings("rawtypes")
+	public List getSoftwareById(Integer softId,Integer flag) {
+
+		Transaction tr = null;
+		Session session = getSession();
+		try {
+			tr = session.beginTransaction();
+			StringBuffer sb = new StringBuffer();
+			if(flag==3)//id为software的id
+			{
+				/*
+				sb.append("select t.flag,w.id,s.icon,s.name,s.remark,s.download,'','0','0',s.from_source,s.channelId,");
+				sb.append("case when (select count(1) from photo where softId = s.id and flag=3) > 0 then 1 else 0 end as existImg,s.create_time,'0','0','0','0','0','1900-00-00','1900-00-00','0','0'");
+				sb.append(" from app_tab s ");
+				sb.append(" inner join type t on t.id = s.type_Id");
+				sb.append(" inner join software w on w.newId = s.id");
+				sb.append(" where  s.id = " + softId );
+				sb.append(" and w.flag=3");*/
+				sb.append("select t.flag,s.id,s.icon,s.name,s.remark,s.download,s.pushicon,s.phoneNumber,s.url,s.develope,s.channelId,");
+				sb.append("case when (select count(1) from photo where softid = s.id and flag = 3) > 0 then 1 else 0 end as existImg,s.time,s.isCommodity,s.isPanicBuying,s.original_Price,s.current_Price,s.discount,s.Start_Panicbuying_Time,s.end_Panicbuying_Time,s.isWebContent,s.inventory ");
+				sb.append(" from software s ");
+				sb.append(" inner join type t on t.id = s.typeid");
+				sb.append(" where s.newId = " + softId + " and s.flag = 3");
+			}
+			else if(flag==2)
+			{
+				/*
+				sb.append("select 7,w.id,s.icon,s.title,s.content,'0','',s.contact_phone,s.details_url,s.from_where,s.channelId,");
+				sb.append("case when (select count(1) from photo where softId = s.id and flag=2) > 0 then 1 else 0 end as existImg,s.create_time,'0','0','0','0','0','1900-00-00','1900-00-00',s.isWebContent,'0' ");
+				sb.append(" from information_tab s ");
+				//sb.append(" inner join type t on t.id = s.typeid");
+				sb.append(" inner join software w on w.newId = s.id");
+				sb.append(" where  s.id = " + softId);
+				sb.append(" and w.flag=2");*/
+				sb.append("select t.flag,s.id,s.icon,s.name,s.remark,s.download,s.pushicon,s.phoneNumber,s.url,s.develope,s.channelId,");
+				sb.append("case when (select count(1) from photo where softid = s.id and flag = 2) > 0 then 1 else 0 end as existImg,s.time,s.isCommodity,s.isPanicBuying,s.original_Price,s.current_Price,s.discount,s.Start_Panicbuying_Time,s.end_Panicbuying_Time,s.isWebContent,s.inventory ");
+				sb.append(" from software s ");
+				sb.append(" inner join type t on t.id = s.typeid");
+				sb.append(" where s.newId = " + softId + " and s.flag = 2");
+			}
+			else
+			{
+				sb.append("select t.flag,s.id,s.icon,s.name,s.remark,s.download,s.pushicon,s.phoneNumber,s.url,s.develope,s.channelId,");
+				sb.append("case when (select count(1) from photo where softid = s.id and flag = 1) > 0 then 1 else 0 end as existImg,s.time,s.isCommodity,s.isPanicBuying,s.original_Price,s.current_Price,s.discount,s.Start_Panicbuying_Time,s.end_Panicbuying_Time,s.isWebContent,s.inventory ");
+				sb.append(" from software s ");
+				sb.append(" inner join type t on t.id = s.typeid");
+				sb.append(" where s.newId = " + softId + " and s.flag = 1");
+			}
+			Query query = session.createSQLQuery(sb.toString());
+			List list = query.list();
+			tr.commit();
+
+			return list;
+		} catch (Exception ex) {
+			tr.rollback();
+			ex.printStackTrace();
+			return null;
+		}
+	}
+
+	public List getSoftwareByPushAction(Integer action,String day) {
+
+		Transaction tr = null;
+		Session session = getSession();
+		try {
+			tr = session.beginTransaction();
+			StringBuffer sb = new StringBuffer();
+			
+			sb.append("select t.flag,s.id,s.icon,s.name,s.remark,s.download,s.pushicon,s.phoneNumber,s.url,s.develope,s.channelId,");
+			sb.append("case when (select count(1) from photo where softid = s.id) > 0 then 1 else 0 end as existImg,s.time,s.isCommodity,s.isPanicBuying,s.original_Price,s.current_Price,s.discount,s.Start_Panicbuying_Time,s.end_Panicbuying_Time,s.isWebContent,p.channel,s.inventory ");
+			sb.append(" from software s ");
+			sb.append(" inner join type t on t.id = s.typeid");
+			sb.append(" inner join push_tab p on p.softId = s.id");
+			sb.append(" where p.action = " + action);
+			sb.append(" and p.day = '" + day+"'");
+			Query query = session.createSQLQuery(sb.toString());
+			List list = query.list();
+			tr.commit();
+			return list;
+		} catch (Exception ex) {
+			tr.rollback();
+			ex.printStackTrace();
+			return null;
+		}
+	}
+	
+	public List getSoftwareByPushId(Integer id) {
+
+		Transaction tr = null;
+		Session session = getSession();
+		try {
+			tr = session.beginTransaction();
+			StringBuffer sb = new StringBuffer();
+			
+			sb.append("select t.flag,s.id,s.icon,s.name,s.remark,s.download,s.pushicon,s.phoneNumber,s.url,s.develope,s.channelId,");
+			sb.append("case when (select count(*) from photo where softid = s.id) > 0 then 1 else 0 end as existImg,s.time,s.isCommodity,s.isPanicBuying,s.original_Price,s.current_Price,s.discount,s.Start_Panicbuying_Time,s.end_Panicbuying_Time,s.isWebContent,p.channel,s.inventory ");
+			sb.append(" from software s ");
+			sb.append(" inner join type t on t.id = s.typeid");
+			sb.append(" inner join push_tab p on p.softId = s.id");
+			sb.append(" where p.id = " + id);
+			Query query = session.createSQLQuery(sb.toString());
+			List list = query.list();
+			tr.commit();
+			return list;
+		} catch (Exception ex) {
+			tr.rollback();
+			ex.printStackTrace();
+			return null;
+		}
+	}
+	
+	public CommodityDetailedTab getCommodityDetailedTab(Integer software_id) {
+		Session session = getSession();
+		Transaction transaction = session.beginTransaction();
+		transaction.begin();
+		String hql = " FROM CommodityDetailedTab  where software_id= "
+				+ software_id;
+		Query q = session.createQuery(hql);
+		CommodityDetailedTab cdt = (CommodityDetailedTab) q.uniqueResult();
+		transaction.commit();
+		if (cdt == null) {
+			cdt = new CommodityDetailedTab();
+			cdt.setSoftware_Id(software_id);
+		}
+		return cdt;
+	}
+
+	public void deleteCommodityDetailedTab(Integer software_id) {
+		String hql = " delete FROM CommodityDetailedTab  where software_id= "
+				+ software_id;
+		this.deleteByHql(hql);
+	}
+	
+	
+	/***
+	 * 获取颜色尺码
+	 * @param commdityId
+	 * @return
+	 */
+	public List<CommodityColorSize> findCommodityColorSizeByCommdityId(int commdityId){
+		
+		Transaction tr = null;
+		Session session = getSession();
+		try {
+			tr = session.beginTransaction();
+
+			String hql = "from CommodityColorSize where commodity_id = " + commdityId;
+			Query query = session.createQuery(hql);
+			List<CommodityColorSize> list = query.list();
+			tr.commit();
+
+			return list;
+		} catch (Exception ex) {
+			tr.rollback();
+			ex.printStackTrace();
+			return null;
+		}
+	}
+	
+	
+	@SuppressWarnings("unchecked")
+	public PageResult<Software> getAllByPage(Page page) {
+		String hql = "select software from Software as software where software.status = 0 and software.type.flag in(1,2) order by time desc,recommend asc";
+		return super.getAllByPageAndHql(page, hql);
+	}
+	
+	/*
+	 * 根据条件查询(应用名称,所属分类,是否顶置,是否收费,是否可用)
+	 */
+	@SuppressWarnings("unchecked")
+	public PageResult<Software> getAllByParams(Page page, String softName, int typeId, int flag) {
+		String hql = "select software from Software as software where";
+		if (flag == 0)
+			hql += " software.type.flag!=4";
+		else
+			hql += " software.type.flag=" + flag;
+		if (softName != null && !"".equals(softName.trim())) {
+			hql += " and (software.name like '%" + softName + "%' or software.pinyin like '%" + softName.toLowerCase()
+					+ "%')";
+		}
+		if (typeId != -1) {
+			hql += " and software.type.id=" + typeId;
+		}
+		hql += " order by software.time desc,software.recommend asc";
+		return super.getAllByPageAndHql(page, hql);
+	}
+
+	/*
+	 * 根据条件查询(应用名称,所属分类,是否顶置,是否收费,是否可用)
+	 */
+	@SuppressWarnings("unchecked")
+	public PageResult<Software> getAllByParams(Page page, String softName, int typeId, int isTops, int isMoney,
+			int isUsed, int resId,Integer[] channelId) {
+		String hql = "select software from Software as software where software.type.flag in(1,2)";
+		if (softName != null && !"".equals(softName.trim())) {
+			hql += " and (software.name like '%" + softName + "%' or software.pinyin like '%" + softName.toLowerCase()
+					+ "%')";
+		}
+		if (typeId != -1) {
+			hql += " and software.type.id=" + typeId;
+		}
+		if (resId != -1) {
+			hql += " and software.resources.id=" + resId;
+		}
+		if (isTops != -1) {
+			hql += " and software.tops=" + isTops;
+		}
+		if (isMoney != -1) {
+			hql += " and software.share=" + isMoney;
+		}
+		if (isUsed != -1) {
+			hql += " and software.status=" + isUsed;
+		}
+		if(channelId != null && channelId.length > 0){
+			
+			hql += " and (software.channel.id =" + channelId[0];
+			for(int i = 1;i< channelId.length;i++){
+				
+				hql += " or software.channel.id = " + channelId[i];
+			}
+			hql += ")";
+		}
+		
+		hql += " order by software.time desc,software.recommend asc";
+		System.out.println(hql);
+		return super.getAllByPageAndHql(page, hql);
+	}
+
+	/*
+	 * 根据条件查询(应用名称,所属分类,是否顶置,是否收费,是否可用)
+	 */
+	@SuppressWarnings("unchecked")
+	public PageResult<Software> getAllByParams(Page page, String softName, int typeId, int isTops, int isMoney,
+			int isUsed) {
+		String hql = "select software from Software as software where 1=1";
+		if (softName != null && !"".equals(softName.trim())) {
+			hql += " and (software.name like '%" + softName + "%' or software.pinyin like '%" + softName.toLowerCase()
+					+ "%')";
+		}
+		if (typeId != -1) {
+			hql += " and software.type.id=" + typeId;
+		}
+		if (isTops != -1) {
+			hql += " and software.tops=" + isTops;
+		}
+		if (isMoney != -1) {
+			hql += " and software.share=" + isMoney;
+		}
+		if (isUsed != -1) {
+			hql += " and software.status=" + isUsed;
+		}
+		hql += " order by id";
+		return super.getAllByPageAndHql(page, hql);
+	}
+	
+	public List getTagByInId(String ids){
+		String hql = "FROM Tag t WHERE t.id in( "+ids+")";
+		return super.getAllByHql(hql);
+	}
+	
+	public int getIdByNewId(int newId){
+		Transaction tr = null;
+		Session session = getSession();
+		try {
+			tr = session.beginTransaction();
+			String hql=" from Software where newId='"+newId+"' and flag=3";
+			Query query = session.createQuery(hql);
+			List list = query.list();
+			tr.commit();
+			return ((Software)list.get(0)).getId();
+		} catch (Exception ex) {
+			tr.rollback();
+			ex.printStackTrace();
+			return 0;
+		}
+	}
+	
+	public Software getSoftwareByNewId(int newId,int flag){
+		Transaction tr = null;
+		Session session = getSession();
+		try {
+			tr = session.beginTransaction();
+			String hql=" from Software where newId='"+newId+"' and flag=" + flag;
+			Query query = session.createQuery(hql);
+			query.setMaxResults(1);
+			Software s = (Software) query.uniqueResult();
+			tr.commit();
+			return s;
+		} catch (Exception ex) {
+			tr.rollback();
+			ex.printStackTrace();
+			return null;
+		}
+	}
+}

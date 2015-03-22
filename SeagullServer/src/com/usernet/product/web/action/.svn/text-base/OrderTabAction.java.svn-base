@@ -1,0 +1,497 @@
+package com.usernet.product.web.action;
+
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.RandomAccessFile;
+import java.sql.Timestamp;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import net.sf.json.JSONArray;
+import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionForward;
+import org.apache.struts.action.ActionMapping;
+import com.opensymphony.oscache.util.StringUtil;
+import com.usernet.product.comm.BaseAction;
+import com.usernet.product.entity.Channel;
+import com.usernet.product.entity.Commodity_Tab;
+import com.usernet.product.entity.OrderCommodityTab;
+import com.usernet.product.entity.OrderTab;
+import com.usernet.product.entity.Software;
+import com.usernet.product.utils.Page;
+import com.usernet.product.utils.PageResult;
+import com.usernet.product.web.form.OrderTabForm;
+
+public class OrderTabAction extends BaseAction{
+	
+	public ActionForward toShanghuList(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+
+		OrderTabForm mForm = (OrderTabForm) form;
+		PageResult<Object[]> list = null;
+		Page page = new Page();
+		// 分页信息
+		String pageNo = mForm.getPageNo();
+		String pageSize = mForm.getPageSize();
+		if (pageSize != null)
+			page.setEveryPage(Integer.parseInt(pageSize.trim()));
+		if (pageNo != null)
+			page.setCurrentPage(Integer.parseInt(pageNo.trim()));
+		Channel channel = (Channel) request.getSession().getAttribute("admin");
+		if (mForm.getChannelId() == null) {
+			mForm.setChannelId(0);
+		}
+		Integer channelId = channel.getId();
+		String status = request.getParameter("status");
+		String fromSource = request.getParameter("fromSource");
+		String startDate = request.getParameter("startDate");
+		String endDate = request.getParameter("endDate");
+		
+		request.setAttribute("startDate", startDate);
+		request.setAttribute("endDate", endDate);
+		if (!StringUtil.isEmpty(startDate)) {
+			startDate = startDate + " 00:00:00";
+		}
+		if (!StringUtil.isEmpty(endDate)) {
+			endDate = endDate + " 23:59:59";
+		}
+		
+		list = orderTabDao.getshanghuOrder(page,channelId,status,startDate,endDate,fromSource);
+		if(null == list){
+			
+			list = new PageResult<Object[]>(page,null);
+		}
+		
+		request.setAttribute("form", mForm);
+		request.setAttribute("status", status);
+		request.setAttribute("list", list.getContent());
+		request.setAttribute("page", list.getPage());
+		request.setAttribute("size", list.getSize());
+		request.setAttribute("fromSource", fromSource);
+		return mapping.findForward("toList");
+	}
+			
+	public ActionForward toList(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		
+		OrderTabForm mForm = (OrderTabForm) form;
+		PageResult<Object[]> list = null;
+	//	PageResult<OrderTab> list = null;
+		Page page = new Page();
+		// 分页信息
+		String pageNo = mForm.getPageNo();
+		String pageSize = mForm.getPageSize();
+		if (pageSize != null)
+			page.setEveryPage(Integer.parseInt(pageSize.trim()));
+		if (pageNo != null)
+			page.setCurrentPage(Integer.parseInt(pageNo.trim()));
+		
+		Channel channel = (Channel) request.getSession().getAttribute("admin");
+		if(channel.getType() == 2){
+			return toShanghuList(mapping, mForm, request, response);
+		}
+		
+		if (mForm.getChannelId() == null) {
+			mForm.setChannelId(0);
+		}
+		
+		Integer channelId = channel.getId();
+		String status = request.getParameter("status");
+		String startDate = request.getParameter("startDate");
+		String endDate = request.getParameter("endDate");
+		String versionName = request.getParameter("versionName");
+		String fromSource = request.getParameter("fromSource");
+		
+		request.setAttribute("startDate", startDate);
+		request.setAttribute("endDate", endDate);
+		if (!StringUtil.isEmpty(startDate)) {
+			startDate = startDate + " 00:00:00";
+		}
+		if (!StringUtil.isEmpty(endDate)) {
+			endDate = endDate + " 23:59:59";
+		}
+		if (channel.getType() == 1) {
+			List<Channel> channels = channelDao.getAll(channel.getType() == 0 ? channel.getId() : null);
+			if (channels == null)
+				channels = new ArrayList<Channel>();
+			if (channel.getType() != 1)
+				channels.add(0, channel);
+			request.setAttribute("channels", channels);
+			
+			String channelIdStr = request.getParameter("channelId");
+			
+			if(StringUtil.isEmpty(channelIdStr)){
+				list = orderTabDao.getAllOrder(page,null,status,startDate,endDate,versionName,fromSource);
+				//list = orderTabDao.getAll(page,null,status,startDate,endDate,versionName);
+			}else{
+				channelId = Integer.parseInt(channelIdStr);
+				list = getResult(channelId, page,status,startDate,endDate,versionName,fromSource);
+			}
+			
+		} else if (channel.getType() == 0) {
+			    list = getResult(channelId, page,status,startDate,endDate,versionName,fromSource);
+		}
+		
+		request.setAttribute("form", mForm);
+		request.setAttribute("status", status);
+		request.setAttribute("size", list.getSize());
+		request.setAttribute("versionName", versionName);
+		request.setAttribute("fromSource", fromSource);
+		request.setAttribute("list", list.getContent());
+		request.setAttribute("page", list.getPage());
+		
+		return mapping.findForward("toList");
+	}
+	
+	public ActionForward exportOrderCsv(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) throws IOException{
+		String startDate = request.getParameter("startDate");
+		String endDate = request.getParameter("endDate");
+		String channelIdStr = request.getParameter("channelId");
+		String status = request.getParameter("status");
+		String fromSource = request.getParameter("fromSource");
+		String versionName = request.getParameter("versionName");
+		if (!StringUtil.isEmpty(startDate)) {
+			startDate = startDate + " 00:00:00";
+		}
+		if (!StringUtil.isEmpty(endDate)) {
+			endDate = endDate + " 23:59:59";
+		}
+		
+		Channel channel = (Channel) request.getSession().getAttribute("admin");
+		List<Object[]> result;
+		if(channel.getManufacturersType()==null)
+		{
+			channel.setManufacturersType(0);
+		}
+		if(channel.getType() == 2){
+			
+			result = orderTabDao.getListByShanghu(channel.getId(), status, startDate, endDate,fromSource);
+			
+		}else{
+		
+			result = orderTabDao.getList((channel.getType() == 0 ? String.valueOf(channel.getId()) : channelIdStr), status, startDate, endDate,fromSource);
+		}
+		
+		String line = "订单号,货号,商品名,订单时间,订单成交时间,单价,数量,总额,联系电话,联系人,渠道名,订单状态,收货地址,备注\n";
+		File f = new File("/data/temp/tempOrder.csv");
+		//File f = new File("D:/logs/tempOrder.csv");
+		RandomAccessFile raf;
+		raf = new RandomAccessFile(f, "rw");
+		//raf.write(line.getBytes());
+		raf.write(line.getBytes("GBK"));
+		if(result!=null)
+		for(int j=0;j<result.size();j++){
+			Object[] obj = result.get(j);
+			StringBuffer sb = new StringBuffer();
+			
+			sb.append(obj[0].toString());
+			sb.append(",");
+			
+			sb.append(obj[1]==null?"":obj[1].toString());
+			sb.append(",");
+			
+		//	java.sql.Timestamp time = obj[2].toString();
+		//	SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");//定义格式，不显示毫秒
+		//	sb.append(df.format(time));
+			sb.append(obj[2]==null?"":obj[2].toString());
+			sb.append(",");
+			
+			sb.append(obj[3].toString());
+			sb.append(",");
+			
+			sb.append(obj[4]==null?"":obj[4].toString());
+			sb.append(",");
+			
+			sb.append(obj[5].toString());
+			sb.append(",");
+			
+			sb.append(obj[6].toString());
+			sb.append(",");
+			
+			sb.append(obj[7].toString());
+			sb.append(",");
+			
+			sb.append(obj[8].toString());
+			sb.append(",");
+			sb.append(obj[9].toString());
+			sb.append(",");
+			if(obj[10]==null){
+				sb.append("通过网页订购");
+			}else{
+				sb.append(obj[10].toString());
+			}
+			sb.append(",");
+			sb.append(switchStatus(Integer.parseInt(obj[11].toString())));
+			sb.append(",");
+			sb.append(obj[12] == null ? "" : String.valueOf(obj[12]).replace(",", " "));
+			sb.append(",");
+			sb.append(obj[13] == null ? "" : String.valueOf(obj[13]).replace("\n"," ").replace(",", " ").replace("\r", " "));
+			sb.append("\n");
+			
+			raf.write(sb.toString().getBytes("GBK"));
+			//raf.write(sb.toString().getBytes());
+		}
+		raf.close();
+
+		// 以流的形式下载文件。
+		InputStream fis = new BufferedInputStream(new FileInputStream(f));
+		byte[] buffer = new byte[fis.available()];
+		fis.read(buffer);
+		fis.close();
+		
+		response.reset();
+		response.setHeader("Content-Disposition", "attachment;filename="
+				+ new String("订单列表.csv".getBytes("GBK"), "ISO8859_1"));
+		response.addHeader("Content-Length", "" + f.length());
+		OutputStream toClient = new BufferedOutputStream(response
+				.getOutputStream());
+		//response.setContentType("application/octet-stream");
+		response.setContentType("application/x-msdownload");
+		response.setContentType("application/vnd.ms-excel;charset=uft-8");
+		toClient.write(buffer);
+		toClient.flush();
+		toClient.close();
+		
+		f.delete();
+		/*
+		PrintWriter out = response.getWriter();
+		out.print("<script type=\"text/javascript\">window.reload();</script>"); 
+		out.flush();
+		out.close();
+		*/
+		//return mapping.findForward("other");
+		return null;
+	}
+	
+	private String switchStatus(Integer status){
+		String statusStr = "";
+		switch (status) {
+		case 0:statusStr="未确认";break;
+		case 1:statusStr="已确认";break;
+		case 2:statusStr="关机";break;
+		case 3:statusStr="无人接听";break;
+		case 4:statusStr="恶意投单";break;
+		case 5:statusStr="已发货";break;
+		case 6:statusStr="已退货";break;
+		case 7:statusStr="成交";break;
+		case 8:statusStr="已取消";break;
+		}
+		return statusStr;
+	}
+	
+	public ActionForward doEdit(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		String id_str = request.getParameter("id");
+		Integer id = Integer.parseInt(id_str);
+		
+		OrderTab order = (OrderTab) orderTabDao.getById(OrderTab.class, id);
+		String key = request.getParameter("key");
+		if("status".equalsIgnoreCase(key)){
+			order.setStatus(chanage(order.getStatus()));
+		}else{
+			order.setIsSend(chanage(order.getIsSend()));
+		}
+		orderTabDao.modify(order);
+		return mapping.findForward("other");
+	}
+	
+	public ActionForward doEdit1(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		String id_str = request.getParameter("id");
+		Integer id = Integer.parseInt(id_str);		
+		OrderTab ot = (OrderTab) orderTabDao.getById(OrderTab.class, id);
+		String phone = request.getParameter("phone");
+		String consignee =request.getParameter("consignee");
+		String address = request.getParameter("address");
+		String remark = request.getParameter("remark");
+		Integer status = Integer.parseInt(request.getParameter("status"));
+		String dealtime = request.getParameter("dealtime");
+		//Timestamp dealtime = new Timestamp(System.currentTimeMillis());
+		ot.setPhone(phone);
+		ot.setConsignee(consignee);
+		ot.setAddress(address);
+		ot.setRemark(remark);
+		if(status!=null&&status==7){
+			SimpleDateFormat sdf=new SimpleDateFormat("yyyy-MM-dd HH:mm");
+			if(!StringUtil.isEmpty(dealtime)){
+				 try {
+					 ot.setDealtime(new Timestamp(sdf.parse(dealtime).getTime()));
+				} catch (ParseException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+		ot.setStatus(status);
+		orderTabDao.modify(ot);
+		return mapping.findForward("other");
+	}
+	
+	public ActionForward doView(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		String id_str = request.getParameter("id");
+		Integer id = Integer.parseInt(id_str);
+		
+		OrderTab order = (OrderTab) orderTabDao.getById(OrderTab.class, id);
+		request.setAttribute("item", order);
+		return mapping.findForward("view");
+	}
+	public ActionForward doViewReadOnly(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		String id_str = request.getParameter("id");
+		Integer id = Integer.parseInt(id_str);
+		
+		OrderTab order = (OrderTab) orderTabDao.getById(OrderTab.class, id);
+		request.setAttribute("item", order);
+		return mapping.findForward("viewreadonly");
+	}	
+	public ActionForward toAdd(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		String goods_id = request.getParameter("goods_id");
+		Software goods = (Software) orderTabDao.getById(Software.class, Integer.parseInt(goods_id));
+	//	List<CommodityColorSize> sizelist = goodsDao.getCommodityColorSizeBySoftId(goods.getId());
+		String mobile = request.getParameter("mobile");
+		String imei = request.getParameter("imei");
+		
+		request.setAttribute("imei", imei);
+		request.setAttribute("item", goods);
+	//	request.setAttribute("sizelist", sizelist);
+		if(mobile!=null&&!mobile.equals("")){
+			return mapping.findForward("toMobileAdd");
+		}
+		return mapping.findForward("toAdd");
+	}
+	
+	public ActionForward doAdd(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		String goods_id = request.getParameter("goods_id");
+		String numberStr = request.getParameter("number");
+		String phone = request.getParameter("phone");
+		String consignee =request.getParameter("consignee");
+		String address = request.getParameter("address");
+		String color_id = request.getParameter("color_id");
+		String imei = request.getParameter("imei");
+		Integer number = StringUtil.isEmpty(numberStr)?1:Integer.parseInt(numberStr);
+		Software goods = (Software) orderTabDao.getById(Software.class, Integer.parseInt(goods_id));
+		
+		OrderTab ot = new OrderTab();
+		ot.setImei(imei);
+		ot.setTotal_commodity_Price(number*goods.getCurrent_price());
+	//	ot.setSoftware(goods);
+		ot.setNumber(number);
+		ot.setPrice(goods.getCurrent_price());
+		ot.setTotal_order_price(number*goods.getCurrent_price());
+		ot.setPhone(phone);
+		ot.setConsignee(consignee);
+		ot.setAddress(address);
+		ot.setStatus(0);
+		ot.setIsSend(0);
+		ot.setTime(new Timestamp(new Date().getTime()));
+		if(!StringUtil.isEmpty(color_id))
+		ot.setColor_id(Integer.parseInt(color_id));
+		
+		orderTabDao.save(ot);
+		return mapping.findForward("ok");
+	}
+	
+	public ActionForward doDel(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		String id_str = request.getParameter("id");
+		Integer id = Integer.parseInt(id_str);
+		
+		OrderTab order = (OrderTab) orderTabDao.getById(OrderTab.class, id);
+		orderTabDao.delete(order);
+		orderTabDao.delOrderCommodity(id);
+		return mapping.findForward("other");
+	}
+	public ActionForward doDelGoods(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		String id_str = request.getParameter("id");
+		Integer id = Integer.parseInt(id_str);
+		
+		OrderCommodityTab order = (OrderCommodityTab) orderTabDao.getById(OrderCommodityTab.class, id);
+		orderTabDao.delete(order);
+		return mapping.findForward("other");
+	}
+	
+	public ActionForward doViewGoods(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		String id_str = request.getParameter("id");
+		Integer id = Integer.parseInt(id_str);
+		
+		OrderCommodityTab order = (OrderCommodityTab) orderTabDao.getById(OrderCommodityTab.class, id);
+		request.setAttribute("item", order);
+		return mapping.findForward("viewgoods");
+	}
+	
+	private Integer chanage(Integer status){
+		if(status==0){
+			status = 1;
+		}else{
+			status = 0;
+		}
+		return status;
+	}
+	
+	private PageResult<Object[]> getResult(Integer channelId,Page page,String status,String beginDate,String endDate,String versionName,String fromSource){
+		List<Channel> channelList = new ArrayList<Channel>();
+		channelList = channelDao.getAll(channelId);
+		Channel c = (Channel)channelDao.getById(Channel.class, channelId);
+		channelList.add(c);
+		
+		Integer[] channelArray = new Integer[channelList.size()];
+		for (int i = 0; i < channelList.size(); i++) {
+			Channel temp = channelList.get(i);
+			channelArray[i] = temp.getId();
+		}
+		
+		return orderTabDao.getAllOrder(page, channelArray,status,beginDate,endDate,versionName,fromSource);
+	}
+	public ActionForward getCommodity(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) throws IOException {
+
+		String orderId=request.getParameter("orderId");
+		List<OrderCommodityTab> orderCommodityList= orderTabDao.getCommodityInfo(Integer.parseInt(orderId));
+		if(orderCommodityList==null||orderCommodityList.isEmpty()){
+			response.getWriter().print("");
+		}else{
+			List<OrderCommodityTab> temList = new ArrayList<OrderCommodityTab>();
+			for(OrderCommodityTab t:orderCommodityList){
+				OrderCommodityTab tm = new OrderCommodityTab();
+				Commodity_Tab c = new Commodity_Tab(); 
+				if(t.getCommodity_tab()==null)
+				{
+					c.setName("");
+					c.setSmall_picture("");
+				}
+				else
+				{
+					c.setName(t.getCommodity_tab().getName()==null?"":t.getCommodity_tab().getName());
+					c.setCurrent_price(t.getCommodity_tab().getCurrent_price()==null?0:t.getCommodity_tab().getCurrent_price());
+					c.setSmall_picture(t.getCommodity_tab().getSmall_picture()==null?"":t.getCommodity_tab().getSmall_picture());
+				}
+				
+				tm.setCommodity_tab(c);
+				tm.setId(t.getId());
+				tm.setOrder_id(Integer.parseInt(orderId));
+				tm.setColor_name(t.getColor_name());
+				tm.setSize(t.getSize());
+				tm.setNumber(t.getNumber());
+				tm.setId(t.getId());
+				temList.add(tm);
+			}
+			JSONArray array = new JSONArray(temList);
+			response.getWriter().print(array.toString());
+		}
+		return null;
+	}
+}

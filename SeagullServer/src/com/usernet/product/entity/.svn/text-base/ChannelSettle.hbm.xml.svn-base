@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+"http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+<hibernate-mapping>
+	<class name="com.usernet.product.entity.ChannelSettle" table="channel_settle">
+		<cache usage="read-write" />
+		<id name="id" type="java.lang.Integer">
+			<column name="id" />
+			<generator class="native" />
+		</id>
+		<property name="channelId" type="java.lang.Integer">
+			<column name="channelId" />
+		</property>
+		<property name="startTime" type="java.lang.String">
+			<column name="startTime" />
+		</property>
+		<property name="settleTime" type="java.lang.String">
+			<column name="settleTime" />
+		</property>
+		<property name="payTime" type="java.lang.String">
+			<column name="payTime" />
+		</property>
+		<property name="squared" type="java.lang.Integer">
+			<column name="squared" />
+		</property>
+	</class>
+</hibernate-mapping>

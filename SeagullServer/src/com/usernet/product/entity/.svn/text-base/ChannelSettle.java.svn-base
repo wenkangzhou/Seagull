@@ -1,0 +1,63 @@
+package com.usernet.product.entity;
+
+public class ChannelSettle implements java.io.Serializable {
+	private static final long serialVersionUID = 4516014800563330612L;
+
+	private Integer id;
+	private Integer channelId;
+	private String startTime;
+	private String settleTime;
+	private String payTime;
+	private Integer squared; // 是否已结算完成，0：未结算；1：已结算
+
+	public ChannelSettle() {
+	}
+
+	public Integer getId() {
+		return id;
+	}
+
+	public void setId(Integer id) {
+		this.id = id;
+	}
+
+	public Integer getChannelId() {
+		return channelId;
+	}
+
+	public void setChannelId(Integer channelId) {
+		this.channelId = channelId;
+	}
+
+	public String getStartTime() {
+		return startTime;
+	}
+
+	public void setStartTime(String startTime) {
+		this.startTime = startTime;
+	}
+
+	public String getSettleTime() {
+		return settleTime;
+	}
+
+	public void setSettleTime(String settleTime) {
+		this.settleTime = settleTime;
+	}
+
+	public String getPayTime() {
+		return payTime;
+	}
+
+	public void setPayTime(String payTime) {
+		this.payTime = payTime;
+	}
+
+	public Integer getSquared() {
+		return squared;
+	}
+
+	public void setSquared(Integer squared) {
+		this.squared = squared;
+	}
+}

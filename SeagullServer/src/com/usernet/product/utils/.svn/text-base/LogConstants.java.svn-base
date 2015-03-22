@@ -1,0 +1,121 @@
+package com.usernet.product.utils;
+
+/**
+ * 管理员操作记录信息
+ * 
+ */
+public class LogConstants {
+
+	// //////////////////软件管理//////////////////////////////////////////////
+	/** 登录系统 */
+	public static final String login = "登录系统";
+	/** 退出系统 */
+	public static final String logout = "退出系统";
+	/** 非法的操作 */
+	public static final String not_agreen = "非法操作[%s]";
+	/** 上传软件 */
+	public static final String add_software = "上传软件[%d][%s]";// 软件ID和名称
+	/** 上传图片 */
+	public static final String add_photo = "上传[%d]张图片";// 软件ID和名称
+	/** 上传图片 */
+	public static final String delete_photo = "删除[%d]张图片";// 软件ID和名称
+	/** 锁定图片 */
+	public static final String lock_photo = "锁定[%d]张图片";// 软件ID和名称
+	/** 解锁图片 */
+	public static final String unlock_photo = "解锁[%d]张图片";// 软件ID和名称
+	/** 修改软件 */
+	public static final String update_software = "修改软件[%d][%s]";// 软件ID和名称
+	/** 删除软件 */
+	public static final String delete_software = "删除软件[%d][%s]";// 软件ID和名称
+	/** 重新上传APK */
+	public static final String upload_software_apk = "重新上传APK[%d][%s]";// 软件ID和名称
+	/** 锁定软件 */
+	public static final String lock_software = "锁定软件[%d][%s]";// 软件ID和名称
+	/** 解锁软件 */
+	public static final String unlock_software = "解锁软件[%d][%s]";// 软件ID和名称
+	/** 修改软件排序 */
+	public static final String upadte_software_sort = "修改软件排序(%d)[%d][%s]";// 排序,软件ID和名称
+	/** 顶置软件 */
+	public static final String upadte_software_tops = "顶置软件[%d][%s]";// 软件ID和名称
+	/** 推荐软件 */
+	public static final String upadte_software_goods = "推荐软件[%d][%s]";// 软件ID和名称
+	/** 重新上传ICON */
+	public static final String upload_software_icon = "重新上传ICON[%d][%s]";// 软件ID和名称
+	/** 修改软件评分 */
+	public static final String upadte_software_avg = "修改软件评分(%d)[%d][%s]";// 评分,软件ID和名称
+
+	// //////////////////分类管理//////////////////////////////////////////////
+	/** 添加分类 */
+	public static final String add_type = "添加分类[%d][%s]";// ID和名称
+	/** 修改分类 */
+	public static final String update_type = "修改分类[%d][%s]";// ID和名称
+	/** 删除分类 */
+	public static final String delete_type = "删除分类[%d][%s]";// ID和名称
+	/** 锁定分类 */
+	public static final String lock_type = "锁定分类[%d][%s]";// ID和名称
+	/** 解锁分类 */
+	public static final String unlock_type = "解锁分类[%d][%s]";// ID和名称
+	/** 分类排序 */
+	public static final String update_type_sort = "修改分类排序(%d)[%d][%s]";// 排序,ID和名称
+
+	// //////////////////专题管理//////////////////////////////////////////////
+	/** 添加专题 */
+	public static final String add_res = "添加专题[%d][%s]";// ID和名称
+	/** 修改专题 */
+	public static final String update_res = "修改专题[%d][%s]";// ID和名称
+	/** 删除专题 */
+	public static final String delete_res = "删除专题[%d][%s]";// ID和名称
+	/** 锁定专题 */
+	public static final String lock_res = "锁定专题[%d][%s]";// ID和名称
+	/** 解锁专题 */
+	public static final String unlock_res = "解锁专题[%d][%s]";// ID和名称
+	/** 分类专题 */
+	public static final String update_res_sort = "修改专题排序(%d)[%d][%s]";// 排序,ID和名称
+
+	// //////////////////错误管理//////////////////////////////////////////////
+	/** 删除错误 */
+	public static final String delete_error = "删除错误[%d][%s]"; // ID
+
+	// //////////////////评论管理//////////////////////////////////////////////
+	/** 删除评论 */
+	public static final String delete_comment = "删除评论[%d][%s]";// ID
+
+	// //////////////////用户管理//////////////////////////////////////////////
+	/** 添加用户 */
+	public static final String add_user = "添加用户[%d][%s]";// ID和名称
+	/** 修改用户 */
+	public static final String update_user = "修改用户[%d][%s]";// ID和名称
+	/** 删除用户 */
+	public static final String delete_user = "删除用户[%d][%s]";// ID和名称
+	/** 锁定用户 */
+	public static final String lock_user = "锁定用户[%d][%s]";// ID和名称
+	/** 解锁用户 */
+	public static final String unlock_user = "解锁用户[%d][%s]";// ID和名称
+
+	// //////////////////修改密码//////////////////////////////////////////////
+	/** 修改密码 */
+	public static final String update_password = "修改密码[%d][%s]";// ID和名称
+
+	// ////////////////// 添加管理员 //////////////////////////////////////////////
+	/** 添加管理员 */
+	public static final String add_manager = "添加管理员[%d][%s]";// ID和名称
+	/** 修改管理员 */
+	public static final String update_manager = "修改管理员[%d][%s]";// ID和名称
+	/** 删除管理员 */
+	public static final String delete_manager = "删除管理员[%d][%s]";// ID和名称
+	/** 锁定管理员 */
+	public static final String lock_manager = "锁定管理员[%d][%s]";// ID和名称
+	/** 解锁管理员 */
+	public static final String unlock_manager = "解锁管理员[%d][%s]";// ID和名称
+	
+	/** 添加任务 */
+	public static final String task_add = "添加任务[%d][%s]";
+	/** 修改任务 */
+	public static final String task_update = "修改任务[%d][%s]";
+	/** 添加任务条件 */
+	public static final String task_condition_add = "添加任务条件[%d]";
+	/** 添加任务奖品 */
+	public static final String task_gift_add = "添加任务奖品[%d]";
+	/** 删除任务 */
+	public static final String task_delete = "删除任务[%d][%s]";
+}

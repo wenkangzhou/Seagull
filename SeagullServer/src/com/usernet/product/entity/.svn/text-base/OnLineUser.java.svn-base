@@ -1,0 +1,57 @@
+package com.usernet.product.entity;
+
+public class OnLineUser implements java.io.Serializable {
+	private static final long serialVersionUID = 4516014800563330612L;
+
+	private Integer id;
+	
+	private String channel;
+	
+	private Integer userNum;
+	
+	private String day;
+
+	private Integer hours;
+	
+	public Integer getId() {
+		return id;
+	}
+
+	public void setId(Integer id) {
+		this.id = id;
+	}
+
+	public String getChannel() {
+		return channel;
+	}
+
+	public void setChannel(String channel) {
+		this.channel = channel;
+	}
+
+	public Integer getUserNum() {
+		return userNum;
+	}
+
+	public void setUserNum(Integer userNum) {
+		this.userNum = userNum;
+	}
+
+	public String getDay() {
+		return day;
+	}
+
+	public void setDay(String day) {
+		this.day = day;
+	}
+
+	public void setHours(Integer hours) {
+		this.hours = hours;
+	}
+
+	public Integer getHours() {
+		return hours;
+	}
+
+
+}

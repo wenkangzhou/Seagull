@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE struts-config PUBLIC "-//Apache Software Foundation//DTD Struts Configuration 1.2//EN" "http://struts.apache.org/dtds/struts-config_1_2.dtd">
+<struts-config>
+	<data-sources />
+	<form-beans>
+		<form-bean name="channelForm" type="com.usernet.product.web.form.ChannelForm" />
+		<form-bean name="authForm" type="com.usernet.product.web.form.AuthForm" />
+		<form-bean name="roleForm" type="com.usernet.product.web.form.RoleForm" />
+		<form-bean name="feedbackForm" type="com.usernet.product.web.form.FeedBackForm" />
+		<form-bean name="photoForm" type="com.usernet.product.web.form.PhotoForm" />
+		<form-bean name="musicForm" type="com.usernet.product.web.form.MusicForm" />
+		<form-bean name="taoForm" type="com.usernet.product.web.form.TaoForm" />
+		<form-bean name="suiForm" type="com.usernet.product.web.form.SuiForm" />
+		<form-bean name="uploadForm" type="com.usernet.product.web.form.UploadForm" />
+	</form-beans>
+	
+	<global-forwards>
+		<forward name="admin_msg" path="/admin/admin_msg.jsp" />
+		<forward name="login" path="/admin/login.jsp" />
+	</global-forwards>
+	
+	<action-mappings>
+		<action path="/admin" scope="request" parameter="method" 
+			type="com.usernet.product.web.action.AdminAction">
+			<forward name="success" path="/admin/index/index.jsp" redirect="true" />
+			<forward name="login" path="/admin/login.jsp" />
+			<forward name="password" path="/admin/page/admin_password.jsp" />
+			<forward name="other" path="/admin.do?method=toList" redirect="true" />
+		</action>
+
+		<action path="/channel" scope="request" parameter="method"
+			name="channelForm" type="com.usernet.product.web.action.ChannelAction">
+			<forward name="list" path="/admin/page/channel_list.jsp" />
+			<forward name="edit" path="/admin/page/channel_edit.jsp" />
+			<forward name="other" path="/channel.do?method=toList" redirect="true" />
+		</action>
+		
+		<action path="/auth" scope="request" parameter="method" name="authForm"
+			type="com.usernet.product.web.action.AuthAction">
+			<forward name="add" path="/admin/page/auth_add.jsp"/>
+			<forward name="edit" path="/admin/page/auth_edit.jsp"/>
+			<forward name="list" path="/admin/page/auth_list.jsp"/>
+			<forward name="other" path="/auth.do?method=toList" redirect="true" />
+		</action>
+		
+		<action path="/role" scope="request" parameter="method" name="roleForm"
+			type="com.usernet.product.web.action.RoleAction">
+			<forward name="add" path="/admin/page/role_add.jsp"/>
+			<forward name="edit" path="/admin/page/role_edit.jsp"/>
+			<forward name="list" path="/admin/page/role_list.jsp"/>
+			<forward name="authorize" path="/admin/page/role_authorize.jsp"/>
+			<forward name="other" path="/role.do?method=toList" redirect="true" />
+		</action>
+		
+		<action path="/feedback" scope="request" parameter="method" name="feedbackForm"
+			type="com.usernet.product.web.action.FeedBackAction">
+			<forward name="list" path="/admin/page/feedback_list.jsp"/>
+			<forward name="edit" path="/admin/page/feedback_edit.jsp"/>
+			<forward name="other" path="/feedback.do?method=List" redirect="true" />
+		</action>
+		
+		<action path="/photo" scope="request" parameter="method" name="photoForm"
+			type="com.usernet.product.web.action.PhotoAction">
+			<forward name="list" path="/admin/page/photo_list.jsp"/>
+			<forward name="add" path="/admin/page/photo_add.jsp"/>
+			<forward name="edit" path="/admin/page/photo_edit.jsp"/>
+			<forward name="preview" path="/photo_test.jsp"/>
+			<forward name="other" path="/photo.do?method=List" redirect="true" />
+		</action>
+		
+		<action path="/music" scope="request" parameter="method" name="musicForm"
+			type="com.usernet.product.web.action.MusicAction">
+			<forward name="list" path="/admin/page/music_list.jsp"/>
+			<forward name="add" path="/admin/page/music_add.jsp"/>
+			<forward name="edit" path="/admin/page/music_edit.jsp"/>
+			<forward name="preview" path="/music_test.jsp"/>
+			<forward name="other" path="/music.do?method=List" redirect="true" />
+		</action>
+		
+		<action path="/tao" scope="request" parameter="method" name="taoForm"
+			type="com.usernet.product.web.action.TaoAction">
+			<forward name="list" path="/admin/page/tao_list.jsp"/>
+			<forward name="add" path="/admin/page/tao_add.jsp"/>
+			<forward name="edit" path="/admin/page/tao_edit.jsp"/>
+			<forward name="preview" path="/tao_test.jsp"/>
+			<forward name="other" path="/tao.do?method=List" redirect="true" />
+		</action>
+		
+		<action path="/sui" scope="request" parameter="method" name="suiForm"
+			type="com.usernet.product.web.action.SuiAction">
+			<forward name="list" path="/admin/page/sui_list.jsp"/>
+			<forward name="add" path="/admin/page/sui_add.jsp"/>
+			<forward name="edit" path="/admin/page/sui_edit.jsp"/>
+			<forward name="preview" path="/sui_test.jsp"/>
+			<forward name="other" path="/sui.do?method=List" redirect="true" />
+		</action>
+		
+		<action path="/upload" scope="request" parameter="method" name="uploadForm"
+			type="com.usernet.product.web.action.UploadAction">
+			<forward name="list" path="/admin/page/upload_list.jsp"/>
+		</action>
+		
+	</action-mappings>
+	<message-resources parameter="resources" />
+</struts-config>

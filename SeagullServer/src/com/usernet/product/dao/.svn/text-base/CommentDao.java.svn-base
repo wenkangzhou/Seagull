@@ -1,0 +1,79 @@
+package com.usernet.product.dao;
+
+import java.util.List;
+
+import org.hibernate.Query;
+import org.hibernate.Session;
+
+import com.opensymphony.oscache.util.StringUtil;
+import com.usernet.product.comm.BaseDao;
+import com.usernet.product.comm.HibernateSessionFactory;
+import com.usernet.product.entity.Comment;
+import com.usernet.product.entity.CommodityComment;
+import com.usernet.product.entity.Software;
+import com.usernet.product.entity.Tag;
+import com.usernet.product.entity.User;
+import com.usernet.product.utils.Page;
+import com.usernet.product.utils.PageResult;
+
+public class CommentDao extends BaseDao  {
+	
+	public List<Comment> getListBySoftId(Integer softId,Integer flag){
+		
+		String hql = "";
+		if(flag==1)
+		{
+			hql = "FROM Comment where commodity_tab.id =:softId and flag =:flag and status=:status ";
+		}
+		if(flag==2)
+		{
+			hql = "FROM Comment where information_tab.id =:softId and flag =:flag and status=:status ";
+		} 
+		Session session = HibernateSessionFactory.getSessionFactory().openSession();
+		Query q = session.createQuery(hql);
+		q.setInteger("softId", softId);
+		q.setInteger("flag", flag);
+		q.setInteger("status", 0);
+		List l = q.list();
+		session.close();
+		return l;
+	}
+	public List<CommodityComment> getCommodityCommentById(Integer id,String uesername,String info,String startDate,String endDate){
+		
+		String hql = "";
+		hql = "FROM CommodityComment  where commodity_tab.id="+id+" and status = '0' " ;
+		if (!StringUtil.isEmpty(startDate)) {
+			hql = hql + " and updateTime > '" + startDate + "'";
+		}
+		if (!StringUtil.isEmpty(endDate)) {
+			hql = hql + " and updateTime < '" + endDate + "'";
+		}
+		if (!StringUtil.isEmpty(uesername)) {
+			hql = hql + " and user.nickName like '%" + uesername + "%'";
+		}
+		if (!StringUtil.isEmpty(info)) {
+			hql = hql + " and info like '%" + info + "%'";
+		}
+		hql = hql +" order by updateTime desc";
+		Session session = HibernateSessionFactory.getSessionFactory().openSession();
+		Query q = session.createQuery(hql);
+		List l = q.list();
+		session.close();
+		return l;
+	}	
+	public PageResult<Comment> getAll(Page page){
+		String hql = "FROM Comment order by time desc";
+		return super.getAllByPageAndHql(page, hql);
+	}
+	public boolean updateCommodityComment(Integer id) {
+		String sql = "update commodity_comment set status= '-1'  where id="+id+" ";
+		return save(sql);
+	}
+	/**获取机器人用户*/
+	public List<User> getUserList(){
+		String hql = "from User where speak=2";
+		hql += " order by id desc";
+		List l = this.getAllByHql(hql);
+		return l;
+	}
+}

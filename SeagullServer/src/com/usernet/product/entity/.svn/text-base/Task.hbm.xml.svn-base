@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+"http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+
+<hibernate-mapping>
+	<class name="com.usernet.product.entity.Task" table="task">
+		<id name="id" type="java.lang.Integer">
+			<column name="id" />
+			<generator class="native" />
+		</id>
+		<property name="name" type="java.lang.String">
+			<column name="name" />
+		</property>
+		<property name="expired" type="java.sql.Timestamp">
+			<column name="expired" />
+		</property>
+		<property name="loop" type="java.lang.Integer">
+			<column name="loop" />
+		</property>
+		<property name="descr" type="java.lang.String">
+			<column name="descr" />
+		</property>
+		<property name="rate" type="java.lang.Integer">
+			<column name="rate" />
+		</property>
+		<property name="giveMode" type="java.lang.Double">
+			<column name="giveMode" />
+		</property>
+		<property name="deleted" type="java.lang.Integer">
+			<column name="deleted" />
+		</property>
+	</class>
+</hibernate-mapping>

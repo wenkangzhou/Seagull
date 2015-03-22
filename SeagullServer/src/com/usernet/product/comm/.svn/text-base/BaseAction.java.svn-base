@@ -1,0 +1,202 @@
+package com.usernet.product.comm;
+
+import java.util.ArrayList;
+import java.util.List;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionForward;
+import org.apache.struts.action.ActionMapping;
+import org.apache.struts.actions.DispatchAction;
+import com.opensymphony.oscache.util.StringUtil;
+import com.usernet.product.dao.AdminLogDao;
+import com.usernet.product.dao.AdvertDao;
+import com.usernet.product.dao.AdvertTypeDao;
+import com.usernet.product.dao.AppAccountDao;
+import com.usernet.product.dao.AppTabDao;
+import com.usernet.product.dao.ChannelDao;
+import com.usernet.product.dao.ChannelPvDao;
+import com.usernet.product.dao.ClientDao;
+import com.usernet.product.dao.ClientPushMessageDao;
+import com.usernet.product.dao.ConfigBaseDao;
+import com.usernet.product.dao.GoodsDao;
+import com.usernet.product.dao.InformationPictureDao;
+import com.usernet.product.dao.LogDao;
+import com.usernet.product.dao.MessageBoardDao;
+import com.usernet.product.dao.MessagePushDao;
+import com.usernet.product.dao.MicroBlogUserDao;
+import com.usernet.product.dao.OrderTabDao;
+import com.usernet.product.dao.PhotoDao;
+import com.usernet.product.dao.ProductDao;
+import com.usernet.product.dao.PushDao;
+import com.usernet.product.dao.QuickSearchKeywordDao;
+import com.usernet.product.dao.RecommendDao;
+import com.usernet.product.dao.ResourcesDao;
+import com.usernet.product.dao.SearchDao;
+import com.usernet.product.dao.SoftwareDao;
+import com.usernet.product.dao.StatisticsDao;
+import com.usernet.product.dao.SubscriberDao;
+import com.usernet.product.dao.TagDao;
+import com.usernet.product.dao.TypeDao;
+import com.usernet.product.dao.UserSoftwareDao;
+import com.usernet.product.entity.Channel;
+import com.usernet.product.utils.BeanFactory;
+
+public class BaseAction extends DispatchAction {
+
+	protected ChannelDao channelDao = (ChannelDao) BeanFactory.getBean("channelDao");
+	protected StatisticsDao statisticsDao = (StatisticsDao) BeanFactory.getBean("statisticsDao");
+	protected LogDao logDao = (LogDao) BeanFactory.getBean("logDao");
+	protected ProductDao productDao = (ProductDao) BeanFactory.getBean("productDao");
+	protected TypeDao typeDao = (TypeDao) BeanFactory.getBean("typeDao");
+	protected ResourcesDao resourcesDao = (ResourcesDao) BeanFactory.getBean("resourcesDao");
+	protected PhotoDao photoDao = (PhotoDao) BeanFactory.getBean("photoDao");
+	protected AdvertDao advertDao = (AdvertDao) BeanFactory.getBean("advertDao");
+	protected AdvertTypeDao advertTypeDao = (AdvertTypeDao)BeanFactory.getBean("advertTypeDao");
+	protected MessagePushDao messagePushDao = (MessagePushDao)BeanFactory.getBean("messagePushDao");
+	protected AdminLogDao adminLogDao = (AdminLogDao) BeanFactory.getBean("adminLogDao");
+	protected RecommendDao recommendDao = (RecommendDao) BeanFactory.getBean("recommendDao");
+	protected UserSoftwareDao userSoftwareDao = (UserSoftwareDao) BeanFactory.getBean("userSoftwareDao");
+	protected AppAccountDao appAccountDao=(AppAccountDao) BeanFactory.getBean("appAccountDao");
+	protected InformationPictureDao informationPictureDao = (InformationPictureDao) BeanFactory.getBean("informationPictureDao");
+	protected SoftwareDao softwareDao = (SoftwareDao) BeanFactory.getBean("softwareDao");
+	protected ChannelPvDao channelPvDao = (ChannelPvDao) BeanFactory.getBean("channelPvDao");
+	protected SubscriberDao subscriberDao = (SubscriberDao) BeanFactory.getBean("subscriberDao");
+	protected OrderTabDao orderTabDao = (OrderTabDao) BeanFactory.getBean("orderTabDao");
+	protected GoodsDao goodsDao = (GoodsDao) BeanFactory.getBean("goodsDao");
+	protected ClientDao clientDao = (ClientDao) BeanFactory.getBean("clientDao");
+	protected TagDao tagDao = (TagDao) BeanFactory.getBean("tagDao");
+	protected MicroBlogUserDao microBlogUserDao = (MicroBlogUserDao) BeanFactory.getBean("microBlogUserDao");
+	protected QuickSearchKeywordDao quickSearchKeywordDao = (QuickSearchKeywordDao) BeanFactory.getBean("quickSearchKeywordDao");
+	protected ConfigBaseDao configBaseDao = (ConfigBaseDao) BeanFactory.getBean("configBaseDao");
+	protected PushDao pushDao = (PushDao) BeanFactory.getBean("pushDao");
+	protected SearchDao searchDao = (SearchDao) BeanFactory.getBean("searchDao");
+	protected ClientPushMessageDao clientPushMessageDao = (ClientPushMessageDao) BeanFactory.getBean("clientPushMessageDao");
+	protected AppTabDao appTabDao = (AppTabDao) BeanFactory.getBean("appTabDao");
+	protected MessageBoardDao messageBoardDao = (MessageBoardDao)BeanFactory.getBean("messageBoardDao");
+	@Override
+	public ActionForward execute(ActionMapping mapping, ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) throws Exception {
+		
+		HttpSession session = request.getSession();
+		Channel admin = (Channel) session.getAttribute("admin");
+		String uri = request.getRequestURL().toString();
+		boolean a = !uri.substring(uri.lastIndexOf("/"), uri.length()).equals("/admin.do");//不是登陆
+		boolean b = uri.indexOf("ordertab.do")==-1;//不是 
+		if(b){
+			if(admin == null  && a){
+				request.setAttribute("error", "登陆超时 请重新登陆!");
+				return mapping.findForward("login"); 
+			}
+		}
+		return super.execute(mapping, form, request, response);
+	}
+	
+	/***
+	 * 设置当前导航页面选中状态
+	 * @param session
+	 * @param currentNavigation
+	 */
+	public void settingCurrentNavigation(HttpSession session,String currentNavigation){
+		
+		session.setAttribute("currentNavigation", currentNavigation);
+	}
+	
+	
+	/***
+	 * 获取渠道ID 以及子渠道ID 
+	 * 如果渠道有子渠道则将当前渠道及其子渠道ID都取出如果没有子渠道则只返回当前渠道ID
+	 * @param request
+	 * @param channel
+	 * @return
+	 */
+	public Integer[] getChannelIdArray(HttpServletRequest request,Channel channel){
+		
+		Integer[] channelIdArray = null;
+		if (channel.getType() == 0) {
+
+			List<Channel> channelList = channelDao.getAll(channel.getId());
+			
+			if (channelList != null && channelList.size() > 0) {
+				channelIdArray = new Integer[channelList.size()+1];
+				channelIdArray[0] = channel.getId();
+				for (int i = 0; i < channelList.size(); i++) {
+
+					Channel ch = channelList.get(i);
+					channelIdArray[i+1] = ch.getId();
+				}
+			}
+			
+			if (channelIdArray == null) {
+
+				channelIdArray = new Integer[1];
+				channelIdArray[0] = channel.getId();
+			}
+		}
+		
+		return channelIdArray;
+	}
+	
+	public List<Channel> getChannel(Integer channelId,Integer type){
+		if (type == 1) {
+			return channelDao.getAll(null);
+		}
+		Channel channel = (Channel) channelDao.getById(Channel.class, channelId);
+		if(channel==null){
+			return null;
+		}
+		
+		List<Channel> re  = new ArrayList<Channel>();
+		re.add(channel);
+		List<Channel> channelList = channelDao.getAll(channel.getId());
+		if (channelList != null && channelList.size() > 0) {
+				re.addAll(channelList);
+		}
+		return re;
+	}
+	
+	public static Integer[] channelToIdArray(List<Channel> channelList){
+		Integer[] channelIdArray = new Integer[channelList.size()];
+		for(int i=0;i<channelIdArray.length;i++){
+			channelIdArray[i] = channelList.get(i).getId();
+		}
+		return channelIdArray;
+	}
+	
+	
+	/**
+	 * 此方法为software表提供查询时根据channelID列表查询 时所需的ID数组
+	 * 返回值：返回null时表示查询所有
+	 * */
+	public Integer[] getChannelsArray(HttpServletRequest request,Channel admin){
+		/**以下为获取渠道*/
+		String channelIdStr = request.getParameter("channelId");//页面传来需要查渠道ID
+		Integer channelId = 0;
+		if(StringUtil.isEmpty(channelIdStr)||"0".equals(channelIdStr)){//如果渠道ID为空或者为查询所有
+			if(admin.getType()==0){//如果为渠道用户则channelID不允许为空或0   将channelID设为当前渠道ID
+				channelId = admin.getId();
+			}
+		}else{
+			channelId = Integer.parseInt(channelIdStr);
+		}
+		request.setAttribute("channelId", channelId);
+		List<Channel> queryChannel = getChannel(channelId,0);//需要查询数据的渠道
+		Integer[] channelIdArray = null;
+		//如果为管理员并且查询渠道ID不为空或0  查询所选渠道 否则查询所用 管理员查询所用时将channelIdArray设为null
+		if(admin.getType()==1&&!StringUtil.isEmpty(channelIdStr)&&!"0".equals(channelIdStr)){
+			channelIdArray = channelToIdArray(queryChannel);
+		}
+		if(admin.getType()==0){//如果为渠道 
+			channelIdArray = channelToIdArray(queryChannel);
+		}
+		/**获取渠道结束*/
+		return channelIdArray;
+	}
+	
+	public Channel getCurrentChannelSession(HttpServletRequest request){
+		
+		return (Channel) request.getSession().getAttribute("admin");
+	}
+	
+}

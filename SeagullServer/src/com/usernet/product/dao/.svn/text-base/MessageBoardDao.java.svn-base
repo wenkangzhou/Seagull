@@ -1,0 +1,168 @@
+package com.usernet.product.dao;
+
+import java.util.List;
+
+import org.hibernate.Query;
+import org.hibernate.Session;
+import org.hibernate.Transaction;
+
+import com.opensymphony.oscache.util.StringUtil;
+import com.usernet.product.comm.BaseDao;
+import com.usernet.product.comm.HibernateSessionFactory;
+import com.usernet.product.entity.MessageBoard;
+import com.usernet.product.utils.Page;
+import com.usernet.product.utils.PageResult;
+import com.usernet.product.utils.PageUtils;
+
+/**
+ *留言板管理
+ */
+public class MessageBoardDao extends BaseDao {	
+	
+	@SuppressWarnings("unchecked")
+	public PageResult<Object[]> getMainMessage(Page page,String nickname,Integer type,Integer channelId,String search_id) {
+		String sql = "";
+		//String tempsql = "";
+		if(type==0)
+		{
+			sql="select (select top 1 MSG_FROM from MESSAGE_BOARD_TAB where USER_ID = mbt.USER_ID and COMMODITY_ID = mbt.COMMODITY_ID order by REPLAY_TIME desc ) as ms," +
+			    "COMMODITY_ID,ut.USERNAME,mbt.MESSAGE_STATUS,USER_ID,CHANNEL_ID,ut.SPEAK " +
+			    "  from MESSAGE_BOARD_TAB mbt inner join USER_TAB ut on ut.ID = mbt.USER_ID  " +
+			    "  where mbt.COMMODITY_ID is not null  ";
+			//tempsql = "select distinct COMMODITY_ID,USER_TAB.USERNAME ,MESSAGE_STATUS,MESSAGE_BOARD_TAB.USER_ID,MESSAGE_BOARD_TAB.CHANNEL_ID from MESSAGE_BOARD_TAB,USER_TAB where  MESSAGE_BOARD_TAB.USER_ID=USER_TAB.ID AND COMMODITY_ID is not null ";			
+		}	
+		else
+		{
+			sql="select (select top 1 MSG_FROM from MESSAGE_BOARD_TAB where USER_ID = mbt.USER_ID and ORDER_ID = mbt.ORDER_ID order by REPLAY_TIME desc ) as ms," +
+				    "ORDER_ID,ut.USERNAME,mbt.MESSAGE_STATUS,USER_ID,CHANNEL_ID,ut.SPEAK " +
+				    "  from MESSAGE_BOARD_TAB mbt inner join USER_TAB ut on ut.ID = mbt.USER_ID  " +
+				    "  where mbt.ORDER_ID is not null  ";
+			//tempsql = "select distinct ORDER_ID,USER_TAB.USERNAME ,MESSAGE_STATUS,MESSAGE_BOARD_TAB.USER_ID,MESSAGE_BOARD_TAB.CHANNEL_ID from MESSAGE_BOARD_TAB,USER_TAB where  MESSAGE_BOARD_TAB.USER_ID=USER_TAB.ID AND ORDER_ID is not null ";			
+		}
+
+				
+		if(!StringUtil.isEmpty(nickname)){
+			sql += " and ut.USERNAME like '%"+nickname+"%' ";
+			//tempsql += " and USER_TAB.USERNAME like '%"+nickname+"%' ";
+		}
+		if(channelId!=null&&channelId>0){
+			sql += " and mbt.CHANNEL_ID = "+channelId+" ";
+			//tempsql +=" and USER_TAB.USERNAME like '%"+nickname+"%' ";
+		}
+		if(!StringUtil.isEmpty(search_id)){
+			if(type==0){
+				sql += " and cast(mbt.COMMODITY_ID  as varchar) like '%"+search_id+"%'";
+				//sql += " and mbt.COMMODITY_ID = "+Integer.parseInt(search_id)+" ";
+				//tempsql += " and MESSAGE_BOARD_TAB.COMMODITY_ID = "+Integer.parseInt(search_id)+" ";
+			}			
+			else{
+				sql += " and cast(mbt.ORDER_ID  as varchar) like '%"+search_id+"%'";
+				//sql += " and mbt.ORDER_ID = "+Integer.parseInt(search_id)+" ";
+				//tempsql += " and MESSAGE_BOARD_TAB.ORDER_ID = "+Integer.parseInt(search_id)+" ";
+			}
+				
+		}
+		if(type==0)
+			sql+=" group by mbt.USER_ID,mbt.COMMODITY_ID,ut.USERNAME,mbt.MESSAGE_STATUS,CHANNEL_ID,USER_ID,ut.SPEAK order by ms";
+		else
+			sql+=" group by mbt.USER_ID,mbt.ORDER_ID,ut.USERNAME,mbt.MESSAGE_STATUS,CHANNEL_ID,USER_ID,ut.SPEAK order by ms";
+		
+		return getPageBySql(page, sql);
+	}
+	
+	public boolean edtMessageStatus(Integer status,Integer type,Integer searchid,Integer userid) {
+		String sql="";
+		if(type==0)
+			sql=" update Message_Board_Tab set message_status="+status+"  from Message_Board_Tab,User_Tab where Message_Board_Tab.user_id=User_Tab.id and commodity_id="+searchid+" and User_Tab.id="+userid+"";
+		else
+			sql=" update Message_Board_Tab set message_status="+status+"  from Message_Board_Tab,User_Tab where Message_Board_Tab.user_id=User_Tab.id and order_id="+searchid+" and User_Tab.id="+userid+"";
+		
+		return save(sql);
+		
+	}
+	public List<MessageBoard> getMessageInfoList(Integer type,Integer searchid,Integer userid,Integer from,String play_content,String startDate,String endDate,Integer channelid){	
+		String hql = "";
+		hql = "FROM MessageBoard  where user.id="+userid+" " ;
+		if(type==0)
+			hql = hql + " and commodity_id="+searchid+" ";
+		else
+			hql = hql + " and order_id="+searchid+" ";
+			
+		if (!StringUtil.isEmpty(startDate)) {
+			hql = hql + " and replay_time > '" + startDate + "'";
+		}
+		if (!StringUtil.isEmpty(endDate)) {
+			hql = hql + " and replay_time < '" + endDate + "'";
+		}
+		if(from>=0)
+			hql = hql + " and msg_from="+from+" ";
+		
+		if (!StringUtil.isEmpty(play_content)) {
+			hql = hql + " and replay_content like '%" + play_content + "%'";
+		}
+		if(channelid!=null&&channelid>0)
+			hql = hql + " and channel_id="+channelid+" ";
+		
+		hql = hql +" order by replay_time desc";
+		
+		
+		Session session = HibernateSessionFactory.getSessionFactory().openSession();
+		Query q = session.createQuery(hql);
+		List list = q.list();
+		session.close();
+		return list;
+	}	
+	public Integer getReadStatus(Integer type,Integer searchid,Integer userid,Integer channelid){	
+		String hql = "";
+		hql = "FROM MessageBoard  where user.id="+userid+" " ;
+		if(type==0)
+			hql = hql + " and commodity_id="+searchid+" ";
+		else
+			hql = hql + " and order_id="+searchid+" ";
+			
+
+		if(channelid!=null&&channelid>0)
+			hql = hql + " and channel_id="+channelid+" ";
+		
+		hql = hql +" order by replay_time desc";
+		
+		Session session = HibernateSessionFactory.getSessionFactory().openSession();
+		Query q = session.createQuery(hql);
+		MessageBoard messageboard = (MessageBoard)q.setFirstResult(0).setMaxResults(1).uniqueResult();
+		int status = messageboard.getMsg_from();
+		System.out.println("##:"+messageboard.getId()+"##"+status);
+		session.close();
+		return status;
+	}
+	/**
+	 * 分页方法
+	 * 
+	 * @param page
+	 * @param sql
+	 * @return
+	 */
+	@SuppressWarnings("unchecked")
+	public PageResult getPageBySql(Page page, String sql) {
+		Transaction tr = null;
+		Session session = getSession();
+		try {
+			tr = session.beginTransaction();
+			int totalRecords = 0;
+			Query  query = session.createSQLQuery(sql);
+			query.setFirstResult(page.getBeginIndex());
+			query.setMaxResults(page.getEveryPage());
+			totalRecords=query.list().size();
+			page = PageUtils.createPage(page, totalRecords);
+			List content = query.list();
+			if (content.size() == 0) {
+				content = null;
+			}
+			tr.commit();
+			return new PageResult(page, content);
+		} catch (Exception ex) {
+			tr.rollback();
+			ex.printStackTrace();
+			return null;
+		}
+	}
+}

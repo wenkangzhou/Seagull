@@ -1,0 +1,36 @@
+package com.usernet.product.entity;
+
+
+public class ChannelPrefecture implements java.io.Serializable {
+	
+	private static final long serialVersionUID = 4516014800563330612L;
+
+	private Integer id;
+	private String channel;
+	private int key;
+	private String channelNO;
+	public Integer getId() {
+		return id;
+	}
+	public void setId(Integer id) {
+		this.id = id;
+	}
+	public String getChannel() {
+		return channel;
+	}
+	public void setChannel(String channel) {
+		this.channel = channel;
+	}
+	public int getKey() {
+		return key;
+	}
+	public void setKey(int key) {
+		this.key = key;
+	}
+	public String getChannelNO() {
+		return channelNO;
+	}
+	public void setChannelNO(String channelNO) {
+		this.channelNO = channelNO;
+	}
+}

@@ -1,0 +1,344 @@
+package com.usernet.product.dao;
+
+import java.util.List;
+
+import com.opensymphony.oscache.util.StringUtil;
+import com.usernet.product.comm.BaseDao;
+import com.usernet.product.entity.OrderCommodityTab;
+import com.usernet.product.entity.OrderTab;
+import com.usernet.product.utils.Page;
+import com.usernet.product.utils.PageResult;
+
+public class OrderTabDao extends BaseDao {
+	
+	public List<Object[]> getList(String channelId, String stauts,
+			String beginDate, String endDate, String fromSource) {
+
+		String sql = "SELECT o.id, q.artNum,q.name, o.time,o.dealtime, q.current_price, r.NUMBER, o.total_commodity_price, ";
+		sql += "o.phone, o.consignee, case when w.name is null then '通过网页订购' end , o.status, o.address,o.remark";
+		sql += " FROM  order_tab AS o ";
+		sql += "INNER JOIN  ORDER_COMMODITY_TAB AS r ON o.id = r.ORDER_ID ";
+		sql += "INNER JOIN commodity_tab AS q ON r.COMMODITY_ID = q.id ";
+		sql += "LEFT OUTER JOIN channel AS w ON o.channelId = w.id";
+		if (!StringUtil.isEmpty(stauts)) {
+			sql = sql + " and o.status = " + Integer.parseInt(stauts);
+		}
+		if (!StringUtil.isEmpty(channelId)) {
+			if (sql.indexOf("where") == -1) {
+				sql = sql + " where o.channelId = " + channelId;
+			} else {
+				sql = sql + " and o.channelId = " + channelId;
+			}
+		}
+
+		if (!StringUtil.isEmpty(beginDate)) {
+			if (sql.indexOf("where") == -1) {
+				sql = sql + " where o.time > '" + beginDate + "'";
+			} else {
+				sql = sql + " and o.time > '" + beginDate + "'";
+			}
+		}
+
+		if (!StringUtil.isEmpty(endDate)) {
+			if (sql.indexOf("where") == -1) {
+				sql = sql + " where o.time < '" + endDate + "'";
+			} else {
+				sql = sql + " and o.time < '" + endDate + "'";
+			}
+		}
+
+		if (!StringUtil.isEmpty(fromSource) && !"0".equals(fromSource)) {
+			if (sql.indexOf("where") == -1) {
+				sql = sql + " where q.from_source_id = '" + fromSource + "'";
+			} else {
+				sql = sql + " and q.from_source_id  = '" + fromSource + "'";
+			}
+		}
+		sql = sql + " order by o.time desc";
+		return super.getAllByPageAndSql(sql);
+		/*
+		 * String hql = "from OrderTab o "; if(!StringUtil.isEmpty(stauts)){ hql
+		 * = hql+" where status = "+stauts; }
+		 * if(!StringUtil.isEmpty(channelId)){ if(hql.indexOf("where")==-1){ hql
+		 * = hql+" where channelId = "+channelId; }else{ hql =
+		 * hql+" and channelId = "+channelId; } }
+		 * 
+		 * if(!StringUtil.isEmpty(beginDate)){ if(hql.indexOf("where")==-1){ hql
+		 * = hql+" where time > '"+beginDate+"'"; }else{ hql =
+		 * hql+" and time > '"+beginDate+"'"; } }
+		 * 
+		 * if(!StringUtil.isEmpty(endDate)){ if(hql.indexOf("where")==-1){ hql =
+		 * hql+" where time < '"+endDate+"'"; }else{ hql =
+		 * hql+" and time < '"+endDate+"'"; } }
+		 * 
+		 * if(!StringUtil.isEmpty(fromSource) && !"0".equals(fromSource)){
+		 * if(hql.indexOf("where")==-1){ hql = hql +
+		 * " where order_commodity_tab.commodity_tab.from_source_id = '" +
+		 * fromSource + "'"; }else{ hql = hql +
+		 * " and order_commodity_tab.commodity_tab.from_source_id  = '" +
+		 * fromSource + "'"; } } hql = hql + " order by time desc";
+		 * 
+		 * return getAllByHql(hql);
+		 */
+	}
+
+	public PageResult<Object[]> getPage(Page page, Integer[] channelId,
+			String stauts, String beginDate, String endDate, String fromSource,
+			String versionName) {
+		String hql = "SELECT o.id,s.from_source_id,s.name,o.time,o.price,o.number,o.total_commodity_Price,o.phone,"
+				+ "o.consignee,o.status,log.versionName,o.software_id "
+				+ "From order_tab as o left join Client_Log as log on o.imei = log.imei left join commodity_tab as s on s.id = o.software_id where 1=1";
+
+		if (channelId != null && channelId.length > 0) {
+			hql += " and ( o.channelId =" + channelId[0];
+			for (int i = 1; i < channelId.length; i++) {
+				hql += " OR o.channelId = " + channelId[i];
+			}
+			hql = hql + ")";
+		}
+		if (!StringUtil.isEmpty(stauts)) {
+			hql = hql + " and o.status = " + stauts;
+		}
+		if (!StringUtil.isEmpty(beginDate)) {
+			hql = hql + " and o.time > '" + beginDate + "'";
+		}
+		if (!StringUtil.isEmpty(endDate)) {
+			hql = hql + " and o.time < '" + endDate + "'";
+		}
+		if (!StringUtil.isEmpty(fromSource) && !"0".equals(fromSource)) {
+			hql = hql + " and s.from_source_id  = '" + fromSource + "'";
+		}
+		if (!StringUtil.isEmpty(versionName)) {
+			hql = hql + " and (log.versionName = '" + versionName + "'";
+			if ("1.5.4".equals(versionName)) {
+				hql = hql + " or log.versionName is null";
+			}
+			hql = hql + ")";
+		}
+		hql = hql + " order by o.time desc";
+		return super.getAllByPageAndSql(page, hql);
+	}
+
+	/***
+	 * 商户接入 查看到的自己商品的订单
+	 * 
+	 * @return
+	 */
+	public PageResult<Object[]> getPageByShanghu(Page page, Integer channelId,
+			String stauts, String send, String beginDate, String endDate,
+			String fromSource) {
+		String hql = "SELECT o.id,s.from_source_id,s.name,o.time,o.price,o.number,o.total_commodity_Price,o.phone,"
+				+ "o.consignee,o.status,o.software_id "
+				+ "from order_tab as o inner join commodity_tab as s on s.id = o.software_id where 1=1 ";
+
+		hql += " and s.channelId =" + channelId;
+
+		if (!StringUtil.isEmpty(stauts)) {
+			hql = hql + " and o.status = " + stauts;
+		}
+		if (!StringUtil.isEmpty(send)) {
+			hql = hql + " and o.isSend = " + send;
+		}
+		if (!StringUtil.isEmpty(beginDate)) {
+			hql = hql + " and o.time > '" + beginDate + "'";
+		}
+		if (!StringUtil.isEmpty(endDate)) {
+			hql = hql + " and o.time < '" + endDate + "'";
+		}
+		if (!StringUtil.isEmpty(fromSource) && !"0".equals(fromSource)) {
+			hql = hql + " and s.from_source_id  = '" + fromSource + "'";
+		}
+		hql = hql + " order by o.time desc";
+		return super.getAllByPageAndSql(page, hql);
+	}
+
+	public List<Object[]> getListByShanghu(Integer channelId, String stauts,
+			String beginDate, String endDate, String fromSource) {
+//		String sql = "SELECT o.id,q.artNum, q.name, r.ORDER_TIME, q.current_price, r.NUMBER, o.total_commodity_price, ";
+//		sql += "o.phone, o.consignee, case when w.name is null then '通过网页订购' end , o.status, o.address,o.remark";
+//		sql += " FROM  order_tab AS o ";
+//		sql += "INNER JOIN ORDER_COMMODITY_TAB AS r ON o.id = r.ORDER_ID ";
+//		sql += "INNER JOIN commodity_tab AS q ON r.COMMODITY_ID = q.id ";
+//		sql += "LEFT OUTER JOIN channel AS w ON o.channelId = w.id";
+//		sql += " where q.channelId = " + channelId;
+		String sql = " SELECT o.id,q.artNum, q.name, o.time, o.dealtime,q.current_price, o.NUMBER, ";
+		sql += "  o.total_commodity_price, o.phone, o.consignee, ";
+		sql += "  case when w.name is null then '通过网页订购' end as fromSource  , o.status, o.address,o.remark ";
+		sql += "   FROM  order_tab AS o ";
+		sql += " INNER JOIN order_commodity_tab AS q ON o.id= q.order_id ";
+		sql += " INNER JOIN commodity_tab AS c ON c.id= q.commodity_id ";
+		sql += " LEFT OUTER JOIN channel AS w ON o.channelId = w.id";
+		sql += "   where o.channelId =  " + channelId + " ";
+		if (!StringUtil.isEmpty(stauts)) {
+			sql = sql + " and o.status = " + Integer.parseInt(stauts);
+		}
+		if (!StringUtil.isEmpty(beginDate)) {
+			sql = sql + " and o.time > '" + beginDate + "'";
+		}
+
+		if (!StringUtil.isEmpty(endDate)) {
+			if (sql.indexOf("where") == -1) {
+				sql = sql + " where o.time < '" + endDate + "'";
+			} else {
+				sql = sql + " and o.time < '" + endDate + "'";
+			}
+		}
+
+		if (!StringUtil.isEmpty(fromSource) && !"0".equals(fromSource)) {
+			if (sql.indexOf("where") == -1) {
+				sql = sql + " where q.from_source_id = '" + fromSource + "'";
+			} else {
+				sql = sql + " and q.from_source_id  = '" + fromSource + "'";
+			}
+		}
+		sql = sql + " order by o.time desc";
+		return super.getAllByPageAndSql(sql);
+
+		/*
+		 * String hql = "from OrderTab o "; if(!StringUtil.isEmpty(stauts)){ hql
+		 * = hql+" where status = "+stauts; }
+		 * if(!StringUtil.isEmpty(channelId)){ if(hql.indexOf("where")==-1){ hql
+		 * = hql+" where o.channel.id = "+channelId; }else{ hql =
+		 * hql+" and o.channel.id = "+channelId; } }
+		 * 
+		 * if(!StringUtil.isEmpty(beginDate)){ if(hql.indexOf("where")==-1){ hql
+		 * = hql+" where time > '"+beginDate+"'"; }else{ hql =
+		 * hql+" and time > '"+beginDate+"'"; } }
+		 * 
+		 * if(!StringUtil.isEmpty(endDate)){ if(hql.indexOf("where")==-1){ hql =
+		 * hql+" where time < '"+endDate+"'"; }else{ hql =
+		 * hql+" and time < '"+endDate+"'"; } }
+		 * 
+		 * if(!StringUtil.isEmpty(fromSource) && !"0".equals(fromSource)){
+		 * if(hql.indexOf("where")==-1){ hql = hql +
+		 * " where order_commodity_tab.commodity_tab.from_source_id = '" +
+		 * fromSource + "'"; }else{ hql = hql +
+		 * " and order_commodity_tab.commodity_tab.from_source_id   = '" +
+		 * fromSource + "'"; } }
+		 * 
+		 * hql = hql + " order by time desc"; return getAllByHql(hql);
+		 */
+	}
+
+	public PageResult<Object[]> getAllOrder(Page page, Integer[] channelId,
+			String stauts, String beginDate, String endDate, String versionName,String fromSource) {
+		
+		String hql = "SELECT o.id,o.time,o.total_commodity_Price,o.phone,"
+				+ "o.consignee,o.status,c.name,log.versionName "
+				+ " From order_tab as o "
+		 		+ " left join Client_Log as log on o.imei = log.imei "
+		 		+ " left join commodity_tab as c on c.id = o.software_id  where 1=1";
+		 		
+		if (channelId != null && channelId.length > 0) {
+			hql += " and ( o.channelId =" + channelId[0];
+			for (int i = 1; i < channelId.length; i++) {
+				hql += " OR o.channelId = " + channelId[i];
+			}
+			hql = hql + ")";
+		}
+		if (!StringUtil.isEmpty(stauts)) {
+			hql = hql + " and o.status = " + Integer.parseInt(stauts);
+		}
+		if (!StringUtil.isEmpty(beginDate)) {
+			hql = hql + " and o.time > '" + beginDate + "'";
+		}
+		if (!StringUtil.isEmpty(endDate)) {
+			hql = hql + " and o.time < '" + endDate + "'";
+		}
+		if (!StringUtil.isEmpty(versionName)) {
+			hql = hql + " and (log.versionName = '" + versionName + "'";
+			if ("1.5.4".equals(versionName)) {
+				hql = hql + " or log.versionName is null";
+			}
+			hql = hql + ")";
+		}
+		if(!StringUtil.isEmpty(fromSource)){
+			
+			hql += " and c.from_source_id = '" + fromSource + "'";
+		}
+		hql = hql + " order by o.time desc";
+		return super.getAllByPageAndSql(page, hql);
+	}
+
+	public PageResult<Object[]> getshanghuOrder(Page page, Integer channelId,
+			String stauts, String beginDate, String endDate, String fromSource) {
+		String sql = "SELECT o.id,o.time,o.total_commodity_Price,o.phone,o.consignee,o.status,s.name ";
+		sql += "from order_tab as o ";
+		sql += "inner join commodity_tab as s on s.id = o.software_id ";
+		sql += " and s.channelId =" + channelId;
+		sql += " where 1=1 ";
+		if (!StringUtil.isEmpty(stauts)) {
+			sql = sql + " and o.status = " + Integer.parseInt(stauts);
+		}
+		if (!StringUtil.isEmpty(beginDate)) {
+			sql = sql + " and o.time > '" + beginDate + "'";
+		}
+		if (!StringUtil.isEmpty(endDate)) {
+			sql = sql + " and o.time < '" + endDate + "'";
+		}
+		if (!StringUtil.isEmpty(fromSource) && !"0".equals(fromSource)) {
+			sql = sql + " and s.from_source_id  = '" + fromSource + "'";
+		}
+		sql = sql + " order by o.time desc";
+		return super.getAllByPageAndSql(page, sql);
+	}
+ 
+	public List<OrderCommodityTab> getCommodityInfo(int orderId) {
+		String hql = "from OrderCommodityTab o where order_id=" + orderId + "";
+		hql = hql + " order by order_time desc";
+		return getAllByHql(hql);
+	}
+	/*
+	public PageResult<OrderTab> getAll(Page page, Integer[] channelId,
+			String stauts, String beginDate, String endDate, String versionName) {
+		String hql = "from OrderTab o where 1=1";
+		
+		if (channelId != null && channelId.length > 0) {
+			hql += " and ( o.channel.id =" + channelId[0];
+			for (int i = 1; i < channelId.length; i++) {
+				hql += " OR o.channel.id = " + channelId[i];
+			}
+			hql = hql + ")";
+		}
+		
+		if (!StringUtil.isEmpty(stauts)) {
+			hql = hql + " and o.status = " + stauts;
+		}
+		
+		if (!StringUtil.isEmpty(beginDate)) {
+			hql = hql + " and o.time > '" + beginDate + "'";
+		}
+		
+		if (!StringUtil.isEmpty(endDate)) {
+			hql = hql + " and o.time < '" + endDate + "'";
+		}
+		
+		if (!StringUtil.isEmpty(versionName)) {
+			hql = hql + " and (clientlog.versionName = '" + versionName + "'";
+			if ("1.5.4".equals(versionName)) {
+				hql = hql + " or clientlog.versionName is null";
+			}
+			hql = hql + ")";
+		}
+		
+		hql = hql + " order by order_time desc";
+		return super.getAllByPageAndHql(page,hql);
+	}
+	*/
+	public void delOrderCommodity(Integer order_id) {
+		String hql = " delete FROM OrderCommodityTab  where order_id= "
+				+ order_id;
+		this.deleteByHql(hql);
+	}
+	
+	/***
+	 * 根据商品ID 获取商品颜色
+	 * @param id
+	 * @return
+	 */
+	public List<String> getCommodityColorId(Integer id){
+		String hql = "SELECT color FROM CommodityColorSize WHERE commodity_Id = "+id + " group by color";
+		List<String> list = super.getAllByHql(hql);
+		return list;
+	}
+}

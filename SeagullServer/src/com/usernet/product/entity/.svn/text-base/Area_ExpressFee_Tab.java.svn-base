@@ -1,0 +1,37 @@
+package com.usernet.product.entity;
+
+
+public class Area_ExpressFee_Tab implements java.io.Serializable {
+
+	private static final long serialVersionUID = 1L;
+	private Integer id;
+	private String  area;//地区
+	private Double price;//价格
+	private Integer commodity_id; //商品id
+	public Integer getId() {
+		return id;
+	}
+	public void setId(Integer id) {
+		this.id = id;
+	}
+	public String getArea() {
+		return area;
+	}
+	public void setArea(String area) {
+		this.area = area;
+	}
+	public Double getPrice() {
+		return price;
+	}
+	public void setPrice(Double price) {
+		this.price = price;
+	}
+	public Integer getCommodity_id() {
+		return commodity_id;
+	}
+	public void setCommodity_id(Integer commodity_id) {
+		this.commodity_id = commodity_id;
+	}
+
+	
+}

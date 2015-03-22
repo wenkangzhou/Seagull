@@ -1,0 +1,41 @@
+package com.usernet.product.dao;
+
+import java.util.List;
+
+import com.usernet.product.comm.BaseDao;
+
+public class UserSoftwareDao extends BaseDao {
+	
+	/***
+	 * 所有用户手机应用安装排名统计
+	 * @return
+	 */
+	public List getUserSoftwareInstalledStatistics() {
+		
+		StringBuffer sql = new StringBuffer();
+		sql.append("select us.softPackageName,isnull(s.name,'未知') as softName,count(us.imei) as installedCount");
+		sql.append(" from user_software us");
+		sql.append(" left join software s on s.package = us.softPackageName");
+		sql.append(" group by s.name,us.softPackageName");
+		sql.append(" order by count(us.imei) desc");
+		
+		return super.getAllByPageAndSql(sql.toString());
+	}
+	
+	/***
+	 * 用户下载后的增值产品打开次数列表
+	 * @return
+	 */
+	public List getUserSoftwareOpenNumStatistics() {
+		
+		StringBuffer sql = new StringBuffer();
+		sql.append(" select uis.softPackageName,s.name,sum(uis.openNumber) as openNumber");
+		sql.append(" from users_installed_softpackage uis");
+		sql.append(" inner join software s on s.package = uis.softPackageName");
+		sql.append(" group by uis.softPackageName,s.name");
+		
+		return super.getAllByPageAndSql(sql.toString());
+	}
+
+
+}

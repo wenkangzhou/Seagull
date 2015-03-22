@@ -1,0 +1,73 @@
+package com.usernet.product.utils;
+
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+
+public class MakeFileHash {
+
+	private static char hexChar[] = { '0', '1', '2', '3', '4', '5', '6', '7',
+			'8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
+	
+	private static final String HASHTYPE = "SHA1";
+
+	public MakeFileHash() {
+
+	}
+
+	public static String getFileSHA1(String filepath) {
+		String str = "";
+		try {
+			str = getHash(filepath, HASHTYPE);
+		} catch (Exception e) {
+
+			return "";
+		}
+		return str;
+	}
+
+	public static String getFileSHA1(InputStream is)
+			throws NoSuchAlgorithmException, IOException {
+
+		InputStream fis = is;
+		byte buffer[] = new byte[1024];
+		MessageDigest md5 = MessageDigest.getInstance(HASHTYPE);
+		for (int numRead = 0; (numRead = fis.read(buffer)) > 0;) {
+			md5.update(buffer, 0, numRead);
+		}
+
+		fis.close();
+		return toHexString(md5.digest());
+	}
+
+	private static String getHash(String filePath, String hashType)
+			throws Exception {
+		InputStream fis = new FileInputStream(filePath);
+		byte buffer[] = new byte[1024];
+		MessageDigest md5 = MessageDigest.getInstance(hashType);
+		for (int numRead = 0; (numRead = fis.read(buffer)) > 0;) {
+			md5.update(buffer, 0, numRead);
+		}
+
+		fis.close();
+		return toHexString(md5.digest());
+	}
+
+	private static String toHexString(byte b[]) {
+		StringBuilder sb = new StringBuilder(b.length * 2);
+		for (int i = 0; i < b.length; i++) {
+			sb.append(hexChar[(b[i] & 0xf0) >>> 4]);
+			sb.append(hexChar[b[i] & 0xf]);
+		}
+
+		return sb.toString();
+	}
+
+	public static void main(String[] args) {
+
+		System.out.println(MakeFileHash.getFileSHA1("d://logo_main.jpg"));
+	}
+
+}

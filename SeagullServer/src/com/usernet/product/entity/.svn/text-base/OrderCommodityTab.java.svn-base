@@ -1,0 +1,63 @@
+package com.usernet.product.entity;
+
+import java.sql.Timestamp;
+
+public class OrderCommodityTab {
+	private Integer id;
+	private Integer order_id;
+	private Integer commodity_id;
+	private String color_name;
+	private String size;
+	private Integer number;
+	private Timestamp order_time;
+	private Commodity_Tab commodity_tab;
+	public Integer getId() {
+		return id;
+	}
+	public void setId(Integer id) {
+		this.id = id;
+	}
+	public Integer getOrder_id() {
+		return order_id;
+	}
+	public void setOrder_id(Integer order_id) {
+		this.order_id = order_id;
+	}
+	public Integer getCommodity_id() {
+		return commodity_id;
+	}
+	public void setCommodity_id(Integer commodity_id) {
+		this.commodity_id = commodity_id;
+	}
+	public String getColor_name() {
+		return color_name;
+	}
+	public void setColor_name(String color_name) {
+		this.color_name = color_name;
+	}
+	public String getSize() {
+		return size;
+	}
+	public void setSize(String size) {
+		this.size = size;
+	}
+	public Integer getNumber() {
+		return number;
+	}
+	public void setNumber(Integer number) {
+		this.number = number;
+	}
+	public Timestamp getOrder_time() {
+		return order_time;
+	}
+	public void setOrder_time(Timestamp order_time) {
+		this.order_time = order_time;
+	}
+	public Commodity_Tab getCommodity_tab() {
+		return commodity_tab;
+	}
+	public void setCommodity_tab(Commodity_Tab commodity_tab) {
+		this.commodity_tab = commodity_tab;
+	}
+	
+}

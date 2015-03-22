@@ -1,0 +1,160 @@
+package com.usernet.product.web.action;
+
+import java.io.IOException;
+import java.sql.Timestamp;
+import java.util.List;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import com.usernet.product.dao.ClientPushMessageDao;
+import com.usernet.product.dao.PushDao;
+import com.usernet.product.dao.SoftwareDao;
+import com.usernet.product.entity.ClientPushMessage;
+import com.usernet.product.entity.CommodityColorSize;
+import com.usernet.product.entity.Push;
+import com.usernet.product.entity.Software;
+import com.usernet.product.tools.JSONTools;
+import com.usernet.product.tools.Property;
+import com.usernet.product.utils.AndroidPnService;
+import com.usernet.product.utils.BeanFactory;
+import com.usernet.product.utils.DateUtils;
+
+public class AutoPush extends HttpServlet{
+
+	@Override
+	protected void doGet(HttpServletRequest request, HttpServletResponse resp)
+			throws ServletException, IOException {
+		
+		try{
+			String downloadPath = Property.getPara("resources", "download_path");
+			ClientPushMessageDao clientPushMessageDao = new ClientPushMessageDao();
+			
+			System.out.println("自动推送任务启动");
+			
+			String actionStr = request.getParameter("action");
+			Integer action = null;
+			
+			String idStr = request.getParameter("id");
+			Integer id = null;
+			SoftwareDao softwareDao = new SoftwareDao();
+			List<Object[]> list;
+			
+			if(actionStr!=null&&!actionStr.equals("")){
+				action = Integer.parseInt(actionStr);
+				list = softwareDao.getSoftwareByPushAction(action,DateUtils.getDate());
+			}else{
+				id = Integer.parseInt(idStr);
+				list = softwareDao.getSoftwareByPushId(id);
+			}
+			
+			StringBuilder sb = new StringBuilder();
+			String name = "";
+			
+			for(Object[] obj:list){
+				name = JSONTools.string2Json(String.valueOf(obj[3])).toString();
+				
+				int flag = Integer.parseInt(String.valueOf(obj[0]));
+				sb.append("{result:2");
+				sb.append(",msg:\"蛋壳淘淘给您推荐:" + name + "\"");
+				sb.append(",twoGOR3GisDownload:");
+				if(flag == 1 && flag == 2){
+					
+					sb.append(1);
+				}else{
+					
+					sb.append(0);
+				}
+				sb.append(",data:");
+				sb.append("{flag:");
+				sb.append(flag);
+				sb.append(",softId:");
+				sb.append(obj[1]);
+				sb.append(",name:\"");
+				sb.append(name);
+				sb.append("\",content:\"");
+				sb.append(JSONTools.string2Json(String.valueOf(obj[4])).toString());
+				sb.append("\",download:\"");
+				sb.append(downloadPath + String.valueOf(obj[5]));
+				sb.append("\",pushIcon:\"");
+				sb.append(obj[6] == null ? "" : obj[6]);
+				sb.append("\",phoneNumber:\"");
+				sb.append(obj[7]);
+				sb.append("\",url:\"");
+				sb.append(obj[8] == null ? "" : obj[8]);
+				sb.append("\",fromSource:\"");
+				sb.append(obj[9]);
+				sb.append("\",isChannel:");
+				sb.append(obj[10] == null ? 0 : 1);
+				sb.append(",issave:0");
+				sb.append(",existImg:");
+				sb.append(obj[11]);
+				sb.append(",time:\"");
+				sb.append(obj[12]);
+				sb.append("\",isCommodity:");
+				int isCommodity = String.valueOf(obj[13]).equals("true") ? 1 : 0;
+				sb.append(isCommodity);
+
+				if (isCommodity == 1) {
+
+					sb.append(",isPanicBuying:");
+					sb.append(String.valueOf(obj[14]).equals("true") ? 1 : 0);
+					sb.append(",originalPrice:");
+					sb.append(obj[15]);
+					sb.append(",currentPrice:");
+					sb.append(obj[16]);
+					sb.append(",discount:");
+					sb.append(obj[17] == null ? 0.0 : obj[17]);
+					if (obj[19] != null) {
+
+						long surplusTime = ((Timestamp)obj[19]).getTime() - System.currentTimeMillis();
+						sb.append(",surplusTime:");
+						sb.append(surplusTime);
+					}
+					sb.append(",colorSize:[");
+					// 颜色尺码
+					List<CommodityColorSize> colorSizeList = softwareDao
+							.findCommodityColorSizeByCommdityId(Integer.valueOf(String.valueOf(obj[1])));
+					for (int i = 0; i < colorSizeList.size(); i++) {
+
+						CommodityColorSize colorSize = colorSizeList.get(i);
+						sb.append("\"" + colorSize.getColor() + " " + colorSize.getSize() + "\"");
+						if (i < colorSizeList.size() - 1) {
+							sb.append(",");
+						}
+					}
+
+					sb.append("]");
+					sb.append(",count:"+obj[22]);
+				}
+				sb.append(",isWebContent:");
+				sb.append(obj[20]);
+				sb.append("}}");
+				
+				ClientPushMessage pushMessage = new ClientPushMessage();
+				pushMessage.setTime(new Timestamp(System.currentTimeMillis()));
+				pushMessage.setSoftware((Software)softwareDao.getById(Software.class, Integer.valueOf(String.valueOf(obj[1]))));
+				pushMessage.setChannelId(0);
+				clientPushMessageDao.save(pushMessage);
+				
+				AndroidPnService.sendToUser(String.valueOf(obj[21]), name, sb.toString(),String.valueOf(obj[1]),"0");
+			}
+			PushDao pushDao = new PushDao();
+			
+			if(actionStr!=null&&!actionStr.equals("")){
+				pushDao.deletedByAction(action,DateUtils.getDate());
+			}else{
+				pushDao.delete(pushDao.getById(Push.class, id));
+			}
+			
+			System.out.println("自动推送任务结束");		
+			request.getRequestDispatcher("push.do?method=toList").forward(request, resp);
+		}catch(Exception exception){
+			System.out.println("自动推送出现异常");
+			exception.printStackTrace();
+		}
+	}
+	
+}

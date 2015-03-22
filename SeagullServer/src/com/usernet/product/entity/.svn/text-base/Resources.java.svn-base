@@ -1,0 +1,116 @@
+package com.usernet.product.entity;
+
+import java.sql.Timestamp;
+
+/**
+ * 主题信息
+ * 
+ * @author Administrator
+ */
+public class Resources implements java.io.Serializable {
+	private static final long serialVersionUID = -1932748475090177142L;
+
+	private Integer id;
+	private String name; // 主题名称
+	private String icon; // 图标:图标地址-日期/名称
+	private String remark; // 备注
+	private String pinyin; // 拼音搜索,全拼
+	private Integer sort; // 排序
+	private Integer status; // 状态0可用1不可用
+	private Timestamp time; // 添加时间或更新时间
+	private Integer flag;// 标识:备用
+
+	public Resources() {
+	}
+
+	public Resources(Integer id, String name) {
+		this.id = id;
+		this.name = name;
+	}
+
+	public Resources(Integer id, String name, String icon) {
+		this.id = id;
+		this.name = name;
+		this.icon = icon;
+	}
+
+	public Resources(Integer id, String name, String icon, String remark) {
+		this.id = id;
+		this.name = name;
+		this.icon = icon;
+		this.remark = remark;
+	}
+
+	public Integer getId() {
+		return id;
+	}
+
+	public void setId(Integer id) {
+		this.id = id;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public String getIcon() {
+		return icon;
+	}
+
+	public void setIcon(String icon) {
+		this.icon = icon;
+	}
+
+	public String getRemark() {
+		return remark;
+	}
+
+	public void setRemark(String remark) {
+		this.remark = remark;
+	}
+
+	public String getPinyin() {
+		return pinyin;
+	}
+
+	public void setPinyin(String pinyin) {
+		this.pinyin = pinyin;
+	}
+
+	public Integer getSort() {
+		return sort;
+	}
+
+	public void setSort(Integer sort) {
+		this.sort = sort;
+	}
+
+	public Integer getStatus() {
+		return status;
+	}
+
+	public void setStatus(Integer status) {
+		this.status = status;
+	}
+
+	public Timestamp getTime() {
+		return time;
+	}
+
+	public void setTime(Timestamp time) {
+		this.time = time;
+	}
+
+	public Integer getFlag() {
+		return flag;
+	}
+
+	public void setFlag(Integer flag) {
+		this.flag = flag;
+	}
+
+}

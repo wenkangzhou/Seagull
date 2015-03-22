@@ -1,0 +1,76 @@
+package com.usernet.product.web.action;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.commons.lang.StringUtils;
+import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionForward;
+import org.apache.struts.action.ActionMapping;
+
+import com.usernet.product.comm.BaseAction;
+import com.usernet.product.dao.PushBlacklistDao;
+import com.usernet.product.entity.PushBlacklist;
+import com.usernet.product.entity.Tag;
+import com.usernet.product.utils.Page;
+import com.usernet.product.utils.PageResult;
+
+public class PushBlacklistAction extends BaseAction{
+	
+	public ActionForward add(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		String imei = request.getParameter("imei");
+		String remark = request.getParameter("remark");
+		
+		PushBlacklistDao pushBlacklistDao = new PushBlacklistDao();
+		PushBlacklist pushBlacklist = new PushBlacklist();
+		pushBlacklist.setImei(imei);
+		pushBlacklist.setRemark(remark);
+		
+		pushBlacklistDao.save(pushBlacklist);
+		
+		return mapping.findForward("other");
+	}
+	
+	public ActionForward toList(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		PushBlacklistDao pushBlacklistDao = new PushBlacklistDao();
+		
+		String pageNo = request.getParameter("pageNo");
+		String pageSize = request.getParameter("pageSize");
+		
+		Page page = new Page();
+		
+		if (org.apache.commons.lang.StringUtils.isNotEmpty(pageSize))
+			page.setEveryPage(Integer.parseInt(pageSize.trim()));
+		if (org.apache.commons.lang.StringUtils.isNotEmpty(pageNo))
+			page.setCurrentPage(Integer.parseInt(pageNo.trim()));
+		
+		String hql = "FROM PushBlacklist order by id desc";
+		
+		PageResult list = pushBlacklistDao.getAllByPageAndHql(page, hql);
+		
+		request.setAttribute("list", list.getContent());
+		request.setAttribute("page", list.getPage());
+		request.setAttribute("size", list.getSize());
+		return mapping.findForward("list");
+	}
+	
+	public ActionForward doDelete(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+
+		String id = request.getParameter("id");
+		if (StringUtils.isNotEmpty(id)) {
+			PushBlacklist pushBlacklist = new PushBlacklist();
+			pushBlacklist.setId(Integer.valueOf(id));
+			pushDao.delete(pushBlacklist);
+		}
+		return mapping.findForward("other");
+	}
+	
+	public ActionForward toAdd(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		
+		return mapping.findForward("add");
+	}
+}

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>MUSIC</title>
+    <link rel="stylesheet" href="css/common.css" >  
+    <link rel="stylesheet" href="css/music.css" >  
+    <link rel="stylesheet" href="css/scroll.css" media="all"> 
+    <link rel="stylesheet" href="js/jPlayer/skin/blue.monday/jplayer.blue.monday.css" />
+    <link rel="shortcut icon" type="image/x-icon" href="img/sys/fac.png" >
+    <meta name="viewport" content="width=device-width,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  </head>
+  <body>
+
+    <div id="header">
+      <h2 class="title">SEAGULL</h2>
+      <a onclick="toshare()"><img src="img/sys/share.png"/></a>
+    </div>
+
+    <div id="wrapper">
+      <div id="hscroller">
+
+      </div>  
+    </div>      
+    
+    <script type="text/javascript" src="js/footer.js"></script>
+    <script type="text/javascript" src="js/jquery.js"></script>
+    <script type="text/javascript" src="js/iscroll.js"></script>
+    <script type="text/javascript" src="js/vhscroll.js"></script>
+    <script type="text/javascript" src="js/jPlayer/js/jquery.jplayer.min.js"></script>
+    <script type="text/javascript" src="js/share.js"></script>
+    <script type="text/javascript" src="js/getData.js"></script>
+    <script type="text/javascript" src="js/fastclick.js"></script>
+    <script type="text/javascript" >
+        $(document).ready(function(){
+            FastClick.attach(document.body);
+            $("a").removeClass("active");
+            $("#foot_music").addClass("active");
+            getData("music");
+        })
+        function toshare(){
+            var nowStyle=$("#hscroller").css("-webkit-transform");
+            var nowPosition=nowStyle.substring(nowStyle.indexOf("(")+1,nowStyle.indexOf("px"));
+            var nowPage=Math.abs(nowPosition)/320;
+            var track_details=$(".track-details").eq(nowPage).html();//eq() 赞
+            var photoSrc=$("#page"+(nowPage+1) +" img").attr("src");
+            track_details=track_details.substring(0,track_details.indexOf("<em>")).trim();
+            track_details="分享了一首歌 ♬"+track_details;        
+            share(track_details,photoSrc); 
+        }
+    </script>
+    <script type="text/javascript">
+        var _bdhmProtocol = (("https:" == document.location.protocol) ? " https://" : " http://");
+        document.write(unescape("%3Cscript src='" + _bdhmProtocol + "hm.baidu.com/h.js%3Ff7b5d8f2abef56a088876db9d2235d61' type='text/javascript'%3E%3C/script%3E"));
+    </script>
+  </body>
+</html>

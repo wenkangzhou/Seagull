@@ -1,0 +1,88 @@
+package com.usernet.product.entity;
+
+import java.sql.Timestamp;
+
+public class MessageBoard implements java.io.Serializable {
+
+	private static final long serialVersionUID = 1L;
+	private Integer id;
+	private Integer order_id; //订单号
+	private Integer commodity_id; // 商品号
+	private String replay_content;//回复内容
+	private Timestamp replay_time;//回复时间
+	private Integer read_status;//阅读状态
+	private Integer msg_from;//来源
+	private User user; //用户
+	private Integer user_id; //用户ID
+	private Integer channel_id;//渠道
+	private Integer message_status; //回复属性
+	public Integer getId() {
+		return id;
+	}
+	public void setId(Integer id) {
+		this.id = id;
+	}
+	public Integer getOrder_id() {
+		return order_id;
+	}
+	public void setOrder_id(Integer order_id) {
+		this.order_id = order_id;
+	}
+	public Integer getCommodity_id() {
+		return commodity_id;
+	}
+	public void setCommodity_id(Integer commodity_id) {
+		this.commodity_id = commodity_id;
+	}
+	public String getReplay_content() {
+		return replay_content;
+	}
+	public void setReplay_content(String replay_content) {
+		this.replay_content = replay_content;
+	}
+	public Timestamp getReplay_time() {
+		return replay_time;
+	}
+	public void setReplay_time(Timestamp replay_time) {
+		this.replay_time = replay_time;
+	}
+	public Integer getRead_status() {
+		return read_status;
+	}
+	public void setRead_status(Integer read_status) {
+		this.read_status = read_status;
+	}
+	public Integer getMsg_from() {
+		return msg_from;
+	}
+	public void setMsg_from(Integer msg_from) {
+		this.msg_from = msg_from;
+	}
+	public User getUser() {
+		return user;
+	}
+	public void setUser(User user) {
+		this.user = user;
+	}
+	public Integer getUser_id() {
+		return user_id;
+	}
+	public void setUser_id(Integer user_id) {
+		this.user_id = user_id;
+	}
+	public Integer getChannel_id() {
+		return channel_id;
+	}
+	public void setChannel_id(Integer channel_id) {
+		this.channel_id = channel_id;
+	}
+	public Integer getMessage_status() {
+		return message_status;
+	}
+	public void setMessage_status(Integer message_status) {
+		this.message_status = message_status;
+	}
+
+	
+
+}

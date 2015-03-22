@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans>
+	<bean name="channelDao" class="com.usernet.product.dao.ChannelDao" />
+	<bean name="feedbackDao" class="com.usernet.product.dao.FeedBackDao" />
+	<bean name="photoDao" class="com.usernet.product.dao.PhotoDao" />
+	<bean name="musicDao" class="com.usernet.product.dao.MusicDao" />
+	<bean name="taoDao" class="com.usernet.product.dao.TaoDao" />
+	<bean name="suiDao" class="com.usernet.product.dao.SuiDao" />
+	<bean name="uploadDao" class="com.usernet.product.dao.UploadDao" />
+</beans>

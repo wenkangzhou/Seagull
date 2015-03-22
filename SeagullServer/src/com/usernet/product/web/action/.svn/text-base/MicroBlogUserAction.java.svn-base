@@ -1,0 +1,109 @@
+package com.usernet.product.web.action;
+
+
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionForward;
+import org.apache.struts.action.ActionMapping;
+
+import com.usernet.product.comm.BaseAction;
+import com.usernet.product.entity.MicroBlogUser;
+import com.usernet.product.entity.Tag;
+import com.usernet.product.utils.Page;
+import com.usernet.product.utils.PageResult;
+import com.usernet.product.utils.ProductConfig;
+import com.usernet.product.utils.StringUtils;
+import com.usernet.product.web.form.MicroBlogUserForm;
+
+public class MicroBlogUserAction extends BaseAction {
+
+	public ActionForward toList(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_SYSTEM_MANAGER);
+		
+		MicroBlogUserForm tForm = (MicroBlogUserForm) form;
+		
+		PageResult<MicroBlogUser> result = null;
+		Page page = new Page();
+		// 分页信息
+		String pageNo = tForm.getPageNo();
+		String pageSize = tForm.getPageSize();
+		if (pageSize != null) {
+			page.setEveryPage(Integer.parseInt(pageSize.trim()));
+		}
+		if (pageNo != null) {
+			page.setCurrentPage(Integer.parseInt(pageNo.trim()));
+		}
+		
+		result = microBlogUserDao.getAllByPage(page, tForm.getName());
+		
+		request.setAttribute("form", tForm);
+		request.setAttribute("list", result.getContent());
+		request.setAttribute("page", result.getPage());
+		request.setAttribute("size", result.getSize());
+		return mapping.findForward("list");
+	}
+	
+	public ActionForward toAdd(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		List<Tag> tagList = tagDao.getAllTag();
+		request.setAttribute("tagList", tagList);
+		return mapping.findForward("toAdd");
+	}
+	
+	public ActionForward doAdd(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		MicroBlogUserForm mForm = (MicroBlogUserForm) form;
+		String name = mForm.getName();
+		String[] tag_id = mForm.getTag_id();
+		String tag_ids = StringUtils.arrayToString(tag_id, ",");
+		
+		MicroBlogUser mb = new MicroBlogUser();
+		mb.setName(name);
+		mb.setTag_id(tag_ids);
+		
+		microBlogUserDao.save(mb);
+		return mapping.findForward("other");
+	}
+	
+	public ActionForward toEdit(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		MicroBlogUserForm mForm = (MicroBlogUserForm) form;
+		List<Tag> tagList = tagDao.getAllTag();
+		MicroBlogUser mb = (MicroBlogUser) microBlogUserDao.getById(MicroBlogUser.class, mForm.getId());
+		
+		mForm.setId(mb.getId());
+		mForm.setName(mb.getName());
+		mForm.setTag_id(mb.getTag_id().split(","));
+		
+		request.setAttribute("tagList", tagList);
+		return mapping.findForward("toEdit");
+	}
+	
+	public ActionForward doEdit(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		MicroBlogUserForm mForm = (MicroBlogUserForm) form;
+		MicroBlogUser mb = (MicroBlogUser) microBlogUserDao.getById(MicroBlogUser.class, mForm.getId());
+		String name = mForm.getName();
+		String[] tag_id = mForm.getTag_id();
+		String tag_ids = StringUtils.arrayToString(tag_id, ",");
+		mb.setName(name);
+		mb.setTag_id(tag_ids);
+		
+		microBlogUserDao.modify(mb);
+		return mapping.findForward("other");
+	}
+	
+	public ActionForward doDel(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		MicroBlogUserForm mForm = (MicroBlogUserForm) form;
+		Integer id = mForm.getId();
+		microBlogUserDao.delete(microBlogUserDao.getById(MicroBlogUser.class, id));
+		return mapping.findForward("other");
+	}
+}

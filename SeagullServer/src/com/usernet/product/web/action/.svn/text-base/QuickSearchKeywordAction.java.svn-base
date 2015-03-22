@@ -1,0 +1,80 @@
+package com.usernet.product.web.action;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.commons.lang.StringUtils;
+import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionForward;
+import org.apache.struts.action.ActionMapping;
+
+import com.usernet.product.comm.BaseAction;
+import com.usernet.product.entity.QuickSearchKeyword;
+import com.usernet.product.utils.Page;
+import com.usernet.product.utils.PageResult;
+import com.usernet.product.utils.ProductConfig;
+import com.usernet.product.web.form.QuickSearchKeywordForm;
+
+public class QuickSearchKeywordAction extends BaseAction {
+
+	public ActionForward toAdd(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		return mapping.findForward("toAdd");
+	}
+
+	public ActionForward doAdd(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		QuickSearchKeywordForm mForm = (QuickSearchKeywordForm) form;
+		String keyword = mForm.getKeyword();
+		
+		QuickSearchKeyword quickSearchKeyword = new QuickSearchKeyword();
+		quickSearchKeyword.setKeyword(keyword);
+		quickSearchKeywordDao.save(quickSearchKeyword);
+		
+		return mapping.findForward("other");
+	}
+
+	public ActionForward toList(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_SYSTEM_MANAGER);
+		
+		QuickSearchKeywordForm mForm = (QuickSearchKeywordForm) form;
+		
+		PageResult<QuickSearchKeyword> result = null;
+		Page page = new Page();
+		// 分页信息
+		String pageNo = mForm.getPageNo();
+		String pageSize = mForm.getPageSize();
+		if (pageSize != null) {
+			page.setEveryPage(Integer.parseInt(pageSize.trim()));
+		}
+		if (pageNo != null) {
+			page.setCurrentPage(Integer.parseInt(pageNo.trim()));
+		}
+		
+		result = quickSearchKeywordDao.getAllByPage(page, mForm.getKeyword());
+		
+		request.setAttribute("form", mForm);
+		request.setAttribute("list", result.getContent());
+		request.setAttribute("page", result.getPage());
+		request.setAttribute("size", result.getSize());
+		
+		return mapping.findForward("list");
+	}
+
+	public ActionForward doDelete(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+
+		String id = request.getParameter("id");
+		if (StringUtils.isNotEmpty(id)) {
+			
+			QuickSearchKeyword quickSearchKeyword = new QuickSearchKeyword();
+			quickSearchKeyword.setId(Integer.valueOf(id));
+			quickSearchKeywordDao.delete(quickSearchKeyword);
+		}
+
+		return mapping.findForward("other");
+	}
+
+}

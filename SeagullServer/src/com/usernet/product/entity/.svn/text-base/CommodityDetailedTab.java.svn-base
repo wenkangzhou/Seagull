@@ -1,0 +1,80 @@
+package com.usernet.product.entity;
+
+public class CommodityDetailedTab implements java.io.Serializable {
+	private static final long serialVersionUID = -322945095269529419L;
+	
+	private Integer id;
+	
+	private Integer software_Id;
+	private String introduction;
+	private String specification;
+	private String special_note;
+	private String recommended_reason;
+	private String review;
+	private String commodity_size_description;
+	private String use_method;
+	private String detailed_parameters;
+	public Integer getId() {
+		return id;
+	}
+	public void setId(Integer id) {
+		this.id = id;
+	}
+	public Integer getSoftware_Id() {
+		return software_Id;
+	}
+	public void setSoftware_Id(Integer software_Id) {
+		this.software_Id = software_Id;
+	}
+	public String getIntroduction() {
+		return introduction;
+	}
+	public void setIntroduction(String introduction) {
+		this.introduction = introduction;
+	}
+	public String getSpecification() {
+		return specification;
+	}
+	public void setSpecification(String specification) {
+		this.specification = specification;
+	}
+	public String getSpecial_note() {
+		return special_note;
+	}
+	public void setSpecial_note(String special_note) {
+		this.special_note = special_note;
+	}
+	public String getRecommended_reason() {
+		return recommended_reason;
+	}
+	public void setRecommended_reason(String recommended_reason) {
+		this.recommended_reason = recommended_reason;
+	}
+	public String getReview() {
+		return review;
+	}
+	public void setReview(String review) {
+		this.review = review;
+	}
+	public String getCommodity_size_description() {
+		return commodity_size_description;
+	}
+	public void setCommodity_size_description(String commodity_size_description) {
+		this.commodity_size_description = commodity_size_description;
+	}
+	public String getUse_method() {
+		return use_method;
+	}
+	public void setUse_method(String use_method) {
+		this.use_method = use_method;
+	}
+	public String getDetailed_parameters() {
+		return detailed_parameters;
+	}
+	public void setDetailed_parameters(String detailed_parameters) {
+		this.detailed_parameters = detailed_parameters;
+	}
+	public static long getSerialversionuid() {
+		return serialVersionUID;
+	}
+}

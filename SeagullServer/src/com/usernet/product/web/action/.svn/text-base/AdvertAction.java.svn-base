@@ -1,0 +1,343 @@
+package com.usernet.product.web.action;
+
+import java.io.File;
+import java.util.Date;
+import java.util.List;
+
+import javax.mail.Session;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionForward;
+import org.apache.struts.action.ActionMapping;
+
+import com.opensymphony.oscache.util.StringUtil;
+import com.usernet.product.comm.BaseAction;
+import com.usernet.product.entity.Advert;
+import com.usernet.product.entity.AdvertType;
+import com.usernet.product.entity.App_Tab;
+import com.usernet.product.entity.Channel;
+import com.usernet.product.entity.Commodity_Tab;
+import com.usernet.product.entity.Information_Tab;
+import com.usernet.product.entity.Resources;
+import com.usernet.product.entity.Software;
+import com.usernet.product.entity.Type;
+import com.usernet.product.utils.Page;
+import com.usernet.product.utils.PageResult;
+import com.usernet.product.utils.ProductConfig;
+import com.usernet.product.web.form.AdvertForm;
+
+public class AdvertAction extends BaseAction {
+
+	/** 新增广告 **/
+	public ActionForward save(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		AdvertForm mForm = (AdvertForm) form;
+		Advert advert = mForm.getAdvert();
+		Channel channel = new Channel();
+		channel.setId(mForm.getChannelId());
+		advert.setChannel(channel);
+		AdvertType advertType = new AdvertType();
+		advertType.setId(mForm.getTypeId());
+		advert.setAdvertType(advertType);
+		advert.setTypeId(mForm.getTypeId());
+		if (mForm.getSoftId() != null) {
+			int flag = advert.getFlag();
+			if(advert.getFlag()==4)
+				flag=1;
+			if(advert.getFlag()==3)
+				flag=2;
+			if(advert.getFlag()==1)
+				flag=3;
+			int sId = advertDao.getSoftId(mForm.getSoftId(),flag);
+			System.out.print("###"+sId);
+			advert.setSoftId(sId);//id为software的id
+			advert.setFlag(advert.getFlag());
+//			Software software = new Software();
+//			software.setId(mForm.getSoftId());
+//			advert.setSoftware(software);
+		}
+		if(advert.getFlag()==2&&StringUtil.isEmpty(advert.getToLink())){
+			advert.setFlag(0);
+		}
+		advert.setFileName(advert.getFileName());
+		advert.setCreateTime(new Date());
+		advertDao.save(advert);
+		return mapping.findForward("other");
+	}
+
+	/** 修改广告 **/
+	public ActionForward toUpdate(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		AdvertForm mForm = (AdvertForm) form;
+		Advert advert = mForm.getAdvert();
+
+		Advert oldAd = (Advert) advertDao.getById(Advert.class, advert.getId());
+		if(mForm.getChannelId()!=null&&!mForm.getChannelId().equals("")){
+			Channel channel = new Channel();
+			channel.setId(mForm.getChannelId());
+			oldAd.setChannel(channel);
+		}
+		
+		if(advert.getFlag()!=null){
+			if(advert.getFlag()==2&&StringUtil.isEmpty(advert.getToLink())){
+				oldAd.setFlag(0);
+			}
+			
+			if(advert.getFlag()==2&&!StringUtil.isEmpty(advert.getToLink())){
+				oldAd.setFlag(2);
+			}
+		}
+		
+		AdvertType advertType = new AdvertType();
+		advertType.setId(mForm.getTypeId());
+		oldAd.setAdvertType(advertType);
+
+		oldAd.setName(advert.getName());
+		oldAd.setFileName(advert.getFileName());
+		oldAd.setToLink(advert.getToLink());
+		oldAd.setRemark(advert.getRemark());
+		
+		advertDao.modify(oldAd);
+
+		return mapping.findForward("other");
+	}
+
+	/** 查询广告 **/
+	public ActionForward toList(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		super.settingCurrentNavigation(request.getSession(), ProductConfig.PAGE_ADVERT_PUT_MANAGER);
+		AdvertForm mForm = (AdvertForm) form;
+		PageResult<Advert> result = null;
+		Page page = new Page();
+		// 分页信息
+		String pageNo = mForm.getPageNo();
+		String pageSize = mForm.getPageSize();
+		if (pageSize != null)
+			page.setEveryPage(Integer.parseInt(pageSize.trim()));
+		if (pageNo != null)
+			page.setCurrentPage(Integer.parseInt(pageNo.trim()));		
+		Channel admin = (Channel) request.getSession().getAttribute("admin");
+		if(admin.getType() == 0){
+			if (mForm.getChannelId() == null||mForm.getChannelId().equals(0)) {
+				mForm.setChannelId(admin.getId());
+			}
+		}else{
+			if (mForm.getChannelId() == null) {
+				mForm.setChannelId(0);
+			}
+		}	
+		result = advertDao.getPage(page, mForm.getName(),mForm.getChannelId());
+		Integer[] channelArrayId = getChannelIdArray(request, admin);
+//		List<Channel> channels = channelDao.findChannelByIds(channelArrayId);
+		List<Channel> channels = channelDao.findChannelByIds(channelArrayId,admin.getType());
+		request.setAttribute("channels", channels);
+		request.setAttribute("form", mForm);
+		request.setAttribute("list", result.getContent());
+		request.setAttribute("page", result.getPage());
+		request.setAttribute("size", result.getSize());
+		return mapping.findForward("list");
+	}
+
+	/** 新增软件广告页面 **/
+	public ActionForward toAddSoftAdvert(ActionMapping mapping,
+			ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) {
+		String softId = request.getParameter("softId");
+		List<Channel> channels = channelDao.getAll(null);
+		List<AdvertType> advertTypes = advertTypeDao.getAll();
+		App_Tab software = ((App_Tab) productDao.getById(App_Tab.class,Integer.valueOf(softId)));
+		request.setAttribute("type", "1");
+		request.setAttribute("software", software);
+		request.setAttribute("channels", channels);
+		request.setAttribute("advertTypes", advertTypes);
+		return mapping.findForward("add_web");
+	}
+	
+	/** 新增资讯广告页面 **/
+	public ActionForward toAddInfoAdvert(ActionMapping mapping,
+			ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) {
+		String softId = request.getParameter("softId");
+		List<Channel> channels = channelDao.getAll(null);
+		List<AdvertType> advertTypes = advertTypeDao.getAll();
+		Information_Tab software = ((Information_Tab) productDao.getById(Information_Tab.class,
+				Integer.valueOf(softId)));
+		request.setAttribute("type", "3");
+		request.setAttribute("software", software);
+		request.setAttribute("channels", channels);
+		request.setAttribute("advertTypes", advertTypes);	
+		return mapping.findForward("add_web");
+	}
+	
+	/** 新增商品广告页面 **/
+	public ActionForward toAddGoodsAdvert(ActionMapping mapping,
+			ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) {
+		String softId = request.getParameter("softId");
+		List<Channel> channels = channelDao.getAll(null);
+		List<AdvertType> advertTypes = advertTypeDao.getAll();
+		Commodity_Tab software = ((Commodity_Tab) productDao.getById(Commodity_Tab.class,
+				Integer.valueOf(softId)));
+		request.setAttribute("type", "4");
+		request.setAttribute("software", software);
+		request.setAttribute("channels", channels);
+		request.setAttribute("advertTypes", advertTypes);	
+		return mapping.findForward("add_web");
+	}
+	
+	/** 去编辑广告页面 **/
+	public ActionForward toEdit(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		String id = request.getParameter("id");
+		Advert advert = (Advert) advertDao.getById(Advert.class,Integer.valueOf(id));
+		List<Channel> channels = channelDao.getAll(null);
+		List<AdvertType> advertTypes = advertTypeDao.getAll();
+		request.setAttribute("advert", advert);
+		request.setAttribute("channels", channels);
+		request.setAttribute("advertTypes", advertTypes);
+		Channel admin = (Channel) request.getSession().getAttribute("admin");
+		super.settingCurrentNavigation(request.getSession(), ProductConfig.PAGE_MEDIA);	
+		if (admin.getType() == 1) {	
+			return mapping.findForward("edit");
+		} else {
+			return mapping.findForward("editByChannel");
+		}
+	}
+
+	/** 去选择新增种类广告页面 **/
+	public ActionForward toAdd1(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		return mapping.findForward("add1");
+	}
+
+	/***
+	 * 选择要新增的广告类别
+	 * 
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 */
+	public ActionForward selectType(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+
+		String type = request.getParameter("type");
+		List<Channel> channels = channelDao.getAll(null);
+		List<AdvertType> advertTypes = advertTypeDao.getAll();
+
+		if (type.equals("soft")) {
+			return toSoftList(mapping, form, request, response);
+		}else if(type.equals("web")){
+			request.setAttribute("type", "2");
+			request.setAttribute("channels", channels);
+			request.setAttribute("advertTypes", advertTypes);
+			return mapping.findForward("add_web");
+		}else if(type.equals("show")){
+			request.setAttribute("type", "0");
+			request.setAttribute("channels", channels);
+			request.setAttribute("advertTypes", advertTypes);
+			return mapping.findForward("add_web");
+		}else if(type.equals("info")){
+			return toInfoList(mapping, form, request, response);
+		} else{
+			return toGoodsList(mapping, form, request, response);
+		}
+	}
+
+	/** 软件列表 **/
+	public ActionForward toSoftList(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		findSoftwareByParam(form, request, "soft");
+		return mapping.findForward("add_soft");
+	}
+
+	/** 资讯列表 **/
+	public ActionForward toInfoList(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		findSoftwareByParam(form, request, "info");
+		return mapping.findForward("add_info");
+	}
+	
+	/** 商品列表 **/
+	public ActionForward toGoodsList(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		findSoftwareByParam(form, request, "goods");
+		return mapping.findForward("add_goods");
+	}
+	
+	private void findSoftwareByParam( ActionForm form,HttpServletRequest request,String type){
+		AdvertForm mForm = (AdvertForm) form;
+		String softName = mForm.getSoftName();
+		Page page = new Page();
+		String pageNo = mForm.getPageNo();
+		String pageSize = mForm.getPageSize();
+		if (pageSize != null) {
+			page.setEveryPage(Integer.parseInt(pageSize.trim()));
+		}
+		if (pageNo != null) {
+			page.setCurrentPage(Integer.parseInt(pageNo.trim()));
+		}	
+		if(type.equals("soft")){
+			Integer[] flag = new Integer[]{1,2};
+			PageResult<App_Tab> result = null;
+			result = productDao.getAllByParams(page, softName, -1,flag,null);
+			request.setAttribute("list", result.getContent());
+			request.setAttribute("page", result.getPage());
+			request.setAttribute("size", result.getSize());
+		}
+		if(type.equals("info")){
+			PageResult<Information_Tab> result = null;
+			result = productDao.getInfo(page, softName, "0");
+			request.setAttribute("list", result.getContent());
+			request.setAttribute("page", result.getPage());
+			request.setAttribute("size", result.getSize());
+		}
+		if(type.equals("goods")){
+			PageResult<Commodity_Tab> result = null;
+			result = productDao.getGoods(page, softName, "1");
+			request.setAttribute("list", result.getContent());
+			request.setAttribute("page", result.getPage());
+			request.setAttribute("size", result.getSize());
+		}	
+		List<Type> typeList = typeDao.getAll(-1);
+		List<Resources> resourcesList = resourcesDao.getAll();
+		request.setAttribute("resourcesList", resourcesList);
+		request.setAttribute("form", mForm);
+		request.setAttribute("typeList", typeList);
+		
+	}
+	
+	/** 跳转到新增广告页面 **/
+	public ActionForward toAdd(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		List<Channel> channels = channelDao.getAll(null);
+		List<AdvertType> advertTypes = advertTypeDao.getAll();
+		request.setAttribute("channels", channels);
+		request.setAttribute("advertTypes", advertTypes);
+		return mapping.findForward("add");
+	}
+
+	/** 删除广告 **/
+	public ActionForward toDelete(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		AdvertForm mForm = (AdvertForm) form;
+		if (mForm.getId() != 0) {
+			Advert advert = (Advert) advertDao.getById(Advert.class,mForm.getId());
+			advert.setId(mForm.getId());	
+			try {				
+				//删除广告的同时也删除广告文件
+				File advertFile = new File(advert.getFileName());
+				if(advertFile.exists()){				
+					advertFile.delete();
+				}
+			} catch (Exception e) {			
+			}
+			advertDao.delete(advert);
+		}
+		return mapping.findForward("other");
+	}
+
+}

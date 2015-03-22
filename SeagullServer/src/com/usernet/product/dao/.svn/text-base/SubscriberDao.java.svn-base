@@ -1,0 +1,72 @@
+package com.usernet.product.dao;
+
+import java.util.List;
+
+import org.hibernate.Query;
+import org.hibernate.Session;
+import org.hibernate.Transaction;
+import com.usernet.product.comm.BaseDao;
+import com.usernet.product.entity.Subscriber;
+
+public class SubscriberDao extends BaseDao {
+	
+	//获取各类型数据的PV总和
+	public List findSubscriberPvSum(Integer[] channelIdArray){
+		
+//		String sql = "select sum(musicPv) as musicPvCount,sum(gamePv) as gamePvCount,sum(appPv) as appPvCount,sum(informationPv) as informationPvCount,sum(themePv) as themePvCount from subscriber_tab";
+//		
+//		if (channelIdArray != null && channelIdArray.length > 0) {
+//
+//			sql += " where channelId = " + channelIdArray[0];
+//			for (int i = 1; i < channelIdArray.length; i++) {
+//
+//				sql += " OR channelId = " + channelIdArray[i];
+//			}
+//		}
+		String sql = "select "+
+"(select COUNT(1) from channel_pv as pv left join software as s on pv.soft_id = s.id where s.typeId = 62 and s.isCommodity=0) as '资讯',"+
+"(select COUNT(1) from channel_pv as pv left join software as s on pv.soft_id = s.id where s.typeId = 62 and s.isCommodity=1) as '商品'";
+		
+		
+		return super.getAllByPageAndSql(sql);
+	}
+
+	public void saveOrUpdate(Subscriber subscriber){
+		
+		Transaction tr = null;
+		Session session = getSession();
+		try {
+			tr = session.beginTransaction();
+
+			session.saveOrUpdate(subscriber);
+			tr.commit();
+			
+		} catch (Exception ex) {
+			if (tr != null)
+				tr.rollback();
+			ex.printStackTrace();
+		}
+	}
+	
+	public Subscriber getSubscriberByUserId(int userId){
+		
+		Transaction tr = null;
+		Session session = getSession();
+		try {
+			tr = session.beginTransaction();
+
+			String hql = "from Subscriber where user.id = " + userId;
+			Query query = session.createQuery(hql);
+			Subscriber sb = (Subscriber) query.uniqueResult();
+			tr.commit();
+			
+			return sb;
+		} catch (Exception ex) {
+			if (tr != null)
+				tr.rollback();
+			ex.printStackTrace();
+			return null;
+		}
+	}
+	
+}

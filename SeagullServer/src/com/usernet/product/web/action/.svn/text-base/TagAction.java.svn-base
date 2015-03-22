@@ -1,0 +1,301 @@
+package com.usernet.product.web.action;
+
+import java.io.IOException;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
+
+import org.apache.commons.lang.StringUtils;
+import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionForward;
+import org.apache.struts.action.ActionMapping;
+
+import com.usernet.product.comm.BaseAction;
+import com.usernet.product.entity.Channel;
+import com.usernet.product.entity.Tag;
+import com.usernet.product.utils.Page;
+import com.usernet.product.utils.PageResult;
+import com.usernet.product.utils.ProductConfig;
+import com.usernet.product.web.form.TagForm;
+
+public class TagAction extends BaseAction{
+	
+	public ActionForward setOld(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		TagForm tForom = (TagForm) form;
+		Integer id = tForom.getId();
+		
+		Tag t = (Tag) tagDao.getById(Tag.class, id);
+		
+		if(new Integer(1).equals(t.getIsOld())){
+			t.setIsOld(0);
+		}else{
+			t.setIsOld(1);
+		}
+		tagDao.modify(t);
+		
+		return mapping.findForward("other");
+	}
+	
+	public ActionForward toAdd(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+
+		Channel channel = (Channel) request.getSession().getAttribute("admin");
+		if(channel.getType()==1){
+			List<Channel> channels = getChannel(channel.getId(),channel.getType());//页面上显示的渠道
+			request.setAttribute("channels", channels);
+		}
+		
+		return mapping.findForward("toAdd");
+	}
+	
+	public ActionForward doAdd(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		TagForm tForm = (TagForm) form;
+		String names = tForm.getName();
+		String[] n = names.split(",");
+		Integer channelId = tForm.getChannelId();
+		Channel channel = (Channel) channelDao.getById(Channel.class, channelId);
+		
+		for(String name:n){
+			if(!tagDao.isRepeatByName(name,null)){
+				if(StringUtils.isNotEmpty(name)){
+					Tag tag = new Tag();
+					tag.setT_name(name);
+					tag.setTime(new Timestamp(new Date().getTime()));
+					tag.setChannel(channel);
+					tagDao.save(tag);
+				}
+			}else{
+				continue;
+			}
+		}
+		return mapping.findForward("other");
+	}
+
+	public ActionForward toEdit(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		String id = request.getParameter("id");
+		Tag t = (Tag) tagDao.getById(Tag.class, Integer.parseInt(id));
+		
+		request.setAttribute("tag", t);
+		
+		Channel channel = (Channel) request.getSession().getAttribute("admin");
+		if(channel.getType()==1){
+			List<Channel> channels = getChannel(channel.getId(),channel.getType());//页面上显示的渠道
+			request.setAttribute("channels", channels);
+		}
+		
+		return mapping.findForward("toEdit");
+	}
+	
+	public ActionForward doEdit(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		TagForm tForm = (TagForm) form;
+		String id = request.getParameter("id");
+		Tag t = (Tag) tagDao.getById(Tag.class, Integer.parseInt(id));
+		String name = tForm.getName();
+		
+		Integer channelId = tForm.getChannelId();
+		Channel channel = (Channel) channelDao.getById(Channel.class, channelId);
+		t.setChannel(channel);
+		if(!tagDao.isRepeatByName(name,channelId)){
+			t.setT_name(name);
+		}
+		tagDao.modify(t);
+		return mapping.findForward("other");
+	}
+	
+	public ActionForward toList(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_SYSTEM_MANAGER);
+		
+		TagForm tForm = (TagForm) form;
+		
+		PageResult<Tag> result = null;
+		Page page = new Page();
+		// 分页信息
+		String pageNo = tForm.getPageNo();
+		String pageSize = tForm.getPageSize();
+		if (pageSize != null) {
+			page.setEveryPage(Integer.parseInt(pageSize.trim()));
+		}
+		if (pageNo != null) {
+			page.setCurrentPage(Integer.parseInt(pageNo.trim()));
+		}
+		
+		result = tagDao.getAllByPage(page, tForm.getName());
+		
+		request.setAttribute("form", tForm);
+		request.setAttribute("list", result.getContent());
+		request.setAttribute("page", result.getPage());
+		request.setAttribute("size", result.getSize());
+		
+		return mapping.findForward("list");
+	}
+
+	public ActionForward doDelete(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+
+		String id = request.getParameter("id");
+		if (StringUtils.isNotEmpty(id)) {
+			
+			Tag tag = new Tag();
+			tag.setId(Integer.valueOf(id));
+			tagDao.delete(tag);
+		}
+
+		String sub = request.getParameter("sub");
+		if("sub".equals(sub)){
+			return mapping.findForward("sub_other");
+		}
+		return mapping.findForward("other");
+	}
+	
+	//二级分类列表  管理员查看所有二级分类  渠道只能查看自己的分类
+	public ActionForward toSubTagList(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_SYSTEM_MANAGER);
+		
+		TagForm tForm = (TagForm) form;
+		
+		PageResult<Tag> result = null;
+		Page page = new Page();
+		// 分页信息
+		String pageNo = tForm.getPageNo();
+		String pageSize = tForm.getPageSize();
+		if (pageSize != null) {
+			page.setEveryPage(Integer.parseInt(pageSize.trim()));
+		}
+		if (pageNo != null) {
+			page.setCurrentPage(Integer.parseInt(pageNo.trim()));
+		}
+		Channel channel = getCurrentChannelSession(request);
+		if(channel.getType()==0){
+			result = tagDao.getSubTagByPage(page, channel.getId());
+		}else{
+			result = tagDao.getSubTagByPage(page, null);
+		}
+		request.setAttribute("form", tForm);
+		request.setAttribute("list", result.getContent());
+		request.setAttribute("page", result.getPage());
+		request.setAttribute("size", result.getSize());
+		
+		return mapping.findForward("sub_list");
+	}
+	
+	//添加二级分类    
+	public ActionForward doAddSubTag(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		TagForm tForm = (TagForm) form;
+		String names = tForm.getName();
+		String[] n = names.split(",");
+		
+		Integer parnetId = tForm.getParnetId();
+		
+		Tag parent = (Tag) tagDao.getById(Tag.class, parnetId);
+		
+		for(String name:n){
+			if(!tagDao.isRepeatByName(name,parent.getChannel().getId())){
+				if(StringUtils.isNotEmpty(name)){
+					Tag tag = new Tag();
+					tag.setT_name(name);
+					tag.setTime(new Timestamp(new Date().getTime()));
+					tag.setChannel(parent.getChannel());//设置该分类所属渠道为当前登录渠道
+					tag.setParent(parent);
+					tagDao.save(tag);
+				}
+			}else{
+				continue;
+			}
+		}
+		return mapping.findForward("sub_other");
+	}
+
+	//跳转到添加二级分类
+	public ActionForward toAddSubTag(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		Channel channel = getCurrentChannelSession(request);
+		List parent = null;
+		if(channel.getType()==0){
+			parent = tagDao.getParentTag(channel.getId());
+		}else{
+			parent = tagDao.getParentTag(null);
+		}
+		request.setAttribute("parentlist",parent);
+		
+		return mapping.findForward("sub_toAdd");
+	}
+	
+	public ActionForward toEditSubTag(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		String id = request.getParameter("id");
+		Tag t = (Tag) tagDao.getById(Tag.class, Integer.parseInt(id));
+		
+		request.setAttribute("tag", t);
+		
+		Channel channel = getCurrentChannelSession(request);
+		List parent = null;
+		if(channel.getType()==0){
+			parent = tagDao.getParentTag(channel.getId());
+		}else{
+			parent = tagDao.getParentTag(null);
+		}
+		request.setAttribute("parentlist",parent);
+		
+		return mapping.findForward("sub_toEdit");
+	}
+	
+	public ActionForward doEditSubTag(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		TagForm tForm = (TagForm) form;
+		Integer id = tForm.getId();
+
+		Integer parnetId = tForm.getParnetId();
+		Tag parent = (Tag) tagDao.getById(Tag.class, parnetId);
+		
+		Tag t = (Tag) tagDao.getById(Tag.class, id);
+		String name = tForm.getName();
+		
+		if(!tagDao.isRepeatByName(name,parent.getChannel().getId())){
+			t.setT_name(name);
+		}
+		t.setParent(parent);
+		t.setChannel(parent.getChannel());
+		
+		tagDao.modify(t);
+		return mapping.findForward("sub_other");
+	}
+	
+	public ActionForward getSubTagByParent(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) throws IOException {
+		TagForm tForm = (TagForm) form;
+
+		Integer parnetId = tForm.getParnetId();
+		
+		List<Tag> subList = tagDao.getSubTagByParent(parnetId);
+		if(subList==null||subList.isEmpty()){
+			response.getWriter().print("");
+		}else{
+			List<Tag> temList = new ArrayList<Tag>();
+			for(Tag t:subList){
+				Tag tm = new Tag();
+				tm.setId(t.getId());
+				tm.setT_name(t.getT_name());
+				temList.add(tm);
+			}
+			JSONArray array = new JSONArray(temList);
+			response.getWriter().print(array.toString());
+		}
+		return null;
+	}
+}

@@ -1,0 +1,161 @@
+package com.usernet.product.web.action;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionForward;
+import org.apache.struts.action.ActionMapping;
+
+import com.opensymphony.oscache.util.StringUtil;
+import com.usernet.product.comm.BaseAction;
+import com.usernet.product.dao.StatDao;
+import com.usernet.product.entity.Comment;
+import com.usernet.product.tools.BaseCache;
+import com.usernet.product.utils.DateUtils;
+import com.usernet.product.utils.Page;
+import com.usernet.product.utils.PageResult;
+import com.usernet.product.web.form.StatForm;
+
+public class StatAction extends BaseAction {
+	
+	//客户端打开记录
+	public ActionForward openNote(ActionMapping mapping, ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) throws Exception {
+		StatForm sForm = (StatForm) form;
+		StatDao statDao = new StatDao();
+		
+		Page page = new Page();
+		page.setEveryPage(sForm.getPageSize());
+		page.setCurrentPage(sForm.getPageNo());
+		
+		String time = sForm.getTime();
+		if(StringUtil.isEmpty(time)){
+			time = DateUtils.getDate();
+		}
+		PageResult list = null;
+		
+		list = statDao.openNote(page, time);
+		
+		request.setAttribute("time", time);
+		request.setAttribute("list", list.getContent());
+		request.setAttribute("page", list.getPage());
+		request.setAttribute("size", list.getSize());
+		return mapping.findForward("openNote");
+	}
+	
+	//连续打开记录
+	public ActionForward openContinuouNote(ActionMapping mapping, ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) throws Exception {
+		StatForm sForm = (StatForm) form;
+		StatDao statDao = new StatDao();
+		
+		Page page = new Page();
+		page.setEveryPage(sForm.getPageSize());
+		page.setCurrentPage(sForm.getPageNo());
+		
+		Integer day = sForm.getDay();
+		PageResult list = null;
+		
+		list = statDao.openContinuouNote(page, day);
+		
+		request.setAttribute("time", day);
+		request.setAttribute("list", list.getContent());
+		request.setAttribute("page", list.getPage());
+		request.setAttribute("size", list.getSize());
+		
+		return mapping.findForward("openContinuouNote");
+	}
+	
+	//未使用记录
+	public ActionForward notUseNote(ActionMapping mapping, ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) throws Exception {
+		StatForm sForm = (StatForm) form;
+		StatDao statDao = new StatDao();
+		
+		Page page = new Page();
+		page.setEveryPage(sForm.getPageSize());
+		page.setCurrentPage(sForm.getPageNo());
+		
+		Integer day = sForm.getDay();
+		PageResult list = null;
+		
+		list = statDao.notUseNote(page, day);
+		
+		request.setAttribute("time", day);
+		request.setAttribute("list", list.getContent());
+		request.setAttribute("page", list.getPage());
+		request.setAttribute("size", list.getSize());
+		
+		return mapping.findForward("notUseNote");
+	}
+	/*
+	//分类点击统计
+	public ActionForward typeClick(ActionMapping mapping, ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) throws Exception {
+		StatForm sForm = (StatForm) form;
+		StatDao statDao = new StatDao();
+		
+		Page page = new Page();
+		page.setEveryPage(sForm.getPageSize());
+		page.setCurrentPage(sForm.getPageNo());
+		
+		Integer t_id = sForm.getT_id();
+		
+		PageResult list = null;
+		list = statDao.typeClick(page, t_id);
+		
+		request.setAttribute("t_id", t_id);
+		request.setAttribute("list", list.getContent());
+		request.setAttribute("page", list.getPage());
+		request.setAttribute("size", list.getSize());
+		
+		return mapping.findForward("typeClick");
+	}
+	
+	*/
+	
+	//分类点击统计
+	public ActionForward typeClick(ActionMapping mapping, ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) throws Exception {
+		StatForm sForm = (StatForm) form;
+		StatDao statDao = new StatDao();
+
+		Page page = new Page();
+		page.setEveryPage(sForm.getPageSize());
+		page.setCurrentPage(sForm.getPageNo());
+			
+		PageResult list = null;
+		
+		list = statDao.getTypeClickNum(page);
+		
+		request.setAttribute("list", list.getContent());
+		request.setAttribute("page", list.getPage());
+		request.setAttribute("size", list.getSize());
+		
+		return mapping.findForward("typeClick");
+	}
+	
+	//商品点击统计
+	public ActionForward goodsClick(ActionMapping mapping, ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) throws Exception {
+		StatForm sForm = (StatForm) form;
+		StatDao statDao = new StatDao();
+		
+		Page page = new Page();
+		page.setEveryPage(sForm.getPageSize());
+		page.setCurrentPage(sForm.getPageNo());
+		
+		Integer goods_id = sForm.getGoodsId();
+		
+		PageResult list = null;
+		list = statDao.goodsClick(page,goods_id);
+		
+		request.setAttribute("goodsId", goods_id);
+		request.setAttribute("list", list.getContent());
+		request.setAttribute("page", list.getPage());
+		request.setAttribute("size", list.getSize());
+		
+		return mapping.findForward("goodsClick");
+	}
+}

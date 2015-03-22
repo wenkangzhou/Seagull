@@ -1,0 +1,142 @@
+package com.usernet.product.entity;
+
+import java.io.Serializable;
+import java.util.Date;
+
+public class Advert implements Serializable{
+	
+	private static final long serialVersionUID = 3830236130087474889L;
+
+	private Integer id;
+	
+	private Channel channel = new Channel();
+	
+	private String name;
+	
+	private String fileName;
+	
+	private String toLink;
+	
+	private AdvertType advertType = new AdvertType();
+	
+	private String type;
+	
+	private String remark;
+	
+	private Date createTime;
+	
+	private Integer flag;
+	
+	private Integer channelId;
+	
+	private Integer softId ;
+	
+	private Integer typeId;
+
+	public Integer getTypeId() {
+		return typeId;
+	}
+
+	public void setTypeId(Integer typeId) {
+		this.typeId = typeId;
+	}
+
+	public Integer getSoftId() {
+		return softId;
+	}
+
+	public void setSoftId(Integer softId) {
+		this.softId = softId;
+	}
+
+	public Integer getChannelId() {
+		return channelId;
+	}
+
+	public void setChannelId(Integer channelId) {
+		this.channelId = channelId;
+	}
+
+	public Integer getId() {
+		return id;
+	}
+
+	public void setId(Integer id) {
+		this.id = id;
+	}
+
+	public Channel getChannel() {
+		return channel;
+	}
+
+	public void setChannel(Channel channel) {
+		this.channel = channel;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public String getFileName() {
+		return fileName;
+	}
+
+	public void setFileName(String fileName) {
+		this.fileName = fileName;
+	}
+
+	public String getToLink() {
+		return toLink;
+	}
+
+	public void setToLink(String toLink) {
+		this.toLink = toLink;
+	}
+	
+	public AdvertType getAdvertType() {
+		return advertType;
+	}
+
+	public void setAdvertType(AdvertType advertType) {
+		this.advertType = advertType;
+	}
+
+	public String getType() {
+		return type;
+	}
+
+	public void setType(String type) {
+		this.type = type;
+	}
+
+	public String getRemark() {
+		return remark;
+	}
+
+	public void setRemark(String remark) {
+		this.remark = remark;
+	}
+
+	public Date getCreateTime() {
+		return createTime;
+	}
+
+	public void setCreateTime(Date createTime) {
+		this.createTime = createTime;
+	}
+
+	public Integer getFlag() {
+		return flag;
+	}
+
+	public void setFlag(Integer flag) {
+		this.flag = flag;
+	}
+
+	
+	
+}

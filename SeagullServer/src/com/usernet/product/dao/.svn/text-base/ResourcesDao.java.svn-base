@@ -1,0 +1,63 @@
+package com.usernet.product.dao;
+
+import java.util.List;
+
+import org.hibernate.HibernateException;
+import org.hibernate.Query;
+import org.hibernate.Session;
+import org.hibernate.Transaction;
+
+import com.usernet.product.comm.BaseDao;
+import com.usernet.product.entity.Resources;
+import com.usernet.product.utils.Page;
+import com.usernet.product.utils.PageResult;
+
+public class ResourcesDao extends BaseDao {
+
+	@SuppressWarnings("unchecked")
+	public List<Resources> getAll() {
+		String hql = "from Resources order by sort";
+		return super.getAllByHql(hql);
+	}
+
+	@SuppressWarnings("unchecked")
+	public PageResult<Resources> getAllByPage(Page page) {
+		String hql = "from Resources order by sort";
+		return super.getAllByPageAndHql(page, hql);
+	}
+
+	/*
+	 * 条件查询
+	 */
+	@SuppressWarnings("unchecked")
+	public PageResult<Resources> getAllByParams(Page page, String name) {
+		String hql = "from Resources where 1=1 ";
+		if (name != null && !"".equals(name.trim())) {
+			hql += " and (name like '%" + name + "%' or pinyin like '%" + name.toLowerCase()
+					+ "%')";
+		}
+		hql += " order by sort";
+		return super.getAllByPageAndHql(page, hql);
+	}
+
+	public int getCount() {
+		Session session = getSession();
+		Transaction tr = null;
+		String hql = "select count(*) from Resources";
+		try {
+			tr = session.beginTransaction();
+			Query query = session.createQuery(hql);
+			Object num = query.uniqueResult();
+			tr.commit();
+			if (num instanceof Number) {
+				return ((Number) num).intValue();
+			}
+		} catch (HibernateException e) {
+			if (tr != null) {
+				tr.rollback();
+			}
+		}
+		return 0;
+
+	}
+}

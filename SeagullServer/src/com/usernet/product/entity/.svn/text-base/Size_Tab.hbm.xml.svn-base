@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+"http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+<hibernate-mapping>
+	<class name="com.usernet.product.entity.Size_Tab" table="size_tab">
+		<cache usage="nonstrict-read-write" />
+		<id name="id" type="java.lang.Integer">
+			<column name="id" />
+			<generator class="native" />
+		</id>
+		<property name="size" type="java.lang.String">
+			<column name="size" />
+		</property>
+		<property name="type_id" type="java.lang.Integer">
+			<column name="type_id" />
+		</property>
+		<many-to-one name="commoditytype" property-ref="size_id"  class="com.usernet.product.entity.Commodity_Type_Tab" not-found="ignore" insert="false" update="false">
+			<column name="type_id" />
+		</many-to-one>
+	</class>
+</hibernate-mapping>

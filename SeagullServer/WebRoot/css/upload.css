@@ -1,0 +1,100 @@
+.wrapper{ 
+	background:#fff;
+	border-top:1px solid #f4f4f4;
+}
+.title{
+	font-size:14px;
+	color:#ababab;
+	padding:15px 20px 15px 47px;
+}
+.camZp{
+	border-top:1px solid #f4f4f4;
+}
+.norTable.register td .selectToolPop{
+	display:none;
+}
+.norTable.register td .selectTool:hover .selectToolPop{
+	display:block;
+}
+.norTable{
+	font-size:14px;
+}
+.norTable tr.last td,.norTable tr.last th{
+	border-bottom:0;
+}
+.norTable td,.norTable th{
+	padding:15px 10px; 
+	vertical-align:top;border-bottom:1px solid #f4f4f4;
+}
+.norTable td.vlm,.norTable th.vlm{ 
+	vertical-align:middle;
+}
+.norTable th{ 
+	text-align:right;
+	font-weight:normal;
+}
+.newTxt{
+	background:#fbfbfb url(../img/upload/txtBg.png) repeat-x left top;height:36px;
+	line-height:36px;
+	border:1px solid #abadb3;
+	font-size:14px;
+	padding:0 5px;
+}
+.uploadBtn {
+	height: 40px;
+	width: 71px;
+	position: relative;
+	display: inline-block;
+	text-align: center;
+	line-height: 40px;
+	background: url(../img/upload/upGrey.jpg) repeat-x left top;
+	border: 1px solid #c8c8c8;
+	color: #6a6a6a;
+	overflow: hidden;
+	font-size: 12px;
+	cursor: pointer;
+}
+.uploadBtn.blue {
+	background: url(../img/upload/upBlue.jpg) repeat-x left top;
+	border: 1px solid #2494cb;
+	color: #fff;
+}
+.uploadBtn input {
+	position: absolute;
+	height: 40px;
+	z-index: 2;
+	right: 0;
+	top: 0;
+	filter: alpha(opacity=0);
+	-moz-opacity: 0;
+	opacity: 0;
+	cursor: pointer;
+	font-size: 16px;
+}
+.w640{
+	width:640px;
+}
+.newArea {
+	background: #fbfbfb url(../img/upload/txtBg.png) repeat-x left top;
+	line-height: 22px;
+	border: 1px solid #abadb3;
+	font-size: 14px;
+	padding: 5px 5px;
+}
+.w810 {
+	width: 810px;
+}
+.h140 {
+	height: 140px;
+}
+input.lBtn {
+	height: 40px;
+	width: 120px;
+	text-align: center;
+	color: #a33300;
+	font: 18px/40px "微软雅黑E\8F6F\96C5\9ED1";
+	background: url(../img/upload/lBtn.png) no-repeat left top;
+	text-decoration: none;
+	border: 0;
+	cursor: pointer;
+}

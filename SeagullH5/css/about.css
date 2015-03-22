@@ -1,0 +1,12 @@
+.container section{
+    text-align: left;
+    text-indent: 30px;
+    line-height: 2em;
+    font-size: 14px;
+    padding-left: 10px;
+    padding-right: 10px;
+    word-break: break-word;
+}
+.container section a{
+    text-decoration: underline;
+}

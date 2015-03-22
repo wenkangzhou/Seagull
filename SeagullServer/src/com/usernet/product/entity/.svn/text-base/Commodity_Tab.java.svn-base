@@ -1,0 +1,167 @@
+package com.usernet.product.entity;
+
+import java.sql.Timestamp;
+import java.util.Set;
+
+public class Commodity_Tab implements java.io.Serializable {
+
+	private static final long serialVersionUID = 1L;
+	private Integer id;
+	private String name; // 商品名称
+	private String small_picture; // 小图标，存放路径：日期/名称
+	private String big_picture;//大图
+	private Double discount;//折扣
+	private Double original_price;//原价
+	private Double current_price;//现价
+	private Integer inventory; //库存
+	private Integer panic_buying = 0;//是否抢购
+	private Timestamp start_panicbuying_time;//开始抢购时间
+	private Timestamp end_panicbuying_time;//结束抢购时间
+	private Integer status; // 状态0可用1不可用
+	private String  from_source_id;//商家接口
+	private Timestamp create_time; // 创建时间
+	private Integer channelId; //渠道号
+	private String remark;//商品介绍
+	private String phoneNumber;//抢购热线
+	private String url;//url
+	private Integer type_id; //商品类型
+	private Double expressFree;//快递费
+	private String artNum;//商品货号
+	private Integer tag_id;//
+	public String getRemark() {
+		return remark;
+	}
+	public void setRemark(String remark) {
+		this.remark = remark;
+	}
+	public String getPhoneNumber() {
+		return phoneNumber;
+	}
+	public void setPhoneNumber(String phoneNumber) {
+		this.phoneNumber = phoneNumber;
+	}
+	public String getUrl() {
+		return url;
+	}
+	public void setUrl(String url) {
+		this.url = url;
+	}
+	public Integer getChannelId() {
+		return channelId;
+	}
+	public void setChannelId(Integer channelId) {
+		this.channelId = channelId;
+	}
+	public Integer getId() {
+		return id;
+	}
+	public void setId(Integer id) {
+		this.id = id;
+	}
+	public String getName() {
+		return name;
+	}
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public String getSmall_picture() {
+		return small_picture;
+	}
+	public void setSmall_picture(String small_picture) {
+		this.small_picture = small_picture;
+	}
+	public String getBig_picture() {
+		return big_picture;
+	}
+	public void setBig_picture(String big_picture) {
+		this.big_picture = big_picture;
+	}
+	public Double getDiscount() {
+		return discount;
+	}
+	public void setDiscount(Double discount) {
+		this.discount = discount;
+	}
+	public Double getOriginal_price() {
+		return original_price;
+	}
+	public void setOriginal_price(Double original_price) {
+		this.original_price = original_price;
+	}
+	public Double getCurrent_price() {
+		return current_price;
+	}
+	public void setCurrent_price(Double current_price) {
+		this.current_price = current_price;
+	}
+	public Integer getInventory() {
+		return inventory;
+	}
+	public void setInventory(Integer inventory) {
+		this.inventory = inventory;
+	}
+	public Integer getPanic_buying() {
+		return panic_buying;
+	}
+	public void setPanic_buying(Integer panic_buying) {
+		this.panic_buying = panic_buying;
+	}
+	public Timestamp getStart_panicbuying_time() {
+		return start_panicbuying_time;
+	}
+	public void setStart_panicbuying_time(Timestamp start_panicbuying_time) {
+		this.start_panicbuying_time = start_panicbuying_time;
+	}
+	public Timestamp getEnd_panicbuying_time() {
+		return end_panicbuying_time;
+	}
+	public void setEnd_panicbuying_time(Timestamp end_panicbuying_time) {
+		this.end_panicbuying_time = end_panicbuying_time;
+	}
+	public Integer getStatus() {
+		return status;
+	}
+	public void setStatus(Integer status) {
+		this.status = status;
+	}
+
+	public String getFrom_source_id() {
+		return from_source_id;
+	}
+	public void setFrom_source_id(String from_source_id) {
+		this.from_source_id = from_source_id;
+	}
+	public Timestamp getCreate_time() {
+		return create_time;
+	}
+	public void setCreate_time(Timestamp create_time) {
+		this.create_time = create_time;
+	}
+	public Integer getType_id() {
+		return type_id;
+	}
+	public void setType_id(Integer type_id) {
+		this.type_id = type_id;
+	}
+	public Double getExpressFree() {
+		return expressFree;
+	}
+	public void setExpressFree(Double expressFree) {
+		this.expressFree = expressFree;
+	}
+	public String getArtNum() {
+		return artNum;
+	}
+	public void setArtNum(String artNum) {
+		this.artNum = artNum;
+	}
+	public Integer getTag_id() {
+		return tag_id;
+	}
+	public void setTag_id(Integer tag_id) {
+		this.tag_id = tag_id;
+	}
+	
+	
+}

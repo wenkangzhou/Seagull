@@ -1,0 +1,204 @@
+package com.usernet.product.web.action;
+
+import java.io.IOException;
+import java.sql.Timestamp;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionForward;
+import org.apache.struts.action.ActionMapping;
+
+import com.opensymphony.oscache.util.StringUtil;
+import com.usernet.product.comm.BaseAction;
+import com.usernet.product.dao.CommentDao;
+import com.usernet.product.entity.Comment;
+import com.usernet.product.entity.CommodityComment;
+import com.usernet.product.entity.Commodity_Tab;
+import com.usernet.product.entity.User;
+import com.usernet.product.utils.Page;
+import com.usernet.product.utils.PageResult;
+import com.usernet.product.utils.ProductConfig;
+import com.usernet.product.web.form.CommentForm;
+import com.usernet.product.web.form.GoodsForm;
+
+public class CommentAction extends BaseAction {
+
+	public ActionForward toListBySoftId(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response){
+		try {
+			int id = Integer.parseInt(request.getParameter("softId"));
+			int flag = Integer.parseInt(request.getParameter("flag"));
+			CommentDao commentDao = new CommentDao();
+			List<Comment> l = commentDao.getListBySoftId(id,flag);			
+			request.setAttribute("result", l);
+			request.setAttribute("flag", flag);
+			request.setAttribute("softId", id);
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+		
+		return mapping.findForward("soft_list");
+	}
+	
+	public ActionForward showCommodityComment(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response){
+		try {
+			int id = Integer.parseInt(request.getParameter("id"));
+			String uesername = request.getParameter("uesername");
+			String info = request.getParameter("info");
+			String startDate = request.getParameter("startDate");
+			String endDate = request.getParameter("endDate");
+			request.setAttribute("uesername", uesername);
+			request.setAttribute("info", info);
+			request.setAttribute("startDate", startDate);
+			request.setAttribute("endDate", endDate);
+			if (!StringUtil.isEmpty(startDate)) {
+				startDate = startDate + " 00:00:00";
+			}
+			if (!StringUtil.isEmpty(endDate)) {
+				endDate = endDate + " 23:59:59";
+			}
+			CommentDao commentDao = new CommentDao();
+			List<CommodityComment> l = commentDao.getCommodityCommentById(id,uesername,info,startDate,endDate);			
+			
+			request.setAttribute("result", l);
+			request.setAttribute("commodityId", id);
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}	
+		return mapping.findForward("Commodity_Comment_List");
+	}
+	
+	public ActionForward toList(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response){
+		try {
+			CommentForm mForm = (CommentForm) form;
+			CommentDao commentDao = new CommentDao();
+			PageResult<Comment> list = null;
+			Page page = new Page();
+			// 分页信息
+			String pageNo = mForm.getPageNo();
+			String pageSize = mForm.getPageSize();
+			if (pageSize != null)
+				page.setEveryPage(Integer.parseInt(pageSize.trim()));
+			if (pageNo != null)
+				page.setCurrentPage(Integer.parseInt(pageNo.trim()));
+			
+			list = commentDao.getAll(page);
+			
+			request.setAttribute("form", mForm);
+			request.setAttribute("list", list.getContent());
+			request.setAttribute("page", list.getPage());
+			request.setAttribute("size", list.getSize());
+			
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+		return mapping.findForward("list");
+	}
+	
+	public ActionForward doDel(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response){
+		int id = Integer.parseInt(request.getParameter("id"));
+		CommentDao commentDao = new CommentDao();
+		Comment comment = (Comment) commentDao.getById(Comment.class, id);
+		commentDao.delete(comment);
+		return mapping.findForward("other");
+	}
+	
+	public ActionForward doDelBySoft(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) throws IOException{
+		int id = Integer.parseInt(request.getParameter("id"));
+		String softId = request.getParameter("softId");
+		String flag = request.getParameter("flag");
+		
+		CommentDao commentDao = new CommentDao();
+		Comment comment = (Comment) commentDao.getById(Comment.class, id);
+		comment.setStatus(1);
+		commentDao.modify(comment);
+		//commentDao.delete(comment);
+		response.sendRedirect("comment.do?method=toListBySoftId&softId="+Integer.parseInt(softId)+"&flag="+Integer.parseInt(flag)+" ");
+		return null;
+	}
+	public ActionForward doDelById(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) throws IOException{
+		int id = Integer.parseInt(request.getParameter("id"));
+		String commodityId = request.getParameter("commodityId");
+		
+		CommentDao commentDao = new CommentDao();
+		commentDao.updateCommodityComment(id);
+		response.sendRedirect("comment.do?method=showCommodityComment&id="+Integer.parseInt(commodityId)+"");
+		return null;
+	}	
+	public ActionForward toUpdateCommodityComment(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) throws IOException{
+		int id = Integer.parseInt(request.getParameter("id"));
+		CommentDao commentDao = new CommentDao();
+		CommodityComment commoditycomment = (CommodityComment) commentDao.getById(CommodityComment.class,Integer.valueOf(id));
+		
+		List<User> userlist = null;
+		userlist=commentDao.getUserList();
+		request.setAttribute("userlist", userlist);
+		request.setAttribute("item", commoditycomment);
+		return mapping.findForward("toEditCommodityComment");
+	}
+	public ActionForward doUpdateCommodityComment(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) throws IOException{	
+		String id = request.getParameter("id");
+		String info = request.getParameter("info");
+		String updateTime = request.getParameter("updateTime");
+		String username = request.getParameter("username");
+		SimpleDateFormat sdf=new SimpleDateFormat("yyyy-MM-dd HH:mm");
+		CommentDao commentDao = new CommentDao();
+		CommodityComment commoditycomment = (CommodityComment) commentDao.getById(CommodityComment.class,Integer.valueOf(id));
+		try {
+			commoditycomment.setUpdateTime(new Timestamp(sdf.parse(updateTime).getTime()));
+		} catch (ParseException e) {
+			e.printStackTrace();
+		}
+		commoditycomment.setInfo(info);
+		commoditycomment.setUserId(Integer.parseInt(username));
+		commentDao.modify(commoditycomment);
+		response.sendRedirect("comment.do?method=showCommodityComment&id="+commoditycomment.getCommodity_tab().getId()+"");
+		return null;
+	}
+	public ActionForward toAddCommodityComment(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) throws IOException{
+		int id = Integer.parseInt(request.getParameter("id"));
+		CommentDao commentDao = new CommentDao();
+		Commodity_Tab commodity = (Commodity_Tab) commentDao.getById(Commodity_Tab.class,Integer.valueOf(id));
+		List<User> userlist = null;
+		userlist=commentDao.getUserList();
+		request.setAttribute("userlist", userlist);
+		request.setAttribute("item", commodity);
+		return mapping.findForward("toAddCommodityComment");
+	}	
+	public ActionForward doAddCommodityComment(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) throws IOException{	
+		String id = request.getParameter("id");
+		String info = request.getParameter("info");
+		String updateTime = request.getParameter("updateTime");
+		String username = request.getParameter("username");
+		SimpleDateFormat sdf=new SimpleDateFormat("yyyy-MM-dd HH:mm");
+		CommentDao commentDao = new CommentDao();
+		CommodityComment commoditycomment = new CommodityComment();
+		try {
+			commoditycomment.setUpdateTime(new Timestamp(sdf.parse(updateTime).getTime()));
+			commoditycomment.setCreateTime(new Timestamp(sdf.parse(updateTime).getTime()));
+		} catch (ParseException e) {
+			e.printStackTrace();
+		}
+		commoditycomment.setCommodityId(Integer.parseInt(id));
+		commoditycomment.setInfo(info);
+		commoditycomment.setUserId(Integer.parseInt(username));
+		commoditycomment.setStatus("0");
+		commentDao.modify(commoditycomment);
+		response.sendRedirect("comment.do?method=showCommodityComment&id="+Integer.parseInt(id)+"");
+		return null;
+	}
+}

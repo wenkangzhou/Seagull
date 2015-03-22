@@ -1,0 +1,30 @@
+package com.usernet.product.dao;
+
+import java.util.List;
+
+import org.apache.commons.lang.StringUtils;
+
+import com.usernet.product.comm.BaseDao;
+import com.usernet.product.entity.MicroBlogUser;
+import com.usernet.product.utils.Page;
+import com.usernet.product.utils.PageResult;
+
+public class MicroBlogUserDao extends BaseDao{
+	@SuppressWarnings("unchecked")
+	public PageResult<MicroBlogUser> getAllByPage(Page page,String name) {
+		
+		String hql = "from MicroBlogUser";
+		if(StringUtils.isNotEmpty(name)){
+			
+			hql += " where name like '%" + name + "%'";
+		}
+		hql += " order by time desc";
+		return super.getAllByPageAndHql(page,hql);
+	} 
+	
+	public List<MicroBlogUser> getAll(){
+		String hql = "from MicroBlogUser";
+		List l = this.getAllByHql(hql);
+		return l;
+	}
+}

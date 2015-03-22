@@ -1,0 +1,50 @@
+package com.usernet.product.web.form;
+
+import com.usernet.product.comm.BaseForm;
+
+public class ConfigBaseForm extends BaseForm{
+	
+	private static final long serialVersionUID = 1L;
+	
+	private Integer id;
+	
+	private String pageNo;
+	
+	private String pageSize;
+	
+	private String property;
+	
+	private String value;
+	
+	public Integer getId() {
+		return id;
+	}
+	public void setId(Integer id) {
+		this.id = id;
+	}
+	
+	public String getPageNo() {
+		return pageNo;
+	}
+	public void setPageNo(String pageNo) {
+		this.pageNo = pageNo;
+	}
+	public String getPageSize() {
+		return pageSize;
+	}
+	public void setPageSize(String pageSize) {
+		this.pageSize = pageSize;
+	}
+	public String getProperty() {
+		return property;
+	}
+	public void setProperty(String property) {
+		this.property = property;
+	}
+	public String getValue() {
+		return value;
+	}
+	public void setValue(String value) {
+		this.value = value;
+	}
+}

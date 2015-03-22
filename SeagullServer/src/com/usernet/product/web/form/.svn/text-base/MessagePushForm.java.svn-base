@@ -1,0 +1,131 @@
+package com.usernet.product.web.form;
+
+import com.usernet.product.comm.BaseForm;
+import com.usernet.product.entity.MessagePush;
+
+public class MessagePushForm extends BaseForm {
+
+	private static final long serialVersionUID = 6768839038084929949L;
+
+	private Integer id;
+	
+	private Integer channelId;
+
+	private String title;
+	
+	private String username;
+
+	private String message;
+
+	private String createTime;
+
+	private String pageNo;
+
+	private String pageSize;
+	
+	private String softName;
+	
+	private Integer softId;
+	
+	private int typeIds = -1; // 所属分类
+	
+
+	private MessagePush messagePush = new MessagePush();
+
+	public Integer getId() {
+		return id;
+	}
+
+	public void setId(Integer id) {
+		this.id = id;
+	}
+	
+	public Integer getChannelId() {
+		return channelId;
+	}
+
+	public void setChannelId(Integer channelId) {
+		this.channelId = channelId;
+	}
+
+	public String getTitle() {
+		return title;
+	}
+
+	public void setTitle(String title) {
+		this.title = title;
+	}
+
+	public String getUsername() {
+		return username;
+	}
+
+	public void setUsername(String username) {
+		this.username = username;
+	}
+
+	public String getMessage() {
+		return message;
+	}
+
+	public void setMessage(String message) {
+		this.message = message;
+	}
+
+	public String getCreateTime() {
+		return createTime;
+	}
+
+	public void setCreateTime(String createTime) {
+		this.createTime = createTime;
+	}
+
+	public MessagePush getMessagePush() {
+		return messagePush;
+	}
+
+	public void setMessagePush(MessagePush messagePush) {
+		this.messagePush = messagePush;
+	}
+
+	public String getPageNo() {
+		return pageNo;
+	}
+
+	public void setPageNo(String pageNo) {
+		this.pageNo = pageNo;
+	}
+
+	public String getPageSize() {
+		return pageSize;
+	}
+
+	public void setPageSize(String pageSize) {
+		this.pageSize = pageSize;
+	}
+
+	public String getSoftName() {
+		return softName;
+	}
+
+	public void setSoftName(String softName) {
+		this.softName = softName;
+	}
+
+	public int getTypeIds() {
+		return typeIds;
+	}
+
+	public void setTypeIds(int typeIds) {
+		this.typeIds = typeIds;
+	}
+
+	public Integer getSoftId() {
+		return softId;
+	}
+
+	public void setSoftId(Integer softId) {
+		this.softId = softId;
+	}
+
+}

@@ -1,0 +1,91 @@
+package com.usernet.product.entity;
+
+import java.sql.Timestamp;
+
+public class UserGift implements java.io.Serializable {
+	private static final long serialVersionUID = 6721808535670053458L;
+
+	private Integer id;
+	private Integer userId;
+	private Gift gift;
+	private Integer count;
+	private Timestamp giveTime;
+	private Integer fromType;
+	private Integer gived;
+	private Users users;
+
+	public UserGift() {
+	}
+
+	public UserGift(Integer userId, Gift gift, Integer count, Timestamp giveTime, Integer fromType) {
+		this.userId = userId;
+		this.gift = gift;
+		this.count = count;
+		this.giveTime = giveTime;
+		this.fromType = fromType;
+	}
+
+	public Integer getId() {
+		return this.id;
+	}
+
+	public void setId(Integer id) {
+		this.id = id;
+	}
+
+	public Integer getUserId() {
+		return userId;
+	}
+
+	public void setUserId(Integer userId) {
+		this.userId = userId;
+	}
+
+	public Gift getGift() {
+		return gift;
+	}
+
+	public void setGift(Gift gift) {
+		this.gift = gift;
+	}
+
+	public Integer getCount() {
+		return count;
+	}
+
+	public void setCount(Integer count) {
+		this.count = count;
+	}
+
+	public Timestamp getGiveTime() {
+		return giveTime;
+	}
+
+	public void setGiveTime(Timestamp giveTime) {
+		this.giveTime = giveTime;
+	}
+
+	public Integer getGived() {
+		return gived;
+	}
+
+	public void setGived(Integer gived) {
+		this.gived = gived;
+	}
+
+	public Integer getFromType() {
+		return fromType;
+	}
+
+	public void setFromType(Integer fromType) {
+		this.fromType = fromType;
+	}
+
+	public Users getUsers() {
+		return users;
+	}
+
+	public void setUsers(Users users) {
+		this.users = users;
+	}
+}

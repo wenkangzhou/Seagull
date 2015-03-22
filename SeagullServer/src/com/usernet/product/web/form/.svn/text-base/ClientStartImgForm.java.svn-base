@@ -1,0 +1,20 @@
+package com.usernet.product.web.form;
+
+import org.apache.struts.upload.FormFile;
+
+import com.usernet.product.comm.BaseForm;
+
+public class ClientStartImgForm extends BaseForm{
+	
+	private static final long serialVersionUID = 1L;
+	
+	private FormFile iconFile;
+
+	public FormFile getIconFile() {
+		return iconFile;
+	}
+
+	public void setIconFile(FormFile iconFile) {
+		this.iconFile = iconFile;
+	}
+}

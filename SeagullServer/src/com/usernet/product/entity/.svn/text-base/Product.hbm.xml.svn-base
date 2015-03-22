@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+"http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+<hibernate-mapping>
+	<class name="com.usernet.product.entity.Product" table="product">
+		<cache usage="read-write" />
+		<id name="id" type="java.lang.Integer">
+			<column name="id" />
+			<generator class="native" />
+		</id>
+		<property name="softId" type="java.lang.Integer">
+			<column name="softId" />
+		</property>
+		<property name="money" type="java.lang.Double">
+			<column name="money" />
+		</property>
+		<property name="feeType" type="java.lang.Integer">
+			<column name="feeType" />
+		</property>
+		<property name="calculate" type="java.lang.Integer">
+			<column name="calculate" />
+		</property>
+		<property name="manufacturer" type="java.lang.String">
+			<column name="manufacturer" />
+		</property>
+		<property name="settleType" type="java.lang.Integer">
+			<column name="settleType" />
+		</property>
+		<property name="contractTime" type="java.lang.String">
+			<column name="contractTime" />
+		</property>
+		<property name="condition" type="java.lang.String">
+			<column name="condition" />
+		</property>
+		<property name="linker" type="java.lang.String">
+			<column name="linker" />
+		</property>
+		<property name="phone" type="java.lang.String">
+			<column name="phone" />
+		</property>
+		<property name="isRecommend" type="java.lang.Integer">
+			<column name="isRecommend" />
+		</property>
+		<property name="networkType" type="java.lang.String">
+			<column name="networkType" />
+		</property>
+		<property name="channelId" type="java.lang.Integer">
+			<column name="channelId" />
+		</property>
+		<property name="deleted" type="java.lang.Integer">
+			<column name="deleted" />
+		</property>
+		<many-to-one name="software" class="com.usernet.product.entity.Software" not-found="ignore" insert="false" update="false" >
+			<column name="softId" />
+		</many-to-one>
+	</class>
+</hibernate-mapping>

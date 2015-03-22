@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+"http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+<hibernate-mapping>
+	<class name="com.usernet.product.entity.ClientLog" table="client_log">
+		<cache usage="read-write" />
+		<id name="id" type="java.lang.Integer">
+			<column name="id" />
+			<generator class="native" />
+		</id>
+		<many-to-one name="channel" class="com.usernet.product.entity.Channel" cascade="all" not-found="ignore">
+			<column name="channelId" />
+		</many-to-one>
+		<many-to-one name="model" class="com.usernet.product.entity.ClientModel" cascade="all" not-found="ignore">
+			<column name="modelId" />
+		</many-to-one>
+		<property name="time" type="java.sql.Timestamp">
+			<column name="time" />
+		</property>
+		<property name="imei" type="java.lang.String">
+			<column name="imei" />
+		</property>
+		<property name="versionName" type="java.lang.String">
+			<column name="versionName" />
+		</property>
+		<property name="ip" type="java.lang.String">
+			<column name="ip" />
+		</property>
+		<property name="address" type="java.lang.String">
+			<column name="address" />
+		</property>
+		<many-to-one name="user" class="com.usernet.product.entity.Users" cascade="all">
+			<column name="userId"></column>
+		</many-to-one>
+	</class>
+</hibernate-mapping>

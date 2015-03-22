@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+"http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+
+<hibernate-mapping>
+	<class name="com.usernet.product.entity.TaskGift" table="task_gift">
+		<id name="id" type="java.lang.Integer">
+			<column name="id" />
+			<generator class="native" />
+		</id>
+		<property name="taskId" type="java.lang.Integer">
+			<column name="taskId" />
+		</property>
+		<many-to-one name="gift" class="com.usernet.product.entity.Gift" not-found="ignore">
+			<column name="giftId" />
+		</many-to-one>
+		<property name="count" type="java.lang.Integer">
+			<column name="count" />
+		</property>
+	</class>
+</hibernate-mapping>

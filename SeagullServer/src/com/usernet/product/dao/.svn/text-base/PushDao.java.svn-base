@@ -1,0 +1,64 @@
+package com.usernet.product.dao;
+
+import java.util.Date;
+import java.util.List;
+
+import org.hibernate.Session;
+import org.hibernate.Transaction;
+
+import com.opensymphony.oscache.util.StringUtil;
+import com.usernet.product.comm.BaseDao;
+import com.usernet.product.comm.HibernateSessionFactory;
+import com.usernet.product.entity.Push;
+import com.usernet.product.entity.Software;
+
+public class PushDao extends BaseDao{
+	public List<Push> getAll(String name){
+		String hql = "FROM Push a  where  1=1";
+		if(!StringUtil.isEmpty(name)){
+			hql = hql +" and a.software.name like '%"+name+"%' ";
+		}
+		return this.getAllByHql(hql);
+	}
+	
+	/**
+	 *  action时否存在channelid的自动推荐
+	 *  存在返回false
+	 */
+	public boolean isRePush(Integer action,String channel,String day){
+		String sql = "select id from push_tab where action ="+action+" and channel = '"+channel+"' and day = '" + day +"'";
+		List l= this.getAllByPageAndSql(sql);
+		if(l==null){
+			return true;
+		}else if(l.isEmpty()){
+			return true;
+		}else{
+			return false;
+		}
+	}
+	
+	public void deletedByAction(Integer action,String day){
+		String sql = "delete from Push where action = "+action+" and day = '"+day+"'";
+		this.deleteByHql(sql);
+	}
+	
+	public void insertAll(Integer action,String channel,Integer[] softId,String day){
+		if(softId==null||softId.length==0){
+			return;
+		}
+		Session session = HibernateSessionFactory.getSessionFactory().openSession();
+		Transaction ts = session.beginTransaction();
+		Date nowDate = new Date();
+		for(Integer sid :softId){
+			Push p = new Push();
+			p.setAction(action);
+			p.setTime(nowDate);
+			p.setChannel(channel);
+			p.setSoftId(sid);
+			p.setDay(day);
+			session.save(p);
+		}
+		ts.commit();
+		session.close();
+	}
+}

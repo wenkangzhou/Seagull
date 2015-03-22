@@ -1,0 +1,431 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE struts-config PUBLIC "-//Apache Software Foundation//DTD Struts Configuration 1.2//EN" "http://struts.apache.org/dtds/struts-config_1_2.dtd">
+<struts-config>
+	<data-sources />
+	<form-beans>
+		<form-bean name="adminForm" type="com.usernet.product.web.form.AdminForm" />
+		<form-bean name="logForm" type="com.usernet.product.web.form.LogForm" />
+		<form-bean name="channelForm" type="com.usernet.product.web.form.ChannelForm" />
+		<form-bean name="productForm" type="com.usernet.product.web.form.ProductForm" />
+		<form-bean name="statisticsForm"
+			type="com.usernet.product.web.form.StatisticsForm" />
+		<form-bean name="advertForm" type="com.usernet.product.web.form.AdvertForm" />
+		<form-bean name="advertTypeForm"
+			type="com.usernet.product.web.form.AdvertTypeForm" />
+		<form-bean name="messagePushForm"
+			type="com.usernet.product.web.form.MessagePushForm" />
+		<form-bean name="informationForm"
+			type="com.usernet.product.web.form.InformationForm" />
+		<form-bean name="appAccountForm"
+			type="com.usernet.product.web.form.AppAccountForm" />
+		<form-bean name="recommendForm"
+			type="com.usernet.product.web.form.RecommendForm" />
+		<form-bean name="orderTabForm"
+			type="com.usernet.product.web.form.OrderTabForm" />
+		<form-bean name="goodsForm"
+			type="com.usernet.product.web.form.GoodsForm" />
+		<form-bean name="tagForm" type="com.usernet.product.web.form.TagForm" />
+		<form-bean name="microBlogUserForm" type="com.usernet.product.web.form.MicroBlogUserForm" />
+		<form-bean name="quickSearchKeywordForm" type="com.usernet.product.web.form.QuickSearchKeywordForm" />
+		<form-bean name="softwareForm" type="com.usernet.product.web.form.SoftwareForm" />
+		<form-bean name="photoForm" type="com.usernet.product.web.form.PhotoForm" />
+		<form-bean name="configBaseForm" type="com.usernet.product.web.form.ConfigBaseForm" />
+		<form-bean name="pushForm" type="com.usernet.product.web.form.PushForm" />
+		<form-bean name="searchForm" type="com.usernet.product.web.form.SearchForm" />
+		<form-bean name="commentForm" type="com.usernet.product.web.form.CommentForm" />
+		<form-bean name="lotteryTicketForm" type="com.usernet.product.web.form.LotteryTicketForm" />
+		<form-bean name="usersForm" type="com.usernet.product.web.form.UsersForm" />
+		<form-bean name="authForm" type="com.usernet.product.web.form.AuthForm" />
+		<form-bean name="roleForm" type="com.usernet.product.web.form.RoleForm" />
+		<form-bean name="statForm" type="com.usernet.product.web.form.StatForm" />
+		<form-bean name="clientStartImgForm" type="com.usernet.product.web.form.ClientStartImgForm" />
+		<form-bean name="channelPrefectureForm" type="com.usernet.product.web.form.ChannelPrefectureForm" />	
+		<form-bean name="messageBoardForm" type="com.usernet.product.web.form.MessageBoardForm" />	
+	</form-beans>
+	
+	<global-forwards>
+		<forward name="admin_msg" path="/admin/admin_msg.jsp" />
+		<forward name="img" path="/admin/page/img.jsp" />
+		<forward name="login" path="/admin/login.jsp" />
+	</global-forwards>
+	
+	<action-mappings>
+		<action path="/admin" scope="request" parameter="method" name="adminForm"
+			type="com.usernet.product.web.action.AdminAction">
+			<forward name="success" path="/admin/index/index.jsp"
+				redirect="true" />
+			<forward name="toshanghu" path="goods.do?method=toList"
+				redirect="true" />
+			<forward name="error" path="/admin/login_error.jsp" />
+			<forward name="login" path="/admin/login.jsp" />
+			<forward name="password" path="/admin/page/admin_password.jsp" />
+			<forward name="userBehavior" path="/admin/page/userBehavior.jsp" />
+			<forward name="addUserBehavior" path="/admin/page/userBehavior_add.jsp" />
+			<forward name="subsidiary" path="/admin/page/subsidiaryList.jsp" />
+			<forward name="toSubsidiary" path="/admin/page/subsidiary_add.jsp" />
+			<forward name="content" path="/admin/page/contentList.jsp" />
+			<forward name="other" path="/admin.do?method=toList"
+				redirect="true" />
+		</action>
+
+		<action path="/log" scope="request" parameter="method" name="logForm"
+			type="com.usernet.product.web.action.LogAction">
+			<forward name="list" path="/admin/page/log_list.jsp" />
+			<forward name="logStatistics" path="/admin/page/log_statistics_list.jsp" />
+			<forward name="logNumStatistik" path="/admin/page/log_logNumStatistik.jsp" />
+			<forward name="everydayLogStatistik" path="/admin/page/everydayLogStatistik.jsp" />
+			<forward name="message" path="/admin/page/log_message.jsp"/>
+			<forward name="other" path="/log.do?method=toList" redirect="true" />
+			<forward name="testList" path="/admin/page/test_manage_list.jsp"/>
+		</action>
+
+		<action path="/channel" scope="request" parameter="method"
+			name="channelForm" type="com.usernet.product.web.action.ChannelAction">
+			<forward name="list" path="/admin/page/channel_list.jsp" />
+			<forward name="edit" path="/admin/page/channel_edit.jsp" />
+			<forward name="other" path="/channel.do?method=toList"
+				redirect="true" />
+			<forward name="channelStatistics" path="/admin/page/channel_statistics_list.jsp" />
+			<forward name="manufacturersTypeStatistics" path="/admin/page/channel_type.jsp" />
+			<forward name="client_Log" path="/admin/page/client_log.jsp" />
+			<forward name="toAreaStatistics" path="/admin/page/AreaStatistics.jsp" />
+			<forward name="getChannelType" path="/admin/page/channelType.jsp" />
+		</action>
+
+		<action path="/advert" scope="request" parameter="method" name="advertForm"
+			type="com.usernet.product.web.action.AdvertAction">
+			<forward name="list" path="/admin/page/advert_list.jsp" />
+			<forward name="edit" path="/admin/page/advert_edit.jsp" />
+			<forward name="editByChannel" path="/admin/page/advert_editByChannel.jsp" />
+			<forward name="add1" path="/admin/page/advert_add_selecttype.jsp" />
+			<forward name="add_soft" path="/admin/page/advert_softlist.jsp" />
+			<forward name="add_info" path="/admin/page/advert_infolist.jsp" />
+			<forward name="add_goods" path="/admin/page/advert_goodslist.jsp" />
+			<forward name="add_web" path="/admin/page/advert_add.jsp" />
+			<forward name="other" path="/advert.do?method=toList" redirect="true" />
+		</action>
+
+		<action path="/messagePush" scope="request" parameter="method"
+			name="messagePushForm" type="com.usernet.product.web.action.MessagePushAction">
+			<forward name="onlineUser" path="/admin/page/onlineUser_list.jsp" />
+			<forward name="pushInformation" path="/admin/page/pushInformation_list.jsp" />
+			<forward name="list" path="/admin/page/messagepush_list.jsp" />
+			<forward name="add" path="/admin/page/messagepush_add.jsp" />
+			<forward name="other" path="/messagePush.do?method=toList" redirect="true" />
+			<forward name="pushSoft" path="/admin/page/pushSoftware_list.jsp" />
+		</action>
+
+		<action path="/advertType" scope="request" parameter="method"
+			name="advertTypeForm" type="com.usernet.product.web.action.AdvertTypeAction">
+			<forward name="list" path="/admin/page/advertType_list.jsp" />
+			<forward name="edit" path="/admin/page/advertType_edit.jsp" />
+			<forward name="add" path="/admin/page/advertType_add.jsp" />
+			<forward name="other" path="/advertType.do?method=toList"
+				redirect="true" />
+		</action>
+
+		<action path="/recommend" scope="request" parameter="method" name="recommendForm"
+			type="com.usernet.product.web.action.RecommendAction">
+			<forward name="recommendList" path="/admin/page/recommendList.jsp" />
+			<forward name="dorecommend" path="/admin/page/recommend_add.jsp" />
+			<forward name="expiredRecommendList" path="/admin/page/expiredRecommendList.jsp" />
+			<forward name="toEdit" path="/admin/page/recommend_edit.jsp" />
+			<forward name="dorecommendAdd" path="/admin/page/recommend_add1.jsp" />
+			<forward name="toSoftList" path="/admin/page/recommend_add2.jsp" />
+			<forward name="toInformation" path="/admin/page/recommend_information.jsp" />
+			<forward name="toTop" path="/admin/page/recommend_top.jsp" />
+			<forward name="list" path="/recommend.do?method=toList" redirect="true" />
+			<forward name="ExpiredList" path="/recommend.do?method=Expiredrecommend"
+				redirect="true" />
+				
+		</action>
+
+		<action path="/statistics" scope="request" parameter="method"
+			name="statisticsForm" type="com.usernet.product.web.action.StatisticsAction">
+			<forward name="unPayList" path="/admin/page/statistics_list_1.jsp" />
+			<forward name="payList" path="/admin/page/statistics_list_2.jsp" />
+			<forward name="statistics_list_channel" path="/admin/page/statistics_list_1_channel.jsp" />
+			<forward name="other" path="/statistics.do?method=toUnPayList"
+				redirect="true" />
+		</action>
+
+		<action path="/information" scope="request" parameter="method"
+			name="informationForm" type="com.usernet.product.web.action.InformationAction">
+			<forward name="toList" path="/admin/page/informationList.jsp" />
+			<forward name="toUploadPicture" path="/admin/page/toUploadInformationPicture.jsp" />
+			<forward name="toUploadPictureMethod" path="/information.do?method=toUploadPicture" />
+			<forward name="saveInformation" path="/admin/page/informationAdd.jsp" />
+			<forward name="toEdit" path="/admin/page/information_edit.jsp" />
+		<!-- <forward name="toAddWeb" path="/admin/page/information_web_add.jsp" /> -->	
+			<forward name="photo" path="/admin/page/photo.jsp" />
+			<forward name="other" path="/information.do?method=toList"
+				redirect="true" />
+		</action>
+
+		<action path="/product" scope="request" parameter="method"
+			name="productForm" type="com.usernet.product.web.action.ProductAction">
+			<forward name="list" path="/admin/page/product_list.jsp" />
+			<forward name="edit" path="/admin/page/product_edit.jsp" />
+			<forward name="softList" path="/admin/page/software_list.jsp" />
+			<forward name="add0" path="/admin/page/product_add_1.jsp" />
+			<forward name="add1" path="/admin/page/software_add_1.jsp" />
+			<forward name="add2" path="/admin/page/software_add_2.jsp" />
+			<forward name="add3" path="/admin/page/software_add_3.jsp" />
+			<forward name="update" path="/admin/page/software_update.jsp" />
+			<forward name="info" path="/admin/page/software_info.jsp" />
+			<forward name="photo" path="/admin/page/photo.jsp" />
+			<forward name="apk" path="/admin/page/software_apk.jsp" />
+			<forward name="icon" path="/admin/page/software_icon.jsp" />
+			<forward name="priceList" path="/admin/page/price_list.jsp" />
+			<forward name="price" path="/admin/page/product_price.jsp" />
+			<forward name="softs" path="/product.do?method=toSoftList"
+				redirect="true" />
+			<forward name="other" path="/product.do?method=toList"
+				redirect="true" />
+			<forward name="productStatistics" path="/admin/page/product_statistics_list.jsp" />
+			<forward name="productDownloadTrend" path="/admin/page/product_downloadTrend.jsp" />
+		</action>
+
+		<action path="/clientCreate" scope="request" parameter="method"
+			type="com.usernet.product.web.action.ClientCreateAction">
+			<forward name="createClient" path="/admin/page/createClient.jsp" />
+		</action>
+
+		<action path="/userSoftware" scope="request" parameter="method"
+			type="com.usernet.product.web.action.UserSoftwareAction">
+			<forward name="userSoftwareStatistics" path="/admin/page/userSoftwareStatistics.jsp" />
+			<forward name="userSoftwareOpenNumStatistics" path="/admin/page/userSoftwareOpenNumStatistics.jsp" />
+		</action>
+
+		<action path="/appAccount" scope="request" parameter="method" name="appAccountForm"
+			type="com.usernet.product.web.action.AppAccountAction" >
+			<forward name="checkOut" path="/admin/page/appAccountCheckOut.jsp" />
+			<forward name="list" path="/admin/page/appAccountList.jsp" />
+			<forward name="other" path="/appAccount.do?method=toList"
+				redirect="true" />
+		</action>
+		
+		<action path="/channelPv" scope="request" parameter="method" name="informationForm"
+			type="com.usernet.product.web.action.ChannelPvAction" >
+			<forward name="infrmationPvStatistics" path="/admin/page/infrmationPvStatistics.jsp" />
+			<forward name="informationPv" path="/admin/page/infrmationPv.jsp" />
+			<forward name="commodityPv" path="/admin/page/commodityPv.jsp" />		
+			<forward name="info_pv_list" path="/admin/page/info_pv_list.jsp" />
+		</action>
+		
+		<action path="/subscriber" scope="request" parameter="method" 
+			type="com.usernet.product.web.action.SubscriberAction" >
+		</action>
+		
+		<action path="/ordertab" scope="request" parameter="method"
+			name="orderTabForm" type="com.usernet.product.web.action.OrderTabAction">
+			<forward name="toList" path="/admin/page/ordertab_list.jsp" />
+			<forward name="toAdd" path="/admin/page/ordertab_add.jsp" />
+			<forward name="ok" redirect="true" path="/admin/page/ordertab_ok.jsp" />
+			<forward name="view" path="/admin/page/ordertab_view.jsp" />
+			<forward name="viewreadonly" path="/admin/page/ordertab_viewreadonly.jsp" />
+			<forward name="viewgoods" path="/admin/page/ordertab_viewgoods.jsp" />		
+			<forward name="other" path="/ordertab.do?method=toList"
+				redirect="true" />
+			<forward name="toMobileAdd"  path="/admin/wap/ordertab_mobile_add.jsp" />
+		</action>
+		
+		<action path="/goods" scope="request" parameter="method"
+			name="goodsForm" type="com.usernet.product.web.action.GoodsAction">
+			<forward name="toList" path="/admin/page/goods_list.jsp" />
+			<forward name="toSyList" path="/admin/page/syGoodsList.jsp" />
+			<forward name="toOther" path="/goods.do?method=toSyList" redirect="true"/>
+			<forward name="toAdd" path="/admin/page/goods_add.jsp" />
+			<forward name="toEdit" path="/admin/page/goods_edit.jsp" />
+			<forward name="toUploadPictureMethod" path="/goods.do?method=toUploadPicture" />
+			<forward name="toUploadPicture" path="/admin/page/toUploadGoodsPicture.jsp"/>
+			<forward name="photo" path="/admin/page/photo.jsp" />
+			<forward name="other" path="/goods.do?method=toList" redirect="true" />
+			<forward name="colorlist" path="/admin/page/color_list.jsp" />
+			<forward name="toColorOther" path="/goods.do?method=colorList" redirect="true" />	
+			<forward name="toAddColor" path="/admin/page/color_add.jsp" />			
+			<forward name="sizelist" path="/admin/page/size_list.jsp" />	
+			<forward name="toSizeOther" path="/goods.do?method=sizeList" redirect="true" />	
+			<forward name="toAddSize" path="/admin/page/size_add.jsp" />	
+			<forward name="viewreadonly" path="/admin/page/goods_view.jsp" />					
+		</action>
+		
+		<action path="/tag" scope="request" parameter="method" 
+		name="tagForm" type="com.usernet.product.web.action.TagAction">
+			<forward name="toAdd" path="/admin/page/tag_add.jsp" />
+			<forward name="toEdit" path="/admin/page/tag_edit.jsp" />
+			<forward name="list" path="/admin/page/tag_list.jsp" />
+			<forward name="other" path="/tag.do?method=toList" redirect="true" />
+			
+			<forward name="sub_toAdd" path="/admin/page/tag_sub_add.jsp" />
+			<forward name="sub_list" path="/admin/page/tag_sub_list.jsp" />
+			<forward name="sub_toEdit" path="/admin/page/tag_sub_edit.jsp" />
+			<forward name="sub_other" path="/tag.do?method=toSubTagList" redirect="true" />
+		</action>
+		
+		<action path="/microBlogUser" scope="request" parameter="method" 
+		name="microBlogUserForm" type="com.usernet.product.web.action.MicroBlogUserAction">
+			<forward name="toAdd" path="/admin/page/microBlogUser_add.jsp" />
+			<forward name="toEdit" path="/admin/page/microBlogUser_edit.jsp" />
+			<forward name="list" path="/admin/page/microBlogUser_list.jsp" />
+			<forward name="other" path="/microBlogUser.do?method=toList" redirect="true" />
+		</action>
+		
+		<action path="/quickSearchKeyword" scope="request" parameter="method" 
+		name="quickSearchKeywordForm" type="com.usernet.product.web.action.QuickSearchKeywordAction">
+			<forward name="toAdd" path="/admin/page/quicksearchkeyword_add.jsp" />
+			<forward name="list" path="/admin/page/quicksearchkeyword_list.jsp" />
+			<forward name="other" path="/quickSearchKeyword.do?method=toList" redirect="true" />
+		</action>
+		
+		<action path="/configBase" scope="request" parameter="method" 
+		name="configBaseForm" type="com.usernet.product.web.action.ConfigBaseAction">
+			<forward name="toAdd" path="/admin/page/configBase_add.jsp" />
+			<forward name="toEdit" path="/admin/page/configBase_edit.jsp" />
+			<forward name="list" path="/admin/page/configBase_list.jsp" />
+			<forward name="other" path="/configBase.do?method=toList" redirect="true" />
+		</action>
+		
+		<action path="/software" scope="request" parameter="method"
+			name="softwareForm" type="com.usernet.product.web.action.SoftwareAction">
+			<forward name="list" path="/admin/page/software_manage_list.jsp" />
+			<forward name="add1" path="/admin/page/software_manage_add_1.jsp" />
+			<forward name="add2" path="/admin/page/software_manage_add_2.jsp" />
+			<forward name="add3" path="/admin/page/software_manage_add_3.jsp" />
+			<forward name="update" path="/admin/page/software_manage_update.jsp" />
+			<forward name="photo" path="/admin/page/photo.jsp" />
+			<forward name="apk" path="/admin/page/software_manage_apk.jsp" />
+			<forward name="icon" path="/admin/page/software_manage_icon.jsp" />
+			<forward name="other" path="/software.do?method=toList" redirect="true" />
+			<forward name="pushIcon" path="/admin/page/software_manage_pushIcon.jsp" />
+		</action>
+		
+		<action path="/photo" scope="request" parameter="method" name="photoForm"
+			type="com.usernet.product.web.action.PhotoAction">
+			<forward name="other" path="/software.do?method=toList"
+				redirect="true" />
+			<forward name="infoOther" path="/information.do?method=toList"
+				redirect="true" />
+			<forward name="goodsOther" path="/goods.do?method=toList"
+				redirect="true" />
+			<forward name="informationOther" path="/information.do?method=toList"
+				redirect="true" />
+		</action>
+		
+		<action path="/push" scope="request" parameter="method" name="pushForm"
+			type="com.usernet.product.web.action.PushAction">
+			<forward name="other" path="/push.do?method=toList" redirect="true" />
+			<forward name="toAdd" path="/admin/page/push_add.jsp"/>
+			<forward name="list" path="/admin/page/push_list.jsp"/>
+			<forward name="toEdit" path="/admin/page/push_edit.jsp"/>
+			<forward name="error" path="/admin/page/push_error.jsp"/>
+		</action>
+		
+		<action path="/weiboOAuth" scope="request" parameter="method"
+			type="com.usernet.product.web.action.WeiboOAuthAction">
+			<forward name="code" path="/admin/page/weibo_code.jsp"/>
+			<forward name="key" path="/admin/page/weibo_key.jsp"/>
+		</action>
+		
+		<action path="/search" scope="request" parameter="method" name="searchForm"
+			type="com.usernet.product.web.action.SearchAction">
+			<forward name="list" path="/admin/page/search_list.jsp"/>
+		</action>
+		
+		<action path="/forward" scope="request" parameter="method"
+			type="com.usernet.product.web.action.ForwardAction">
+			<forward name="goods_list" path="/admin/page/goods_show_list.jsp"/>
+			<forward name="goods_show" path="/admin/page/goods_show.jsp"/>
+			<forward name="wap_goods_view" path="/admin/wap/goods_view.jsp"/>
+			<forward name="goodsOrInfoShow" path="/admin/wap/info_view.jsp"/>
+			<forward name="newgoods" path="/admin/wap/new_goods_view.jsp"/>
+			<forward name="downgoods" path="/admin/wap/down_goods_view.jsp"/>
+		</action>
+		
+		<action path="/comment" scope="request" parameter="method" name="commentForm"
+			type="com.usernet.product.web.action.CommentAction">
+			<forward name="soft_list" path="/admin/page/comment_soft_list.jsp"/>
+			<forward name="list" path="/admin/page/comment_list.jsp"/>
+			<forward name="other" path="/comment.do?method=toList" redirect="true" />
+			<forward name="Commodity_Comment_List" path="/admin/page/commodity_comment_list.jsp"/>
+			<forward name="toEditCommodityComment" path="/admin/page/commodity_comment_edit.jsp"/>
+			<forward name="toAddCommodityComment" path="/admin/page/commodity_comment_add.jsp"/>
+		</action>
+		
+		<action path="/lotteryTicket" scope="request" parameter="method" name="lotteryTicketForm"
+			type="com.usernet.product.web.action.LotteryTicketAction">
+			<forward name="list" path="/admin/page/lotteryTicket_list.jsp"/>
+			<forward name="other" path="/lotteryTicket.do?method=toList"
+				redirect="true" />
+		</action>
+		<action path="/users" scope="request" parameter="method" name="usersForm"
+			type="com.usernet.product.web.action.UsersAction">
+			<forward name="list" path="/admin/page/users_list.jsp"/>
+			<forward name="user_pv" path="/admin/page/users_pv_list.jsp"/>
+			<forward name="user_view" path="/admin/page/user_view.jsp"/>
+		</action>
+		<action path="/auth" scope="request" parameter="method" name="authForm"
+			type="com.usernet.product.web.action.AuthAction">
+			<forward name="add" path="/admin/page/auth_add.jsp"/>
+			<forward name="edit" path="/admin/page/auth_edit.jsp"/>
+			<forward name="list" path="/admin/page/auth_list.jsp"/>
+			<forward name="other" path="/auth.do?method=toList"
+				redirect="true" />
+		</action>
+		<action path="/role" scope="request" parameter="method" name="roleForm"
+			type="com.usernet.product.web.action.RoleAction">
+			<forward name="add" path="/admin/page/role_add.jsp"/>
+			<forward name="edit" path="/admin/page/role_edit.jsp"/>
+			<forward name="list" path="/admin/page/role_list.jsp"/>
+			<forward name="authorize" path="/admin/page/role_authorize.jsp"/>
+			<forward name="other" path="/role.do?method=toList"
+				redirect="true" />
+		</action>
+		<action path="/onLineUser" scope="request" parameter="method"
+			type="com.usernet.product.web.action.OnLineUserAction">
+			<forward name="list" path="/admin/page/onlineUser_list.jsp"></forward>	
+		</action>
+		
+		<action path="/stat" scope="request" parameter="method" name="statForm"
+			type="com.usernet.product.web.action.StatAction">
+			<forward name="openNote" path="/admin/page/open_note_list.jsp"/>
+			<forward name="openContinuouNote" path="/admin/page/open_continuou_note_list.jsp"/>
+			<forward name="notUseNote" path="/admin/page/not_use_note_list.jsp"/>
+			<forward name="typeClick" path="/admin/page/type_click_list.jsp"/>
+			<forward name="goodsClick" path="/admin/page/goods_click_list.jsp"/>
+		</action>
+		
+		<action path="/blacklist" scope="request" parameter="method"
+			type="com.usernet.product.web.action.PushBlacklistAction">
+			<forward name="add" path="/admin/page/push_black_add.jsp"/>
+			<forward name="list" path="/admin/page/push_black_list.jsp"/>
+			<forward name="other" path="/blacklist.do?method=toList" redirect="true"/>
+		</action>
+		
+		<action path="/startimg" scope="request" parameter="method" name="clientStartImgForm"
+			type="com.usernet.product.web.action.StartImgAction">
+			<forward name="edit" path="/admin/page/start_img_edit.jsp"/>
+			<forward name="list" path="/admin/page/start_img_list.jsp"/>
+			<forward name="other" path="/startimg.do?method=toList" redirect="true"/>
+		</action>
+		
+		<action path="/channelPrefecture" scope="request" parameter="method" name="channelPrefectureForm"
+			type="com.usernet.product.web.action.ChannelPrefectureAction">
+			<forward name="add" path="/admin/page/channelPrefecture_add.jsp"/>
+			<forward name="edit" path="/admin/page/channelPrefecture_edit.jsp"/>
+			<forward name="list" path="/admin/page/channelPrefecture_list.jsp"/>
+			<forward name="other" path="/channelPrefecture.do?method=toList" redirect="true"/>
+		</action>
+		
+		<action path="/messageBoard" scope="request" parameter="method" name="messageBoardForm"
+			type="com.usernet.product.web.action.MessageBoardAction">
+			<forward name="toList" path="/admin/page/message_board_list.jsp"/>
+			<forward name="toInfoList" path="/admin/page/message_board_info_list.jsp"/>
+			<forward name="toAdd" path="/admin/page/message_board_info_add.jsp" />
+			<forward name="toEdit" path="/admin/page/message_board_info_edit.jsp" />
+			<forward name="other" path="/messageBoard.do?method=toList" redirect="true"/>
+		</action>
+	</action-mappings>
+	
+	<message-resources parameter="resources" />
+</struts-config>

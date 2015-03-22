@@ -1,0 +1,439 @@
+package com.usernet.product.web.action;
+
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.sql.Timestamp;
+import java.util.Date;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.Hashtable;
+import java.util.List;
+import java.util.Set;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionForward;
+import org.apache.struts.action.ActionMapping;
+import org.apache.struts.upload.FormFile;
+
+import com.opensymphony.oscache.util.StringUtil;
+import com.usernet.product.comm.BaseAction;
+import com.usernet.product.entity.Channel;
+import com.usernet.product.entity.Commodity_Tab;
+import com.usernet.product.entity.Information_Tab;
+import com.usernet.product.entity.Photo;
+import com.usernet.product.entity.Recommend;
+import com.usernet.product.entity.RecommendBase;
+import com.usernet.product.entity.Software;
+import com.usernet.product.entity.Tag;
+import com.usernet.product.tools.FileTools;
+import com.usernet.product.tools.FtpTools;
+import com.usernet.product.tools.Property;
+import com.usernet.product.utils.CreateThumbnail;
+import com.usernet.product.utils.DateUtils;
+import com.usernet.product.utils.Page;
+import com.usernet.product.utils.PageResult;
+import com.usernet.product.utils.ProductConfig;
+import com.usernet.product.utils.StringUtils;
+import com.usernet.product.web.form.InformationForm;
+
+/**
+ * 资讯管理
+ * 
+ * @author Administrator
+ * 
+ */
+public class InformationAction extends BaseAction {
+
+	private final String UPLOAD_DIR = Property.getPara("resources",
+			"informationImage");
+
+	private final String PHOTO_DIR = Property.getPara("resources",
+			"photo_PhysicsPath");
+
+	/**
+	 * 首页
+	 * 
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 */
+	public ActionForward toList(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_MEDIA);
+		InformationForm mForm = (InformationForm) form;
+		PageResult<Information_Tab> list = null;
+		Page page = new Page();
+		// 分页信息
+		String pageNo = mForm.getPageNo();
+		String pageSize = mForm.getPageSize();
+		if (pageSize != null)
+			page.setEveryPage(Integer.parseInt(pageSize.trim()));
+		if (pageNo != null)
+			page.setCurrentPage(Integer.parseInt(pageNo.trim()));
+		Channel channel = (Channel) request.getSession().getAttribute("admin");
+		if (mForm.getChannelId() == null) {
+			mForm.setChannelId(0);
+		}	
+		Integer[] channelIdArray = getChannelsArray(request, channel);
+		list = productDao.getPage(page,mForm.getName(),channelIdArray);
+		List<Channel> channels = getChannel(channel.getId(),channel.getType());//页面上显示的渠道
+		request.setAttribute("channels", channels);	
+		request.setAttribute("form", mForm);
+		request.setAttribute("list", list.getContent());
+		request.setAttribute("page", list.getPage());
+		request.setAttribute("size", list.getSize());
+		return mapping.findForward("toList");
+	}
+	@SuppressWarnings("unchecked")
+	public ActionForward toPhoto(ActionMapping mapping, ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) {
+		int id = Integer.parseInt(request.getParameter("id"));
+		List<Photo> photos = goodsDao.getAllByHql("from Photo where softId='" + id +"' and flag = 2");
+		request.setAttribute("id", id);
+		request.setAttribute("flag", "2");
+		request.setAttribute("photos", photos);
+		return mapping.findForward("photo");
+	}
+	/**
+	 * 去修改
+	 * 
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 */
+	public ActionForward toEdit(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_MEDIA);
+		InformationForm iform = (InformationForm) form;
+		String id = request.getParameter("id");
+		Information_Tab information_tab = (Information_Tab) softwareDao.getById(Information_Tab.class,
+				Integer.valueOf(id));
+		Channel channel = (Channel) request.getSession().getAttribute("admin");
+		if(channel.getType()==1){
+			List<Channel> channels = getChannel(channel.getId(),channel.getType());//页面上显示的渠道
+			request.setAttribute("channels", channels);
+		}		
+		List<Tag> parentTag = null;
+		if(channel.getType()==0){
+			parentTag = tagDao.getTag(channel.getId());
+		}else{
+			parentTag = tagDao.getTag(null);
+		}
+		request.setAttribute("parentTag", parentTag);
+//		Set<Tag> tag_set = software.getTagkey();
+//		Integer[] tag_id = new Integer[tag_set.size()];
+//		int i=0;
+//		for(Tag t:tag_set){
+//			tag_id[i]=t.getId();
+//			i++;
+//		}
+//		List<Tag> tagList = tagDao.getAllTag();
+//		request.setAttribute("tagList", tagList);
+//		iform.setTag_id(tag_id);
+		request.setAttribute("information_tab", information_tab);
+		return mapping.findForward("toEdit");
+	}
+
+	public ActionForward doEdit(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_MEDIA);
+		InformationForm iform = (InformationForm) form;
+		String id = request.getParameter("id");
+		String title = request.getParameter("title1");
+		String msg = request.getParameter("msg");
+		String phoneNumber = request.getParameter("phoneNumber");
+		String url = request.getParameter("url");
+		String develope = request.getParameter("develope");
+		String count = request.getParameter("count");
+		String isWebContent = request.getParameter("isWebContent");
+		String channelIdStr = request.getParameter("channelId");
+		String tag = request.getParameter("tag");
+		Information_Tab information_tab = (Information_Tab)softwareDao.getById(Information_Tab.class, Integer.valueOf(id));
+
+		if(!StringUtil.isEmpty(channelIdStr)&&!"0".equals(channelIdStr)){
+			information_tab.setChannelId(Integer.valueOf(channelIdStr));
+		}
+		if(!StringUtil.isEmpty(tag)){
+			information_tab.setTag_id(Integer.valueOf(tag));
+		}
+		information_tab.setFrom_where(develope);
+		information_tab.setTitle(title);
+		information_tab.setContent(msg);
+		information_tab.setContact_phone(phoneNumber);
+		information_tab.setDetails_url(url);
+		information_tab.setCreate_time(new Timestamp(System.currentTimeMillis()));
+		information_tab.setCount(Integer.valueOf(count));
+		if(!StringUtil.isEmpty(isWebContent)){
+			if(isWebContent.equals("1"))
+			information_tab.setIsWebContent(1);
+		}
+		else
+		{
+			information_tab.setIsWebContent(0);
+		}
+
+		softwareDao.modify(information_tab);
+		//recommendDao.updateRecommendMsgBySoftwareId(information_tab.getId(), msg,title,develope);
+		return mapping.findForward("other");
+	}
+
+	/**
+	 * 新增
+	 */
+	public ActionForward saveInformation(ActionMapping mapping,
+			ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_MEDIA);
+		
+		Channel channel = (Channel) request.getSession().getAttribute("admin");
+		if(channel.getType()==1){
+			List<Channel> channels = getChannel(channel.getId(),channel.getType());//页面上显示的渠道
+			request.setAttribute("channels", channels);
+		}
+		List<Tag> parentTag = null;
+		if(channel.getType()==0){
+			parentTag = tagDao.getTag(channel.getId());
+		}else{
+			parentTag = tagDao.getTag(null);
+		}
+		request.setAttribute("parentTag", parentTag);
+		
+		return mapping.findForward("saveInformation");
+	}
+
+	public ActionForward saveInformationList(ActionMapping mapping,
+			ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_MEDIA);
+		InformationForm iform = (InformationForm) form;
+		Channel channel = (Channel) request.getSession().getAttribute("admin");
+		Information_Tab information_tab = new Information_Tab();
+		// 标题
+		String title = request.getParameter("title1");
+		// 内容
+		String msg = request.getParameter("msg");
+		// 当前时间
+		String date = DateUtils.getDateFomat("DT");
+		String phoneNumber = request.getParameter("phoneNumber");
+		String url = request.getParameter("url");
+		String isWebContent = request.getParameter("isWebContent");
+		String develope = request.getParameter("develope");
+		String count = request.getParameter("count");
+		String channelIdStr = request.getParameter("channelId");	
+		String tag = request.getParameter("tag");	
+		
+		information_tab.setTitle(title);
+		information_tab.setContent(msg);
+		information_tab.setCreate_time(Timestamp.valueOf(date));
+		information_tab.setContact_phone(phoneNumber);
+		information_tab.setDetails_url(url);
+		information_tab.setFrom_where(develope);
+		information_tab.setCount(Integer.valueOf(count));		
+		
+		if(!StringUtil.isEmpty(channelIdStr)&&!"0".equals(channelIdStr)){
+			information_tab.setChannelId(Integer.valueOf(channelIdStr));
+		}else{
+			information_tab.setChannelId(channel.getId());
+		}
+		if(!StringUtil.isEmpty(tag)){
+			information_tab.setTag_id(Integer.parseInt(tag));
+		}else{
+			information_tab.setTag_id(19);//默认
+		}
+		if(!StringUtil.isEmpty(isWebContent)){
+			if(isWebContent.equals("1"))
+			information_tab.setIsWebContent(1);
+		}
+		else
+		{
+			information_tab.setIsWebContent(0);
+		}	
+		int informationId = softwareDao.save(information_tab);
+		
+		Software s = softwareDao.getSoftwareByNewId(informationId,2);
+		Recommend rec = new Recommend();
+		rec.setSoftware(s);
+		rec.setTitle(title);
+		rec.setMsg(msg);
+		rec.setFromWhere(develope);
+		rec.setTime(new Date());
+		rec.setChannelId(channel.getType() == 1 ? 0 : channel.getId());
+		rec.setBriefMsg(msg.length()>=150?msg.substring(0,150):msg);
+		recommendDao.save(rec);
+		
+		request.setAttribute("id", information_tab.getId());
+		return mapping.findForward("toUploadPictureMethod");
+	}
+
+	/***
+	 * 去上传资讯图片
+	 * 
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 * @throws IOException
+	 */
+	public ActionForward toUploadPicture(ActionMapping mapping,
+			ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) throws IOException {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_MEDIA);
+		String informationId = request.getParameter("id");
+		request.setAttribute("informationId", informationId);
+		return mapping.findForward("toUploadPicture");
+	}
+
+	/***
+	 * 上传资讯图片
+	 * 
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 * @throws FileNotFoundException
+	 * @throws IOException
+	 */
+	public ActionForward doUploadPicture(ActionMapping mapping,
+			ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) throws FileNotFoundException,
+			IOException {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_MEDIA);
+
+		int informationId = Integer.parseInt(request
+				.getParameter("id"));
+		Hashtable<?, ?> files = form.getMultipartRequestHandler()
+				.getFileElements();
+		int count = 0;
+		if (files != null & files.size() > 0) {
+			Enumeration<?> enums = files.keys();
+			String fileKey = null;
+			int i = 0;
+			String filePath = UPLOAD_DIR + "/" + DateUtils.getDate() + "/";
+			FileTools.createDateFile(filePath);
+			while (enums.hasMoreElements()) {
+				// 取得key
+				fileKey = (String) (enums.nextElement());
+				// 初始化每一个FormFile(接口)
+				FormFile file = (FormFile) files.get(fileKey);
+				// 分别上传
+				String name = file.getFileName();
+				if (name != null && !"".equals(name.trim())) {
+					String fileType = name.substring(name.lastIndexOf("."),
+							name.length());
+					if (!".png".equals(fileType.toLowerCase())
+							&& !".jpg".equals(fileType.toLowerCase())) {
+						request.setAttribute("msg", "已经添加成功了" + count
+								+ "张,图片类型错误,必须为PNG或JPG");
+						request.setAttribute("return",
+								"/admin/page/software_add_3.jsp&id="
+										+ informationId);
+						return mapping.findForward("admin_msg");
+					} else {
+						String photpName = StringUtils.getUUID();
+
+						InputStream in = file.getInputStream();
+
+						OutputStream out = new FileOutputStream(filePath
+								+ photpName);
+						out.write(file.getFileData(), 0, file.getFileSize());
+						in.close();
+						in = null;
+						out.close();
+						out = null;
+						
+						try {
+							log.info("开始FTP上传文件: " + photpName);
+							FtpTools.uploadFtp(filePath+photpName, photpName, "photo", DateUtils.getDate());
+						} catch (Exception e) {
+							e.printStackTrace();
+						}
+						
+						Photo informationPicture = new Photo();
+						informationPicture.setPhoto(DateUtils.getDate() + "/"
+								+ photpName);
+						informationPicture.setStatus(0);// 可用
+						informationPicture.setFlag(2);
+						informationPicture.setSoftId(informationId);
+						//informationPicture.setSoftware(software);
+						informationPicture.setTime(new Timestamp(System
+								.currentTimeMillis()));
+						int informationPictureId = informationPictureDao
+								.save(informationPicture);
+						if (informationPictureId > 0) {
+							count++;
+						} else {
+							request.setAttribute("msg", "添加失败,(已经添加成功了" + count
+									+ "张)");
+							request.setAttribute("return",
+									"software.do?method=toList");
+							return mapping.findForward("admin_msg");
+						}
+					}
+				}
+				i++;
+			}
+		}
+
+		List<Photo> infoPicture = productDao.getByImgId(informationId,2);
+
+		if (infoPicture != null && infoPicture.size() > 0) {
+
+			Photo photo = infoPicture.get(0);
+
+			// 原图路径
+			String oldImageName = photo.getPhoto();
+			String oldPath = PHOTO_DIR + oldImageName;
+			// 缩略图路径
+			String thumbnailPhoto = oldPath + "_thumbnail";
+			String thumbnailFile = photo.getPhoto() + "_thumbnail";
+
+			// 生成缩略图
+			try {
+				System.out.println(PHOTO_DIR + thumbnailFile);
+				System.out.println(oldImageName.substring(oldImageName.lastIndexOf("/")+1) + "_thumbnail");
+				
+				CreateThumbnail.saveImageAsJpg(oldPath, thumbnailPhoto, 500,
+						500);
+				log.info("开始FTP上传文件: " + thumbnailFile);
+				FtpTools.uploadFtp(PHOTO_DIR + thumbnailFile, oldImageName.substring(oldImageName.lastIndexOf("/")+1) + "_thumbnail", "photo", DateUtils.getDate());
+				FtpTools.uploadFtp(PHOTO_DIR + thumbnailFile, oldImageName.substring(oldImageName.lastIndexOf("/")+1) + "_thumbnail", "icon", DateUtils.getDate());
+			} catch (Exception e) {
+				e.printStackTrace();
+				log.error("生成缩略图失败");
+			}
+			productDao.updateInformationImg(thumbnailFile, informationId);
+		}
+
+		return mapping.findForward("other");
+	}
+	
+	private Set<Tag> getSetTag(Integer[] id){
+		if(id==null){
+			return null;
+		}
+		Set<Tag> set_tag = new HashSet<Tag>();
+		for(Integer temp:id){
+				Tag t = (Tag) tagDao.getById(Tag.class,temp);
+				set_tag.add(t);
+		}
+		return set_tag;
+	}
+}

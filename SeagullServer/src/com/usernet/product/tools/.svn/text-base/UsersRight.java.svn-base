@@ -1,0 +1,14 @@
+package com.usernet.product.tools;
+
+/**
+ * 权限
+ * @author Administrator
+ *
+ */
+public class UsersRight {
+
+
+	public static final int developer = 2; // 开发人员
+	public static final int comm = 1; // 普通人员
+	
+}

@@ -1,0 +1,120 @@
+package com.usernet.product.entity;
+
+import java.sql.Timestamp;
+
+public class Comment implements java.io.Serializable {
+	private static final long serialVersionUID = -322945095269529419L;
+	
+	private Integer id;
+	private Users users;
+	private Commodity_Tab commodity_tab;
+	private Information_Tab information_tab;
+	private String info;
+	private Integer score;
+	private Timestamp time;
+	private Integer status;
+	private Integer publish; // 是否发布到微博，1：发布，其他值：不发布
+	private Integer flag;
+
+	public Information_Tab getInformation_tab() {
+		return information_tab;
+	}
+
+	public void setInformation_tab(Information_Tab information_tab) {
+		this.information_tab = information_tab;
+	}
+
+	public Commodity_Tab getCommodity_tab() {
+		return commodity_tab;
+	}
+
+	public void setCommodity_tab(Commodity_Tab commodity_tab) {
+		this.commodity_tab = commodity_tab;
+	}
+	public Integer getFlag() {
+		return flag;
+	}
+
+	public void setFlag(Integer flag) {
+		this.flag = flag;
+	}
+
+	public Comment() {
+	}
+
+	public Comment(Users users, String info, Integer score,
+			Timestamp time, Integer status, Integer publish) {
+		this.users = users;
+		this.info = info;
+		this.score = score;
+		this.time = time;
+		this.status = status;
+		this.publish = publish;
+	}
+	
+	public Comment(Users users, String info, Integer score, Timestamp time) {
+		this.users = users;
+		this.info = info;
+		this.score = score;
+		this.time = time;
+	}
+
+	public Integer getId() {
+		return this.id;
+	}
+
+	public void setId(Integer id) {
+		this.id = id;
+	}
+
+	public Users getUsers() {
+		return this.users;
+	}
+
+	public void setUsers(Users users) {
+		this.users = users;
+	}
+
+
+
+	public String getInfo() {
+		return this.info;
+	}
+
+	public void setInfo(String info) {
+		this.info = info;
+	}
+
+	public Integer getScore() {
+		return this.score;
+	}
+
+	public void setScore(Integer score) {
+		this.score = score;
+	}
+
+	public Timestamp getTime() {
+		return this.time;
+	}
+
+	public void setTime(Timestamp time) {
+		this.time = time;
+	}
+
+	public Integer getStatus() {
+		return this.status;
+	}
+
+	public void setStatus(Integer status) {
+		this.status = status;
+	}
+
+	public Integer getPublish() {
+		return publish;
+	}
+
+	public void setPublish(Integer publish) {
+		this.publish = publish;
+	}
+
+}

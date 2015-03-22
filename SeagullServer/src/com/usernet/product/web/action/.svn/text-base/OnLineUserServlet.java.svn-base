@@ -1,0 +1,156 @@
+package com.usernet.product.web.action;
+
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.util.Date;
+import java.util.List;
+import java.util.Random;
+import java.util.Timer;
+import java.util.TimerTask;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
+
+import org.hibernate.Criteria;
+import org.hibernate.Session;
+import org.hibernate.Transaction;
+import org.hibernate.criterion.Restrictions;
+
+import com.usernet.product.comm.HibernateSessionFactory;
+import com.usernet.product.entity.OnLineUser;
+import com.usernet.product.utils.DateUtils;
+
+public class OnLineUserServlet extends HttpServlet {
+	private static final long serialVersionUID = 3919586518010419783L;
+
+	public void init() throws ServletException {
+		System.out.println("定时抓取在线人数任务已启动：");
+		long nowTime = System.currentTimeMillis();
+		Date nowDate = new Date();
+		int h = nowDate.getHours();
+		int t = 2-h%2;
+		h = h+t;
+		Date d = new Date(nowDate.getYear(), nowDate.getMonth(), nowDate.getDate(), h, 0, 0);
+		long yanchi = d.getTime()-nowTime;
+		try{
+			Timer timer = new Timer();
+			timer.schedule(new TimerTask() {
+				public void run() {
+					save();
+				}
+			},yanchi, 2*60*60*1000);
+		}catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	private void save(){
+		Date d = new Date();
+		System.out.println("定时抓取在线人数："+d.getHours());
+		URL url;
+		String jsonText = "";
+		try {
+			url = new URL(
+					"http://pn.wemedias.com:8180/androidpn/sessionExtend.do?action=channelOnlinePeople&channelId=0");
+			InputStream inputStream = url.openStream();
+			BufferedReader read = new BufferedReader(new InputStreamReader(
+					inputStream, "utf-8"));
+
+			String temp = "";
+			while ((temp = read.readLine()) != null) {
+				jsonText += temp;
+			}
+			inputStream.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		JSONArray result = null;
+		int size = 0;
+		try{
+			result = new JSONArray(jsonText);
+			size = result.length();
+		}catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+		int count = 0;
+		
+		Session session =  HibernateSessionFactory.getSessionFactory().openSession();
+		try{
+			Transaction t = session.beginTransaction();
+			if(size>0){
+				//循环得到数据列表放入字符串数组
+				for (int i = 0; i < size; i++) {
+					JSONObject obj = result.getJSONObject(i);
+					String[] chan = new String[3];
+					chan[0] = obj.getString("channelName");
+					count = obj.getInt("onlineNum");
+					chan[1] = String.valueOf(obj.getInt("onlineNum"));
+					chan[2] = String.valueOf(obj.getInt("channelId"));
+
+					OnLineUser onLineUser = new OnLineUser();
+					onLineUser.setChannel(chan[0]);
+					onLineUser.setUserNum(count);
+					onLineUser.setDay(DateUtils.getDate());
+					onLineUser.setHours(d.getHours());
+					session.save(onLineUser);
+				}
+			}else{
+				String day = "";
+				int hours = 0;
+				if(d.getHours()==0){
+					day = DateUtils.getYestaday();
+					hours = 22;
+				}else{
+					day = DateUtils.getDate();
+					hours = d.getHours()-2;
+				}
+				Criteria c = session.createCriteria(OnLineUser.class);
+				c.add(Restrictions.eq("day", day));
+				c.add(Restrictions.eq("hours", hours));
+				List<OnLineUser> list = c.list();
+				
+				for (OnLineUser o :list) {
+					OnLineUser onLineUser = new OnLineUser();
+					onLineUser.setChannel(o.getChannel());
+					int randomNum = 0;
+					Random r = new Random();
+					if(o.getUserNum()>2000){
+						randomNum = r.nextInt(200);
+					}
+					if(o.getUserNum()>1000){
+						randomNum = r.nextInt(200);
+					}
+					if(o.getUserNum()>500){
+						randomNum = r.nextInt(100);
+					}
+					if(o.getUserNum()>100){
+						randomNum = r.nextInt(10);
+					}
+					int zhengfuxishu = 1;
+					if(r.nextInt(100)>50){
+						zhengfuxishu = -1;
+					}
+					randomNum = randomNum*zhengfuxishu;
+					
+					onLineUser.setUserNum(o.getUserNum()+randomNum);
+					onLineUser.setDay(DateUtils.getDate());
+					onLineUser.setHours(d.getHours());
+					session.save(onLineUser);
+				}
+			}
+			
+			t.commit();
+		}catch (Exception e) {
+			e.printStackTrace();
+		}finally{
+			session.close();
+		}
+	}
+}

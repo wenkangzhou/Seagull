@@ -1,0 +1,646 @@
+package com.usernet.product.dao;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import org.apache.commons.lang.StringUtils;
+import org.hibernate.HibernateException;
+import org.hibernate.Query;
+import org.hibernate.Session;
+import org.hibernate.Transaction;
+
+import com.opensymphony.oscache.util.StringUtil;
+import com.usernet.product.comm.BaseDao;
+import com.usernet.product.entity.Channel;
+import com.usernet.product.entity.ChannelSettle;
+import com.usernet.product.utils.DateUtils;
+import com.usernet.product.utils.Page;
+import com.usernet.product.utils.PageResult;
+
+/**
+ * 渠道商信息
+ */
+public class ChannelDao extends BaseDao {
+	/*
+	 * return "adminId"：登录成功，"-1"：登录失败，-2：合同期错误，-3：合同已过期，0：合同即将到期
+	 */
+	@SuppressWarnings("unchecked")
+	public int login(String loginName, String password) {
+		Session session = getSession();
+		String hql = "from Channel where channel=:channel and status = 0";
+		Transaction tr = null;
+		try {
+			tr = session.beginTransaction();
+			Query query = session.createQuery(hql);
+			query.setString("channel", loginName);
+			List list = query.list();
+			tr.commit();
+			Channel admin = null;
+			if (list.size() > 0)
+				admin = (Channel) list.get(0);
+			if (admin == null || !admin.getPassword().equals(password))
+				return -1;
+			if (admin.getType() == 1)
+				return admin.getId();
+			if (StringUtils.isEmpty(admin.getStartTime())
+					|| StringUtils.isEmpty(admin.getContractTime()))
+				return -2;
+			long m = DateUtils.stringToTimestampEnd(admin.getContractTime())
+					.getTime() - System.currentTimeMillis();
+			if (m <= 0)
+				return -3;
+
+			return admin.getId();
+		} catch (HibernateException e) {
+			if (tr != null)
+				tr.rollback();
+			throw e;
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	public List<Channel> getIncludeAll(Integer excludeId) {
+		String hql = "from Channel where type=0 and status = 0";
+		if (excludeId != null && excludeId.intValue() != 0)
+			hql += " and id != " + excludeId;
+		hql += " order by channel";
+		return getAllByHql(hql);
+	}
+
+	/**
+	 * 获取指定父级下的渠道商，不指定父级时取所有
+	 * 
+	 * @param parentId
+	 *            上级ID
+	 * @param isAll
+	 * @return
+	 */
+	@SuppressWarnings("unchecked")
+	public List<Channel> getAll(Integer parentId) {
+		String hql = "from Channel where (type=0 or type=2) and status = 0";
+		if (parentId != null && parentId.intValue() != 0)
+			hql += " and parent.id=" + parentId;
+		hql += " order by channel";
+		return getAllByHql(hql);
+	}
+
+	@SuppressWarnings("unchecked")
+	public List<Integer> getAllId(Integer[] parentIds) {
+		if (parentIds == null || parentIds.length == 0)
+			return null;
+		String hql = "select id from Channel where type=0 and status = 0 and parent.id in ("
+				+ StringUtils.join(parentIds, ",") + ")";
+		List<Integer> ids = getAllByHql(hql);
+		if (ids != null && ids.size() > 0) {
+			List<Integer> subIds = getAllId(ids
+					.toArray(new Integer[ids.size()]));
+			if (subIds != null)
+				ids.addAll(subIds);
+		}
+		return ids;
+	}
+
+	/*
+	 * public Integer[] getChildIdChannelId(Integer channelId) {
+	 * 
+	 * String sql =
+	 * "select c.id as a,ca.id as b,cb.id as c,cc.id as d,cd.id as e,cf.id as f,cg.id as g from channel c "
+	 * ; sql += " left join channel ca on c.id = ca.parentId"; sql +=
+	 * " left join channel cb on ca.id = cb.parentId"; sql +=
+	 * " left join channel cc on cb.id = cc.parentId"; sql +=
+	 * " left join channel cd on cc.id = cd.parentId"; sql +=
+	 * " left join channel ce on ce.id = cd.parentId"; sql +=
+	 * " left join channel cf on cf.id = ce.parentId"; sql +=
+	 * " left join channel cg on cg.id = cf.parentId"; sql +=
+	 * " where type=0 and status = 0 and c.id = " + channelId; List list =
+	 * super.getAllByPageAndSql(sql); Set<Integer> temp = new
+	 * HashSet<Integer>(); for (int i = 0; i < list.size(); i++) {
+	 * 
+	 * Object[] obj = (Object[]) list.get(i); for (int j = 0; j < obj.length;
+	 * j++) {
+	 * 
+	 * if (obj[j] != null) {
+	 * 
+	 * temp.add(Integer.valueOf(String.valueOf(obj[j]))); } }
+	 * 
+	 * } return temp.toArray(new Integer[temp.size()]); }
+	 */
+
+	/** 检查登录名是否存在 */
+	@SuppressWarnings("unchecked")
+	public Channel checkChannel(Integer id, String loginName) {
+		Session session = getSession();
+		Transaction tr = null;
+		try {
+			tr = session.beginTransaction();
+			String hql = "from Channel where type=0 and channel=:channel";
+			if (id != null && id.intValue() != 0)
+				hql += " and id !=" + id;
+			Query query = session.createQuery(hql);
+			query.setString("channel", loginName);
+			List<Channel> list = query.list();
+			tr.commit();
+
+			if (list != null && list.size() > 0) {
+
+				return list.get(0);
+			}
+			return null;
+		} catch (HibernateException e) {
+			if (tr != null) {
+				tr.rollback();
+			}
+			throw e;
+		}
+	}
+	
+	/** 根据渠道号获取渠道 */
+	@SuppressWarnings("unchecked")
+	public Channel getChannelByChannel(String channel) {
+		Session session = getSession();
+		Transaction tr = null;
+		try {
+			tr = session.beginTransaction();
+			String hql = "from Channel where type=0 and channel=:channel";
+			Query query = session.createQuery(hql);
+			query.setString("channel", channel);
+			List<Channel> list = query.list();
+			tr.commit();
+
+			if (list != null && list.size() > 0) {
+
+				return list.get(0);
+			}
+			return null;
+		} catch (HibernateException e) {
+			if (tr != null) {
+				tr.rollback();
+			}
+			throw e;
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	public Integer saveChannel(Channel channel) {
+		Session session = getSession();
+		Transaction tr = null;
+		try {
+			int id = 0;
+			tr = session.beginTransaction();
+			String hql = "from Channel where type=0 and channel=:channel";
+			Query query = session.createQuery(hql);
+			query.setString("channel", channel.getChannel());
+			List<Channel> list = query.list();
+			if (!list.isEmpty())
+				return list.get(0).getId();
+			id = Integer.parseInt(String.valueOf(session.save(channel)));
+			tr.commit();
+			return id;
+		} catch (Exception ex) {
+			if (tr != null)
+				tr.rollback();
+			ex.printStackTrace();
+			return 0;
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	public Channel check(String code, String password) {
+		Session session = getSession();
+		Transaction tr = null;
+		try {
+			tr = session.beginTransaction();
+			String hql = "from Channel where type=0 and channel=:channel";
+			Query query = session.createQuery(hql);
+			query.setString("channel", code);
+			List<Channel> list = query.list();
+			if (!list.isEmpty() && list.get(0).getPassword().equals(password))
+				return list.get(0);
+			tr.commit();
+			return null;
+		} catch (Exception ex) {
+			if (tr != null)
+				tr.rollback();
+			ex.printStackTrace();
+			return null;
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	public ChannelSettle getLastUnSettle(Integer channelId) {
+		if (channelId == null)
+			return null;
+		String hql = "from ChannelSettle where channelId=" + channelId
+				+ " and squared=0 order by settleTime desc";
+		List list = getAllByHql(hql);
+		if (list != null && list.size() > 0)
+			return (ChannelSettle) list.get(0);
+		return null;
+	}
+
+	public List<String> getSelltTimeList(int channelId) {
+
+		String hql = "select distinct payTime from ChannelSettle where channelId="
+				+ channelId + " and squared=1";
+
+		List<String> list = getAllByHql(hql);
+
+		return list;
+	}
+
+	@SuppressWarnings("unchecked")
+	public ChannelSettle getPaySettle(Integer channelId, String time) {
+		if (channelId == null || StringUtils.isEmpty(time))
+			return null;
+		String hql = "from ChannelSettle where channelId=" + channelId
+				+ " and squared=1 and payTime='" + time
+				+ "' order by settleTime desc";
+		List list = getAllByHql(hql);
+		if (list != null && list.size() > 0)
+			return (ChannelSettle) list.get(0);
+		return null;
+	}
+
+	@SuppressWarnings("unchecked")
+	public PageResult<Channel> getPage(Page page, String code) {
+		String hql = "from Channel where  status = 0 ";
+		if (StringUtils.isNotEmpty(code)) {
+			hql += " and (channel like '%" + code + "%' or name like '%" + code
+					+ "%')";
+		} else {
+
+			hql += " and parentId is null ";
+		}
+		hql += " order by channel,time desc";
+		return super.getAllByPageAndHql(page, hql);
+	}
+
+	// @SuppressWarnings("unchecked")
+	// public PageResult getStatistics(Page page, String channel, String imei,
+	// String softName, String startTime, String endTime) {
+	// Map<String, Timestamp> map = new HashMap<String, Timestamp>();
+	// String hql =
+	// "select * from (select s.channel,s.name,s.imei,d.softId,d.softName,count(*) downCount from ("
+	// +
+	// "select c.channel,c.name,l.imei from channel c,client_log l where c.id=l.channelId"
+	// + ") s,download d where s.imei=d.imei";
+	// if (StringUtils.isNotEmpty(channel))
+	// hql += " and s.channel like '%" + channel + "%'";
+	// if (StringUtils.isNotEmpty(imei))
+	// hql += " and s.imei like '%" + imei + "%'";
+	// if (StringUtils.isNotEmpty(softName))
+	// hql += " and d.softName like '%" + softName + "%'";
+	// if (StringUtils.isNotEmpty(startTime)) {
+	// hql += " and d.time>=:startTime";
+	// map.put("startTime", DateUtils.stringToTimestampBegin(startTime));
+	// }
+	// if (StringUtils.isNotEmpty(endTime)) {
+	// hql += " and d.time<=:endTime";
+	// map.put("endTime", DateUtils.stringToTimestampBegin(endTime));
+	// }
+	// hql +=
+	// " group by s.channel,s.name,s.imei,d.softId,d.softName) a order by a.channel";
+	// return super.getAllByPageAndSql(page, hql, map);
+	// }
+
+	/***
+	 * 渠道商数据统计
+	 * 
+	 * @param channel
+	 * @param imei
+	 * @param softName
+	 * @param startTime
+	 * @param endTime
+	 * @return
+	 */
+	@SuppressWarnings("unchecked")
+	public List getChannelStatistics(Integer manufacturersType,
+			String startTime, String endTime, String orderBy) {
+
+		StringBuilder sql = new StringBuilder();
+
+		sql.append("select c.id,c.channel,c.[name] ,c.manufacturersType,count(cl.id) as acivecount,");
+		sql.append("(select count(id) from download d where d.imei  in (select imei from client_log where client_log.channelid=c.id) ");
+
+		if (StringUtils.isNotEmpty(startTime) && StringUtils.isEmpty(endTime)) {
+
+			sql.append(" and convert(varchar(100), time, 23) between '"
+					+ startTime + "' and '" + DateUtils.getDate() + "'");
+		} else if (StringUtils.isNotEmpty(startTime)
+				&& StringUtils.isNotEmpty(endTime)) {
+
+			sql.append(" and convert(varchar(100), time, 23) between '"
+					+ startTime + "' and '"
+					+ endTime + "'");
+		}
+
+		sql.append(") as downcount,(select count(id) from download d where d.imei  in (select imei from client_log where client_log.channelid=c.id)");
+
+		if (StringUtils.isNotEmpty(startTime) && StringUtils.isEmpty(endTime)) {
+
+			sql.append(" and convert(varchar(100), time, 23) between '"
+					+ startTime + "' and '" + DateUtils.getDate() + "'");
+		} else if (StringUtils.isNotEmpty(startTime)
+				&& StringUtils.isNotEmpty(endTime)) {
+
+			sql.append(" and convert(varchar(100), time, 23) between '"
+					+ startTime + "' and '"
+					+ endTime + "'");
+		}
+
+		sql.append(" and softid in (select softid from product )) as productcount");
+
+		sql.append(" from channel c left join client_log cl ");
+		sql.append("on c.id =cl.channelid");
+		sql.append(" where c.status = 0");
+		if (manufacturersType != null && manufacturersType > 0) {
+			sql.append("  and c.manufacturersType = " + manufacturersType);
+			if (StringUtils.isNotEmpty(startTime)
+					&& StringUtils.isEmpty(endTime)) {
+
+				sql.append(" and convert(varchar(100), cl.time, 23) between '" + startTime + "' and '"
+						+ DateUtils.getDate() + "'");
+			} else if (StringUtils.isNotEmpty(startTime)
+					&& StringUtils.isNotEmpty(endTime)) {
+
+				sql.append(" and convert(varchar(100), cl.time, 23) between '" + startTime + "' and '"
+						+ endTime + "'");
+			}
+		} else {
+
+			if (StringUtils.isNotEmpty(startTime)
+					&& StringUtils.isEmpty(endTime)) {
+
+				sql.append(" and convert(varchar(100), cl.time, 23) between '" + startTime + "' and '"
+						+ DateUtils.getDate() + "'");
+			} else if (StringUtils.isNotEmpty(startTime)
+					&& StringUtils.isNotEmpty(endTime)) {
+
+				sql.append(" and convert(varchar(100), cl.time, 23) between '" + startTime + "' and '"
+						+ endTime + "'");
+			}
+		}
+		sql.append("  group by c.channel,c.id,c.[name],c.manufacturersType");
+
+		if (StringUtils.isNotEmpty(orderBy)) {
+
+			sql.append(" order by " + orderBy + " desc");
+		} else {
+
+			sql.append(" order by acivecount desc");
+		}
+		return super.getAllByPageAndSql(sql.toString());
+	}
+	/***
+	 * 渠道商数据统计
+	 * 
+	 * @param channel
+	 * @param imei
+	 * @param softName
+	 * @param startTime
+	 * @param endTime
+	 * @return
+	 */
+	@SuppressWarnings("unchecked")
+	public List getChannelStatisticsByPrint(Integer manufacturersType,
+			String startTime, String endTime, String orderBy) {
+
+		StringBuilder sql = new StringBuilder();
+
+		sql.append("select c.id,c.channel,c.[name] ,c.manufacturersType,count(cl.id) as acivecount,");
+		sql.append("(select count(id) from download d where d.imei  in (select imei from client_log where client_log.channelid=c.id) ");
+
+		if (StringUtils.isNotEmpty(startTime) && StringUtils.isEmpty(endTime)) {
+
+			sql.append(" and convert(varchar(100), time, 23) between '"
+					+ startTime + "' and '" + DateUtils.getDate() + "'");
+		} else if (StringUtils.isNotEmpty(startTime)
+				&& StringUtils.isNotEmpty(endTime)) {
+
+			sql.append(" and convert(varchar(100), time, 23) between '"
+					+ startTime + "' and '"
+					+ endTime + "'");
+		}
+
+		sql.append(") as downcount,(select count(id) from download d where d.imei  in (select imei from client_log where client_log.channelid=c.id)");
+
+		if (StringUtils.isNotEmpty(startTime) && StringUtils.isEmpty(endTime)) {
+
+			sql.append(" and convert(varchar(100), time, 23) between '"
+					+ startTime + "' and '" + DateUtils.getDate() + "'");
+		} else if (StringUtils.isNotEmpty(startTime)
+				&& StringUtils.isNotEmpty(endTime)) {
+
+			sql.append(" and convert(varchar(100), time, 23) between '"
+					+ startTime + "' and '"
+					+ endTime + "'");
+		}
+
+		sql.append(" and softid in (select softid from product )) as productcount");
+
+		sql.append(" from channel c left join client_log cl ");
+		sql.append("on c.id =cl.channelid");
+		sql.append(" where c.status = 0");
+		if (manufacturersType != null && manufacturersType > 0) {
+			sql.append("  and c.manufacturersType = " + manufacturersType);
+			if (StringUtils.isNotEmpty(startTime)
+					&& StringUtils.isEmpty(endTime)) {
+
+				sql.append(" and convert(varchar(100), cl.time, 23) between '" + startTime + "' and '"
+						+ DateUtils.getDate() + "'");
+			} else if (StringUtils.isNotEmpty(startTime)
+					&& StringUtils.isNotEmpty(endTime)) {
+
+				sql.append(" and convert(varchar(100), cl.time, 23) between '" + startTime + "' and '"
+						+ endTime + "'");
+			}
+		} else {
+
+			if (StringUtils.isNotEmpty(startTime)
+					&& StringUtils.isEmpty(endTime)) {
+
+				sql.append(" and convert(varchar(100), cl.time, 23) between '" + startTime + "' and '"
+						+ DateUtils.getDate() + "'");
+			} else if (StringUtils.isNotEmpty(startTime)
+					&& StringUtils.isNotEmpty(endTime)) {
+
+				sql.append(" and convert(varchar(100), cl.time, 23) between '" + startTime + "' and '"
+						+ endTime + "'");
+			}
+		}
+		sql.append("  group by c.channel,c.id,c.[name],c.manufacturersType");
+
+		if (StringUtils.isNotEmpty(orderBy)) {
+
+			sql.append(" order by " + orderBy + " desc");
+		} else {
+
+			sql.append(" order by acivecount desc");
+		}
+		return super.getAllByPageAndSql(sql.toString());
+	}
+	/**
+	 * 厂商类型统计
+	 * 
+	 * @return
+	 */
+	public List<String> getStatisticsByManufacturersType(
+			Integer maufacturereTypeId) {
+		String sql = " select  c.manufacturersType as a,count(cl.id) as b ,count(d.id)  as c ,count(p.id)  as d  from channel c ";
+		sql += " left join client_log cl on c.id = cl.channelId ";
+		sql += " left join download d on cl.imei = d.imei ";
+		sql += " left join product p on d.softId = p.softid ";
+
+		if (maufacturereTypeId != null && maufacturereTypeId > 0) {
+
+			sql += " where c.status = 0 and c.manufacturersType ="
+					+ maufacturereTypeId;
+		}
+
+		sql += " group by c.manufacturersType ";
+
+		List<String> list = super.getAllByPageAndSql(sql.toString());
+
+		return list;
+	}
+
+	/***
+	 * @return
+	 */
+	// public List<Object> getChannelStatisticsPrint(Integer manufacturersType,
+	// String startTime, String endTime) {
+	// String hql =
+	// " SELECT c.[name] as b,count(cl.id) as c,count(d.id)  as d,count(p.id) as e  from channel c"
+	// + " left join client_log cl on c.id = cl.channelId "
+	// + " left join download d on cl.imei = d.imei "
+	// + " left join product p on d.softId = p.softid"
+	// + " where d.time between '"
+	// + startTime
+	// + "'and '"
+	// + endTime
+	// + "'" + "group by c.name; ";
+	// return super.getAllByPageAndSql(hql.toString());
+	// }
+
+	public List<Object> getAddressStatistics(Integer[] channelIdArray,
+			String startTime, String endTime) {
+
+		String sql = " select s.address,count(s.acviveCount) as acviveCount from  ( "
+				+ "select address,count(imei) as acviveCount from client_log cl"
+				+ " inner join channel c on c.id = cl.channelId ";
+
+		if (channelIdArray != null && startTime != null && endTime != null) {
+			if (channelIdArray != null && startTime.equals("")
+					|| endTime.equals("") || channelIdArray[0] != 5) {
+
+				sql += "where c.status = 0 and c.id = " + channelIdArray[0];
+
+				for (int i = 1; i < channelIdArray.length; i++) {
+
+					sql += " OR channelId = " + channelIdArray[i];
+				}
+
+			} else {
+				sql += "where c.status = 0 and c.id = " + channelIdArray[0]
+						+ " and c.time between '" + startTime + "' and '"
+						+ endTime + "'";
+
+				for (int i = 1; i < channelIdArray.length; i++) {
+
+					sql += " OR channelId = " + channelIdArray[i];
+				}
+			}
+		} else if (startTime != null && endTime != null
+				&& channelIdArray == null) {
+			if (startTime.equals("") && endTime.equals("")) {
+
+			} else {
+				sql += "where c.status = 0 and  c.time between '" + startTime
+						+ "' and '" + endTime + "'";
+			}
+		}
+		sql += "group by address,imei )  s   group  by  s.address ";
+		sql += " order by acviveCount desc ";
+		return super.getAllByPageAndSql(sql);
+	}
+
+	public List<Object> getChannelTrend() {
+		String sql = "SELECT * FROM channel where status = 0";
+		return super.getAllByPageAndSql(sql.toString());
+	}
+
+	public List<Object> getChannelTrendId(String channle) {
+		String sql = "select *  from channel where channel like '" + channle
+				+ "'  and status = 0";
+		return super.getAllByPageAndSql(sql.toString());
+	}
+
+	/*
+	 * public List<Object> getChannelById(Integer id) { String sql =
+	 * "select *  from channel where id = '" + id + "' "; return
+	 * super.getAllByPageAndSql(sql.toString()); }
+	 */
+
+	/**
+	 * 获取所有用户
+	 * 
+	 * @param page
+	 * @param code
+	 * @param type
+	 * @return
+	 */
+	public PageResult<Channel> getAllChannel(Page page, String code,
+			Integer type) {
+		String hql = "from Channel where status = 0 ";
+		if (StringUtils.isNotEmpty(code)) {
+			hql += " and (channel like '%" + code + "%' or name like '%" + code
+					+ "%'  )";
+		}
+		if (type != null && type != 5) {
+			hql += "and type=" + type;
+		}
+
+		hql += " order by time desc";
+		return super.getAllByPageAndHql(page, hql);
+	}
+
+	/***
+	 * 获取指定ID的渠道集合
+	 * @param channelArrayId
+	 * @return
+	 */
+	public List<Channel> findChannelByIds(Integer[] channelArrayId,Integer type) {
+
+		String hql = "from Channel where status=0" ;
+		if (type != null && type != 0) {
+			hql += "and type=0";
+		}
+		if (channelArrayId != null && channelArrayId.length > 0) {
+			
+			hql += " and ( id = " + channelArrayId[0];
+			
+			for (int i = 1; i < channelArrayId.length; i++) {
+
+				hql += " OR id=" + channelArrayId[i];
+			}
+			hql += ")";
+		}
+
+		return super.getAllByHql(hql);
+	}
+
+	public List<Object[]> findClientLog(Integer channelId,String beginDate,String endDate) {
+		String sql = "select c.name,c.channel,cl.imei,cm.model,cm.manufacturer,cl.time from client_log cl,channel c,dbo.client_model cm where c.id = cl.channelid and cl.modelid = cm.id";
+		
+		if(channelId!=null&&channelId!=0){
+			sql = sql +" and c.id = "+channelId;
+		}
+		if(!StringUtil.isEmpty(beginDate)){
+			sql = sql+" and cl.time > '"+beginDate+"'";
+		}
+		if(!StringUtil.isEmpty(endDate)){
+			sql = sql+" and cl.time < '"+endDate+"'";
+		}
+		return super.getAllByPageAndSql(sql);
+	}
+}

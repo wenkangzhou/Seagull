@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-configuration PUBLIC "-//Hibernate/Hibernate Configuration DTD 3.0//EN" "http://hibernate.sourceforge.net/hibernate-configuration-3.0.dtd" >
+<hibernate-configuration>
+<session-factory>
+	<property name="proxool.pool_alias">proxool</property>
+	<property name="proxool.xml">proxool.xml</property>
+	<property name="connection.provider_class">
+		org.hibernate.connection.ProxoolConnectionProvider
+	</property>
+
+	<property name="dialect">
+		com.usernet.product.dao.SqlServerDialect
+	</property>
+
+	<property name="cache.provider_class">
+		org.hibernate.cache.EhCacheProvider
+	</property>
+	<property name="cache.use_query_cache">false</property>
+
+	<property name="current_session_context_class">thread</property>
+	<property name="show_sql">false</property>
+	<property name="format_sql">false</property>
+	<property name="generate_statistics">false</property>
+	<property name="connection.autocommit">false</property>
+	<property name="max_fetch_depth">0</property>
+	<property name="default_batch_fetch_size">16</property>
+	<property name="hibernate.query.substitutions"></property>
+	<property name="connection.useUnicode">true</property>
+	<property name="connection.characterEncoding">UTF-8</property>
+	<property name="connection.characterSetResults">UTF-8</property>
+
+	<mapping resource="com/usernet/product/entity/Admin.hbm.xml" />
+	<mapping resource="com/usernet/product/entity/AdminLog.hbm.xml" />
+	<mapping resource="com/usernet/product/entity/Comment.hbm.xml" />
+	<mapping resource="com/usernet/product/entity/Download.hbm.xml" />
+	<mapping resource="com/usernet/product/entity/Error.hbm.xml" />
+	<mapping resource="com/usernet/product/entity/Gift.hbm.xml" />
+	<mapping resource="com/usernet/product/entity/Log.hbm.xml" />
+	<mapping resource="com/usernet/product/entity/LoginError.hbm.xml" />
+	<mapping resource="com/usernet/product/entity/Photo.hbm.xml" />
+	<mapping resource="com/usernet/product/entity/Resources.hbm.xml" />
+	<mapping resource="com/usernet/product/entity/Search.hbm.xml" />
+	<mapping resource="com/usernet/product/entity/Software.hbm.xml" />
+	<mapping resource="com/usernet/product/entity/Task.hbm.xml" />
+	<mapping
+		resource="com/usernet/product/entity/TaskCondition.hbm.xml" />
+	<mapping resource="com/usernet/product/entity/TaskFinish.hbm.xml" />
+	<mapping resource="com/usernet/product/entity/TaskGift.hbm.xml" />
+	<mapping resource="com/usernet/product/entity/Type.hbm.xml" />
+	<mapping resource="com/usernet/product/entity/UserGift.hbm.xml" />
+	<mapping resource="com/usernet/product/entity/Users.hbm.xml" />
+
+	<mapping resource="com/usernet/product/entity/Channel.hbm.xml" />
+	<mapping
+		resource="com/usernet/product/entity/ChannelSettle.hbm.xml" />
+	<mapping resource="com/usernet/product/entity/ClientLog.hbm.xml" />
+	<mapping resource="com/usernet/product/entity/ClientModel.hbm.xml" />
+	<mapping resource="com/usernet/product/entity/Product.hbm.xml" />
+	<mapping resource="com/usernet/product/entity/ProductPrice.hbm.xml" />
+	<mapping resource="com/usernet/product/entity/Advert.hbm.xml" />
+	<mapping resource="com/usernet/product/entity/AdvertType.hbm.xml" />
+	<mapping resource="com/usernet/product/entity/MessagePush.hbm.xml" />
+	<mapping resource="com/usernet/product/entity/AppAccount.hbm.xml" />
+	<mapping
+		resource="com/usernet/product/entity/InformationPicture.hbm.xml" />
+	<mapping resource="com/usernet/product/entity/Recommend.hbm.xml" />
+	<mapping resource="com/usernet/product/entity/ChannelPv.hbm.xml" />
+	<mapping
+		resource="com/usernet/product/entity/ClientPushMessage.hbm.xml" />
+	<mapping resource="com/usernet/product/entity/OrderTab.hbm.xml" />
+	<mapping
+		resource="com/usernet/product/entity/CommodityDetailedTab.hbm.xml" />
+	<mapping
+		resource="com/usernet/product/entity/CommodityColorSize.hbm.xml" />
+	<mapping resource="com/usernet/product/entity/Tag.hbm.xml" />
+	<mapping
+		resource="com/usernet/product/entity/MicroBlogUser.hbm.xml" />
+	<mapping
+		resource="com/usernet/product/entity/QuickSearchKeyword.hbm.xml" />
+	<mapping
+		resource="com/usernet/product/entity/RecommendBase.hbm.xml" />
+	<mapping resource="com/usernet/product/entity/Implanted.hbm.xml" />
+	<mapping resource="com/usernet/product/entity/ConfigBase.hbm.xml" />
+	<mapping resource="com/usernet/product/entity/Push.hbm.xml" />
+	<mapping
+		resource="com/usernet/product/entity/LotteryTicket.hbm.xml" />
+	<mapping resource="com/usernet/product/entity/Auth.hbm.xml" />
+	<mapping resource="com/usernet/product/entity/Role.hbm.xml" />
+	<mapping resource="com/usernet/product/entity/OnLineUser.hbm.xml" />
+	<mapping
+		resource="com/usernet/product/entity/PushBlacklist.hbm.xml" />
+	<mapping
+		resource="com/usernet/product/entity/ClientStartImg.hbm.xml" />
+	<mapping
+		resource="com/usernet/product/entity/ChannelPrefecture.hbm.xml" />
+	<mapping resource="com/usernet/product/entity/Commodity_Tab.hbm.xml" />
+	<mapping resource="com/usernet/product/entity/App_Tab.hbm.xml" />
+	<mapping resource="com/usernet/product/entity/Information_Tab.hbm.xml" />
+	<mapping resource="com/usernet/product/entity/Color_Tab.hbm.xml" />
+	<mapping resource="com/usernet/product/entity/Size_Tab.hbm.xml" />
+	<mapping resource="com/usernet/product/entity/Tops_Tab.hbm.xml" />
+	<mapping resource="com/usernet/product/entity/Commodity_Type_Tab.hbm.xml" />
+	<mapping resource="com/usernet/product/entity/Area_ExpressFee_Tab.hbm.xml" />
+	<mapping resource="com/usernet/product/entity/OrderCommodityTab.hbm.xml" />
+	<mapping resource="com/usernet/product/entity/CommodityComment.hbm.xml" />
+	<mapping resource="com/usernet/product/entity/User.hbm.xml" />
+	<mapping resource="com/usernet/product/entity/MessageBoard.hbm.xml" />
+</session-factory>
+</hibernate-configuration>

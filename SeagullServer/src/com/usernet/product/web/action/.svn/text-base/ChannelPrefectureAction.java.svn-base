@@ -1,0 +1,146 @@
+package com.usernet.product.web.action;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionForward;
+import org.apache.struts.action.ActionMapping;
+import org.apache.struts.upload.FormFile;
+
+import com.usernet.product.comm.BaseAction;
+import com.usernet.product.entity.ChannelPrefecture;
+import com.usernet.product.tools.FileTools;
+import com.usernet.product.tools.FtpTools;
+import com.usernet.product.utils.ProductConfig;
+import com.usernet.product.web.form.ChannelPrefectureForm;
+
+public class ChannelPrefectureAction extends BaseAction{
+	
+	public ActionForward add(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		ChannelPrefectureForm channelPrefectureForm = (ChannelPrefectureForm) form;
+		ChannelPrefecture channelPrefecture = new ChannelPrefecture();
+		
+		channelPrefecture.setChannel(channelPrefectureForm.getChannel());
+		channelPrefecture.setChannelNO(channelPrefectureForm.getChannelNO());
+		channelPrefecture.setKey(channelPrefectureForm.getKey());
+		
+		FormFile thumbnailFile = channelPrefectureForm.getImg();
+		if(thumbnailFile.getFileSize()>0){
+			try {
+				String thumbnailName = channelPrefecture.getChannelNO()+".png";
+				String realPath1 = ProductConfig.realPath + "upload/channelPrefecture/";
+				FileTools.createDateFile(realPath1);
+				InputStream is = thumbnailFile.getInputStream();
+				OutputStream out = new FileOutputStream(realPath1 + thumbnailName);
+				out.write(thumbnailFile.getFileData(), 0, thumbnailFile.getFileSize());
+				out.flush();
+				is.close();
+				is = null;
+				out.close();
+				out = null;
+				
+				try {
+					FtpTools.uploadFtp(realPath1+thumbnailName, thumbnailName, "channelPrefecture", null);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+				
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		
+		channelDao.save(channelPrefecture);
+		
+		return mapping.findForward("other");
+	}
+	
+	public ActionForward edit(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		ChannelPrefectureForm channelPrefectureForm = (ChannelPrefectureForm) form;
+		Integer id = channelPrefectureForm.getId();
+		
+		ChannelPrefecture channelPrefectureDB = (ChannelPrefecture) channelDao.getById(ChannelPrefecture.class, id);
+		
+		FormFile thumbnailFile = channelPrefectureForm.getImg();
+		if(thumbnailFile.getFileSize()>0){
+			try {
+				String thumbnailName = channelPrefectureDB.getChannelNO()+".png";
+				String realPath1 = ProductConfig.realPath + "upload/channelPrefecture/";
+				FileTools.createDateFile(realPath1);
+				File f = new File(realPath1 + thumbnailName);
+				if(f.exists()){
+					f.delete();
+				}
+				
+				thumbnailName = channelPrefectureForm.getChannelNO()+".png";
+				InputStream is = thumbnailFile.getInputStream();
+				OutputStream out = new FileOutputStream(realPath1 + thumbnailName);
+				out.write(thumbnailFile.getFileData(), 0, thumbnailFile.getFileSize());
+				out.flush();
+				is.close();
+				is = null;
+				out.close();
+				out = null;
+				
+				try {
+					FtpTools.uploadFtp(realPath1+thumbnailName, thumbnailName, "channelPrefecture", null);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		
+		channelPrefectureDB.setChannel(channelPrefectureForm.getChannel());
+		channelPrefectureDB.setChannelNO(channelPrefectureForm.getChannelNO());
+		channelPrefectureDB.setKey(channelPrefectureForm.getKey());
+		
+		channelDao.modify(channelPrefectureDB);
+		
+		return mapping.findForward("other");
+	}
+	
+	public ActionForward del(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		ChannelPrefectureForm channelPrefectureForm = (ChannelPrefectureForm) form;
+		Integer id = channelPrefectureForm.getId();
+		
+		ChannelPrefecture channelPrefectureDB = (ChannelPrefecture) channelDao.getById(ChannelPrefecture.class, id);
+		channelDao.delete(channelPrefectureDB);
+		
+		return mapping.findForward("other");
+	}
+	
+	public ActionForward toList(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		List<ChannelPrefecture> list = channelDao.getAllByHql("FROM ChannelPrefecture");
+		request.setAttribute("list", list);
+		return mapping.findForward("list");
+	}
+	
+	public ActionForward toAdd(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		return mapping.findForward("add");
+	}
+	
+	public ActionForward toEdit(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		ChannelPrefectureForm channelPrefectureForm = (ChannelPrefectureForm) form;
+		Integer id = channelPrefectureForm.getId();
+		
+		ChannelPrefecture channelPrefectureDB = (ChannelPrefecture) channelDao.getById(ChannelPrefecture.class, id);
+		request.setAttribute("item", channelPrefectureDB);
+		return mapping.findForward("edit");
+	}
+}

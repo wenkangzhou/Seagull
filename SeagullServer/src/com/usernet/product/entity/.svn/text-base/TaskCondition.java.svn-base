@@ -1,0 +1,98 @@
+package com.usernet.product.entity;
+
+public class TaskCondition implements java.io.Serializable {
+	private static final long serialVersionUID = 3167717734402967517L;
+
+	private Integer id;
+	private Integer taskId;
+	private Integer type;
+	private Integer value;
+	private Integer sort;
+	private Integer softId;
+	private String softName;
+	private String icon;
+	private Integer finish; // 已完成数
+
+	public TaskCondition() {
+	}
+
+	public TaskCondition(Integer taskId, Integer type, Integer value, Integer sort, Integer softId) {
+		this.taskId = taskId;
+		this.type = type;
+		this.value = value;
+		this.sort = sort;
+		this.softId = softId;
+	}
+
+	public Integer getId() {
+		return this.id;
+	}
+
+	public void setId(Integer id) {
+		this.id = id;
+	}
+
+	public Integer getTaskId() {
+		return taskId;
+	}
+
+	public void setTaskId(Integer taskId) {
+		this.taskId = taskId;
+	}
+
+	public Integer getType() {
+		return type;
+	}
+
+	public void setType(Integer type) {
+		this.type = type;
+	}
+
+	public Integer getValue() {
+		return value;
+	}
+
+	public void setValue(Integer value) {
+		this.value = value;
+	}
+
+	public Integer getSort() {
+		return sort;
+	}
+
+	public void setSort(Integer sort) {
+		this.sort = sort;
+	}
+
+	public Integer getSoftId() {
+		return softId;
+	}
+
+	public void setSoftId(Integer softId) {
+		this.softId = softId;
+	}
+
+	public String getSoftName() {
+		return softName;
+	}
+
+	public void setSoftName(String softName) {
+		this.softName = softName;
+	}
+
+	public String getIcon() {
+		return icon;
+	}
+
+	public void setIcon(String icon) {
+		this.icon = icon;
+	}
+
+	public Integer getFinish() {
+		return finish;
+	}
+
+	public void setFinish(Integer finish) {
+		this.finish = finish;
+	}
+}

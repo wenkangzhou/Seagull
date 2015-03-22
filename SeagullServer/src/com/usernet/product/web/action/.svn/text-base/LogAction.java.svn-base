@@ -1,0 +1,1039 @@
+﻿package com.usernet.product.web.action;
+
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.RandomAccessFile;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.List;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import net.sf.json.JSONObject;
+import org.apache.commons.lang.StringUtils;
+import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionForward;
+import org.apache.struts.action.ActionMapping;
+import org.apache.struts.upload.FormFile;
+
+import com.opensymphony.oscache.util.StringUtil;
+import com.usernet.product.comm.BaseAction;
+import com.usernet.product.entity.BaseStatistics;
+import com.usernet.product.entity.Channel;
+import com.usernet.product.entity.ClientLog;
+import com.usernet.product.tools.BaseCache;
+import com.usernet.product.tools.Property;
+import com.usernet.product.utils.DateUtils;
+import com.usernet.product.utils.Page;
+import com.usernet.product.utils.PageResult;
+import com.usernet.product.utils.ProductConfig;
+import com.usernet.product.web.form.LogForm;
+
+public class LogAction extends BaseAction {
+
+	BaseCache baseCache = new BaseCache("baseStatistics", 10800);
+
+	public ActionForward getModelList(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response)
+			throws IOException {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_DATA_SERVER);
+
+		String channelId = request.getParameter("channelId");
+		List modelList = logDao.modelList(new Integer[] { Integer
+				.valueOf(channelId) });
+		String result = "";
+		if (modelList != null && modelList.size() > 0) {
+
+			for (Object model : modelList) {
+
+				result += String.valueOf(model) + ",";
+			}
+			result = result.substring(0, result.length() - 1);
+		}
+
+		response.setCharacterEncoding("UTF-8");
+		response.getWriter().write(result);
+		return null;
+	}
+
+	public ActionForward toList(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_DATA_SERVER);
+		LogForm mForm = (LogForm) form;
+
+		Page page = new Page();
+		
+		String pageNo = mForm.getPageNo();
+		String pageSize = mForm.getPageSize();
+		if (!StringUtil.isEmpty(pageSize))
+			page.setEveryPage(Integer.parseInt(pageSize.trim()));
+		if (!StringUtil.isEmpty(pageNo))
+			page.setCurrentPage(Integer.parseInt(pageNo.trim()));
+
+		Channel channel = getCurrentChannelSession(request);
+		PageResult<ClientLog> result = null;
+		
+		Integer[] channelIdArray = new Integer[1];
+		
+		String channelIdStr = request.getParameter("channelId");
+		String versionName = request.getParameter("versionName");
+		if(!StringUtil.isEmpty(channelIdStr)){
+			channelIdArray[0] = Integer.parseInt(channelIdStr);
+		}else{
+			channelIdArray = getChannelsArray(request, channel);
+		}
+
+		result = logDao
+				.getPage(page,channelIdArray, mForm
+								.getModelName(), mForm.getStartTime(), mForm
+								.getEndTime(),versionName);
+		
+		List<Channel> channelList = getChannel(channel.getId(),channel.getType());//页面上显示的渠道
+
+		if(!StringUtil.isEmpty(channelIdStr)){
+			request.setAttribute("channelIdStr", Integer.parseInt(channelIdStr));
+		}
+		request.setAttribute("form", mForm);
+		request.setAttribute("versionName",versionName);
+		request.setAttribute("channelList", channelList);
+		request.setAttribute("list", result.getContent());
+		request.setAttribute("page", result.getPage());
+		request.setAttribute("size", result.getSize());
+		return mapping.findForward("list");
+	}
+
+	public ActionForward doList(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_DATA_SERVER);
+		LogForm mForm = (LogForm) form;
+		Page page = new Page();
+
+		String pageNo = mForm.getPageNo();
+		if (pageNo == "") {
+			pageNo = "1";
+		}
+		Integer[] intTemp = null;
+		String pageSize = mForm.getPageSize();
+		if (pageSize != null)
+			page.setEveryPage(Integer.parseInt(pageSize.trim()));
+		if (pageNo != null)
+			page.setCurrentPage(Integer.parseInt(pageNo.trim()));
+		Channel channel = (Channel) request.getSession().getAttribute("admin");
+		List<Channel> channelList = new ArrayList<Channel>();
+		List modelList = new ArrayList();
+		PageResult<ClientLog> result = null;
+		// String str=request.getParameter("channelIdList");
+		// String[] temp1=str.split(",");
+		String[] temp1 = request.getParameterValues("channelCheckBox");
+		String channeltempstr = request.getParameter("channeltempstr");
+		String versionName = request.getParameter("versionName");
+		if(channeltempstr!=null&&!channeltempstr.equals("")){
+			if(temp1==null||temp1.length==0){
+				temp1 = channeltempstr.split(",");
+			}
+		}
+		
+		String str = "";
+		if(temp1!=null){
+			for(String s:temp1){
+				if(str==""){
+					str = s;
+				}else{
+					str = str+","+s;
+				}
+			}
+		}
+		
+		request.setAttribute("channeltempstr", str);
+		
+		if (temp1 != null && temp1.length > 0) {
+			List channelId = logDao.getChannelId(temp1);
+			if (channelId != null) {
+				intTemp = new Integer[channelId.size()];
+				for (int i = 0; i < channelId.size(); ++i) {
+					intTemp[i] = ((Integer) channelId.get(i)).intValue();
+				}
+			}
+		}
+		if (channel.getType() == 1) {
+
+			channelList = channelDao.getAll(null);
+			modelList = logDao.modelList(null);
+			if (intTemp != null) {
+				result = logDao.getPage(page, intTemp, mForm.getModelName(),
+						mForm.getStartTime(), mForm.getEndTime(),versionName);
+			} else {
+				result = logDao.getPage(page, null, mForm.getModelName(),
+						mForm.getStartTime(), mForm.getEndTime(),versionName);
+			}
+		} else if (channel.getType() == 0) {
+
+			channelList = channelDao
+					.getAll(channel.getParent() == null ? channel.getId()
+							: channel.getId());
+			channelList.add(channel);
+			Integer[] channelArray = new Integer[channelList.size()];
+			for (int i = 0; i < channelList.size(); i++) {
+				Channel temp = channelList.get(i);
+				channelArray[i] = temp.getId();
+			}
+			if (intTemp != null) {
+				result = logDao.getPage(page, intTemp, mForm.getModelName(),
+						mForm.getStartTime(), mForm.getEndTime(),versionName);
+			} else {
+				result = logDao.getPage(page, mForm.getChannelId() == null
+						|| mForm.getChannelId() == 0 ? channelArray
+						: new Integer[] { mForm.getChannelId() }, mForm
+						.getModelName(), mForm.getStartTime(), mForm
+						.getEndTime(),versionName);
+			}
+
+			modelList = logDao.modelList(channelArray.length > 0 ? channelArray
+					: new Integer[] { channel.getId() });
+
+		}
+
+		request.setAttribute("versionName",versionName);
+		request.setAttribute("checkChannelIdList", temp1);
+		request.setAttribute("channelList", channelList);
+		request.setAttribute("modelList", modelList);
+		request.setAttribute("list", result.getContent());
+		request.setAttribute("page", result.getPage());
+		request.setAttribute("size", result.getSize());
+		request.setAttribute("form", mForm);
+		return mapping.findForward("list");
+	}
+
+	public ActionForward toModelStatistics(ActionMapping mapping,
+			ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_DATA_SERVER);
+
+		List manufacturerList = logDao.manufacturerList();
+		request.setAttribute("manufacturerList", manufacturerList);
+
+		return mapping.findForward("logStatistics");
+	}
+
+	public ActionForward modelStatistics(ActionMapping mapping,
+			ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_DATA_SERVER);
+
+		LogForm mForm = (LogForm) form;
+
+		List list = logDao.modelStatistics(mForm.getModelName(),
+				mForm.getChannelName(), mForm.getManufacturer(),
+				mForm.getOrderBy());
+
+		List manufacturerList = logDao.manufacturerList();
+
+		request.setAttribute("form", mForm);
+		request.setAttribute("list", list);
+		request.setAttribute("manufacturerList", manufacturerList);
+		return mapping.findForward("logStatistics");
+	}
+
+	/***
+	 * 基本情况统计
+	 * 
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 * @throws IOException
+	 */
+	public ActionForward baseStatistik(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response)
+			throws IOException {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_DATA_SERVER);
+
+		Channel channel = (Channel) request.getSession().getAttribute("admin");
+		
+		//获取渠道ID
+		Integer[] channelIdArray = getChannelIdArray(request,channel);
+
+		BaseStatistics todayBaseData = null;
+		BaseStatistics yesterBaseData = null;
+
+		todayBaseData = (BaseStatistics) baseCache.get("todayBaseData_"
+				+ channel.getId());
+		yesterBaseData = (BaseStatistics) baseCache.get("yesterBaseData_"
+				+ channel.getId());
+
+		if (todayBaseData == null || yesterBaseData == null) {
+
+			String todayEndTime = DateUtils.getDate();
+
+			Object[] todayData = (Object[]) logDao.baseStatistik(channelIdArray, todayEndTime)
+					.get(0);
+
+			String yesterDayStartTime = DateUtils.getYestaday();
+
+			Object[] yesterDayData = (Object[]) logDao.baseStatistik(channelIdArray, yesterDayStartTime).get(0);
+
+			todayBaseData = new BaseStatistics(String.valueOf(todayData[1]),
+					String.valueOf(todayData[2]), String.valueOf(todayData[3]));
+			yesterBaseData = new BaseStatistics(
+					String.valueOf(yesterDayData[1]),
+					String.valueOf(yesterDayData[2]),
+					String.valueOf(yesterDayData[3]));
+
+			baseCache.put("todayBaseData_" + channel.getId(), todayBaseData);
+			baseCache.put("yesterBaseData_" + channel.getId(), yesterBaseData);
+		}
+
+		if (StringUtils.isNotEmpty(request.getParameter("isAjax"))) {
+
+			String result = "";
+			JSONObject todyJson = JSONObject.fromBean(todayBaseData);
+			JSONObject yesterJson = JSONObject.fromBean(yesterBaseData);
+
+			result += "[" + todyJson.toString() + "," + yesterJson.toString()
+					+ "]";
+			response.setCharacterEncoding("UTF-8");
+			response.getWriter().write(result);
+			return null;
+		}
+
+		request.setAttribute("todayData", todayBaseData);
+		request.setAttribute("yesterDayData", yesterBaseData);
+		return mapping.findForward("logNumStatistik");
+	}
+
+	/***
+	 * 30澶╂椿璺冪敤鎴风粺璁�
+	 * 
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 * @throws IOException
+	 */
+	public ActionForward findActiveUserData(ActionMapping mapping,
+			ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) throws IOException {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_DATA_SERVER);
+
+		Channel channel = (Channel) request.getSession().getAttribute("admin");
+		Integer[] channelIdArray = getChannelIdArray(request, channel);
+
+		String activeUser = (String) baseCache.get("30DayActiveUser"
+				+ channel.getId());
+		String result = "";
+
+		if (StringUtils.isEmpty(activeUser)) {
+
+			List list = logDao
+					.getActiveUserData(channelIdArray);
+
+			String date = "";
+			String accumulationUserCount = "";
+
+			if (list != null && list.size() > 0) {
+
+				for (int i = list.size() - 1; i >= 0; i--) {
+
+					Object[] obj = (Object[]) list.get(i == 0 ? 0 : i);
+					date += "\'" + DateUtils.subDate(String.valueOf(obj[0]))
+							+ "\',";
+					accumulationUserCount += String.valueOf(obj[1]) + ",";
+				}
+
+				date = date.substring(0, date.length() - 1);
+				accumulationUserCount = accumulationUserCount.substring(0,
+						accumulationUserCount.length() - 1);
+			}
+
+			result += "{'date' : [" + date + "],activeCount : ["
+					+ accumulationUserCount + "]}";
+			baseCache.put("30DayActiveUser" + channel.getId(), result);
+
+		} else {
+
+			result = activeUser;
+		}
+
+		response.setCharacterEncoding("UTF-8");
+		response.getWriter().write(result);
+
+		return null;
+	}
+
+	/***
+	 * 绱鐢ㄦ埛缁熻
+	 * 
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 * @throws IOException
+	 */
+	public ActionForward findAccumulationUserData(ActionMapping mapping,
+			ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) throws IOException {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_DATA_SERVER);
+
+		Channel channel = (Channel) request.getSession().getAttribute("admin");
+		Integer[] channelIdArray = getChannelIdArray(request, channel);
+
+		String accumulationUser = (String) baseCache
+				.get("30DayAccumulationUser" + channel.getId());
+
+		String result = "";
+
+		if (StringUtils.isEmpty(accumulationUser)) {
+
+			List<Object[]> dataList = logDao
+					.getNewUserData(channelIdArray);
+
+			List<String> dayList = DateUtils.getCurrentMonthAndPreMonth();
+
+			String date = "";
+			String accumulationUserCount = "";
+
+			int lastCount = 0;
+
+			for (int i = dayList.size() - 1; i >= 0; i--) {
+
+				String day = dayList.get(i);
+
+				if (i == -1)
+					break;
+
+				if (i == dayList.size() - 2) {
+
+					lastCount = Integer
+							.valueOf(logDao
+									.getCountByEndDate(
+											dayList.get(dayList.size() - 1),
+											channelIdArray).get(0)
+									.toString());
+					date += "\'" + DateUtils.subDate(day) + "\',";
+					accumulationUserCount += lastCount + ",";
+					continue;
+				}
+
+				if (dataList != null && dataList.size() > 0) {
+
+					for (Object[] temp : dataList) {
+
+						if (day.equals(String.valueOf(temp[0]))) {
+
+							lastCount = lastCount
+									+ Integer.valueOf(temp[1].toString());
+						}
+					}
+				}
+
+				date += "\'" + DateUtils.subDate(day) + "\',";
+				accumulationUserCount += lastCount + ",";
+			}
+
+			date = date.substring(0, date.length() - 1);
+			accumulationUserCount = accumulationUserCount.substring(0,
+					accumulationUserCount.length() - 1);
+
+			result += "{'date' : [" + date + "],accumulationUserCount : ["
+					+ accumulationUserCount + "]}";
+
+			baseCache.put("30DayAccumulationUser" + channel.getId(), result);
+
+		} else {
+
+			result = accumulationUser;
+		}
+
+		response.setCharacterEncoding("UTF-8");
+		response.getWriter().write(result);
+
+		return null;
+	}
+
+	/***
+	 * 30天里新用户统计趋势图
+	 * 
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 * @throws IOException
+	 */
+	public ActionForward findNewUser(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response)
+			throws IOException {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_DATA_SERVER);
+
+		Channel channel = (Channel) request.getSession().getAttribute("admin");
+		Integer[] channelIdArray = getChannelIdArray(request, channel);
+
+		String newUser = (String) baseCache.get("30DayNewUser_"
+				+ channel.getId());
+
+		String result = "";
+
+		if (StringUtils.isEmpty(newUser)) {
+
+			List<Object[]> dataList = logDao
+					.getNewUserData(channelIdArray);
+
+			List<String> dayList = DateUtils.getCurrentMonthAndPreMonth();
+
+			String date = "";
+			String newUserCount = "";
+
+			for (int i = dayList.size() - 1; i >= 0; i--) {
+
+				if (i == -1)
+					break;
+
+				String day = dayList.get(i);
+
+				boolean flag = false;
+
+				if (dataList != null && dataList.size() > 0) {
+
+					for (Object[] obj : dataList) {
+
+						if (day.equals(String.valueOf(obj[0]))) {
+
+							date += "\'"
+									+ DateUtils.subDate(String.valueOf(obj[0]))
+									+ "\',";
+							newUserCount += String.valueOf(obj[1]) + ",";
+							flag = true;
+						}
+					}
+
+				}
+				if (!flag) {
+
+					date += "\'" + DateUtils.subDate(day) + "\',";
+					newUserCount += 0 + ",";
+				}
+			}
+			date = date.substring(0, date.length() - 1);
+			newUserCount = newUserCount.substring(0, newUserCount.length() - 1);
+
+			result += "{'date' : [" + date + "],newUserCount : ["
+					+ newUserCount + "]}";
+
+			baseCache.put("30DayNewUser_" + channel.getId(), result);
+
+		} else {
+
+			result = newUser;
+		}
+
+		response.setCharacterEncoding("UTF-8");
+		response.getWriter().write(result);
+
+		return null;
+	}
+
+	/***
+	 * 最近30天用户启动数
+	 * 
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 * @throws IOException
+	 */
+	public ActionForward findStartUserData(ActionMapping mapping,
+			ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) throws IOException {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_DATA_SERVER);
+
+		Channel channel = (Channel) request.getSession().getAttribute("admin");
+		Integer[] channelIdArray = getChannelIdArray(request, channel);
+
+		String startCountCache = (String) baseCache.get("30DaystartCount_"
+				+ channel.getId());
+
+		String result = "";
+
+		if (StringUtils.isEmpty(startCountCache)) {
+
+			List list = logDao
+					.getStartUserData(channelIdArray);
+
+			String date = "";
+			String startCount = "";
+
+			if (list != null && list.size() > 0) {
+
+				for (int i = list.size() - 1; i >= 0; i--) {
+
+					Object[] obj = (Object[]) list.get(i == 0 ? 0 : i);
+					date += "\'" + DateUtils.subDate(String.valueOf(obj[0]))
+							+ "\',";
+					startCount += String.valueOf(obj[1]) + ",";
+				}
+				date = date.substring(0, date.length() - 1);
+				startCount = startCount.substring(0, startCount.length() - 1);
+			}
+
+			result += "{'date' : [" + date + "],startCount : [" + startCount
+					+ "]}";
+			baseCache.put("30DaystartCount_" + channel.getId(), result);
+
+		} else {
+
+			result = startCountCache;
+		}
+
+		response.setCharacterEncoding("UTF-8");
+		response.getWriter().write(result);
+
+		return null;
+	}
+
+	/***
+	 * 鏃ユ縺娲昏秼鍔垮浘
+	 * 
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 * @throws IOException
+	 */
+	public ActionForward everydayLogStatistik(ActionMapping mapping,
+			ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) throws IOException {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_DATA_SERVER);
+
+		return mapping.findForward("everydayLogStatistik");
+	}
+	
+	public ActionForward doUploadLogFile(ActionMapping mapping,
+			ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) throws Exception {
+		String message = "";
+		LogForm logForm = (LogForm) form;
+		FormFile file = logForm.getFile();
+		String filesrc = doUploadLogFile(file.getInputStream());
+		message = clientDao.savaCsvLog(filesrc, channelDao);
+		request.setAttribute("message", message);
+		return mapping.findForward("message");
+	}
+	
+	private String doUploadLogFile(InputStream is) throws IOException{
+		String temp = Property.getPara("resources", "csv_temp_path");
+		FileOutputStream fos = new FileOutputStream(temp);
+		byte[] b = new byte[1024*8];
+		int a=0;
+		while((a=is.read(b, 0, 1024*8))!=-1){
+			fos.write(b, 0, a);
+		}
+		fos.flush();
+		fos.close();
+		return temp;
+	}
+	
+	public ActionForward checkActivation(ActionMapping mapping,
+			ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) throws Exception {
+		String imei = request.getParameter("imei");
+		imei = imei==null?"":imei;
+		ClientLog log = clientDao.getRepeatImei(imei);
+		request.setAttribute("log", log);
+		List<Channel> channelList = getChannel(null, 1);
+		request.setAttribute("channelList", channelList);
+		
+		return mapping.findForward("testList");
+	}
+	
+	public ActionForward delActivation(ActionMapping mapping,
+			ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) throws Exception {
+		String idStr = request.getParameter("id");
+		Integer id = Integer.parseInt(idStr);
+		clientDao.delLog(id);
+		
+		List<Channel> channelList = getChannel(null, 1);
+		request.setAttribute("channelList", channelList);
+		return mapping.findForward("testList");
+	}
+	public ActionForward findActiveUserData2(ActionMapping mapping,//TODO 
+			ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) throws IOException {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_DATA_SERVER);
+		
+		Channel channel = (Channel) request.getSession().getAttribute("admin");
+		Integer[] channelIdArray = getChannelIdArray(request, channel);
+		final String key = "30DayActiveUser2" + channel.getId();
+		String activeUser = (String) baseCache.get(key);
+		
+		StringBuffer result = new StringBuffer("");
+		if (StringUtils.isEmpty(activeUser)) {
+			result.append("<?xml version=\"1.0\"?>");
+			result.append("<chart caption='活跃用户' subcaption='' lineThickness='1' showValues='0' ");
+			result.append("formatNumberScale='0' anchorRadius='2' divLineAlpha='20' divLineColor='CC3300' divLineIsDashed='1' ");
+			result.append("yAxisMinValue='0' yAxisName='用户数' xAxisName='Date' ");
+			result.append("showAlternateHGridColor='1' alternateHGridAlpha='5' alternateHGridColor='CC3300' shadowAlpha='40' ");
+			result.append("labelStep='2' numvdivlines='5' chartRightMargin='35' bgColor='FFFFFF,CC3300' bgAngle='270' bgAlpha='10,10'>");
+			StringBuffer label = new StringBuffer("");
+			StringBuffer value = new StringBuffer("");
+			
+			List list = logDao.getActiveUserData(channelIdArray);
+			
+			if (list != null && list.size() > 0) {
+				
+				for (int i = list.size() - 1; i >= 0; i--) {
+					
+					Object[] obj = (Object[]) list.get(i == 0 ? 0 : i);
+					label.append("<category label='");
+					label.append(DateUtils.subDate(String.valueOf(obj[0])));
+					label.append("' />");
+					
+					value.append("<set value='");
+					value.append(String.valueOf(obj[1]));
+					value.append("' />");
+				}
+				
+			}
+			
+			result.append("<categories >");
+			result.append(label.toString());
+			result.append("</categories>");
+			result.append("<dataset seriesName='活跃用户' color='1D8BD1' anchorBorderColor='1D8BD1' anchorBgColor='1D8BD1'>");
+			result.append(value.toString());
+			result.append("</dataset>");
+			result.append("");
+			result.append("<styles>");                
+			result.append("<definition>");
+			result.append("<style name='CaptionFont' type='font' size='12'/>");
+			result.append("</definition>");
+			result.append("<application>");
+			result.append("<apply toObject='CAPTION' styles='CaptionFont' />");
+			result.append("<apply toObject='SUBCAPTION' styles='CaptionFont' />");
+			result.append("</application>");
+			result.append("</styles>");
+			result.append("</chart>");
+			baseCache.put(key, result);
+		} else {
+			result.append(activeUser);
+		}
+		response.setContentType("text/xml;charset=gbk");//解决中文乱码
+		//response.setCharacterEncoding("UTF-8");
+		response.getWriter().write(result.toString());
+		
+		return null;
+	}
+	public ActionForward findAccumulationUserData2(ActionMapping mapping,//TODO
+			ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) throws IOException {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_DATA_SERVER);
+
+		Channel channel = (Channel) request.getSession().getAttribute("admin");
+		Integer[] channelIdArray = getChannelIdArray(request, channel);
+		final String key = "30DayAccumulationUser2" + channel.getId();
+		String accumulationUser = (String) baseCache.get(key);
+
+		StringBuffer result = new StringBuffer("");
+		result.append("<?xml version=\"1.0\"?>");
+		result.append("<chart caption='累计用户' subcaption='' lineThickness='1' showValues='0' ");
+		result.append("formatNumberScale='0' anchorRadius='2' divLineAlpha='20' divLineColor='CC3300' divLineIsDashed='1' ");
+		result.append("yAxisMinValue='0' yAxisName='用户数' xAxisName='Date' ");
+		result.append("showAlternateHGridColor='1' alternateHGridAlpha='5' alternateHGridColor='CC3300' shadowAlpha='40' ");
+		result.append("labelStep='2' numvdivlines='5' chartRightMargin='35' bgColor='FFFFFF,CC3300' bgAngle='270' bgAlpha='10,10'>");
+		StringBuffer label = new StringBuffer("");
+		StringBuffer value = new StringBuffer("");
+		
+		if (StringUtils.isEmpty(accumulationUser)) {
+
+			List<Object[]> dataList = logDao
+					.getNewUserData(channelIdArray);
+
+			List<String> dayList = DateUtils.getCurrentMonthAndPreMonth();
+
+			int lastCount = 0;
+
+			for (int i = dayList.size() - 1; i >= 0; i--) {
+
+				String day = dayList.get(i);
+
+				if (i == -1)
+					break;
+
+				if (i == dayList.size() - 2) {
+
+					lastCount = Integer
+							.valueOf(logDao
+									.getCountByEndDate(
+											dayList.get(dayList.size() - 1),
+											channelIdArray).get(0)
+									.toString());
+					
+					label.append("<category label='");
+					label.append(DateUtils.subDate(day));
+					label.append("' />");
+					
+					value.append("<set value='");
+					value.append(lastCount);
+					value.append("' />");
+					continue;
+				}
+
+				if (dataList != null && dataList.size() > 0) {
+
+					for (Object[] temp : dataList) {
+
+						if (day.equals(String.valueOf(temp[0]))) {
+
+							lastCount = lastCount
+									+ Integer.valueOf(temp[1].toString());
+						}
+					}
+				}
+
+				label.append("<category label='");
+				label.append(DateUtils.subDate(day));
+				label.append("' />");
+				
+				value.append("<set value='");
+				value.append(lastCount);
+				value.append("' />");
+			}
+
+			result.append("<categories >");
+			result.append(label.toString());
+			result.append("</categories>");
+			result.append("<dataset seriesName='累计用户' color='1D8BD1' anchorBorderColor='1D8BD1' anchorBgColor='1D8BD1'>");
+			result.append(value.toString());
+			result.append("</dataset>");
+			result.append("");
+			result.append("<styles>");                
+			result.append("<definition>");
+			result.append("<style name='CaptionFont' type='font' size='12'/>");
+			result.append("</definition>");
+			result.append("<application>");
+			result.append("<apply toObject='CAPTION' styles='CaptionFont' />");
+			result.append("<apply toObject='SUBCAPTION' styles='CaptionFont' />");
+			result.append("</application>");
+			result.append("</styles>");
+			result.append("</chart>");
+
+			baseCache.put(key, result);
+
+		} else {
+			result.append(accumulationUser);
+		}
+		response.setContentType("text/xml;charset=gbk");//解决中文乱码
+		//response.setCharacterEncoding("UTF-8");
+		response.getWriter().write(result.toString());
+
+		return null;
+	}
+	public ActionForward findNewUser2(ActionMapping mapping, ActionForm form,//TODO
+			HttpServletRequest request, HttpServletResponse response)
+					throws IOException {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_DATA_SERVER);
+		
+		Channel channel = (Channel) request.getSession().getAttribute("admin");
+		Integer[] channelIdArray = getChannelIdArray(request, channel);
+		final String key ="30DayNewUser_2" + channel.getId();
+		String newUser = (String) baseCache.get(key);
+		
+		StringBuffer result = new StringBuffer("");
+		if (StringUtils.isEmpty(newUser)) {
+			result.append("<?xml version=\"1.0\"  ?>");
+			result.append("<chart caption='新用户'  subcaption='' lineThickness='1' showValues='0' ");
+			result.append("formatNumberScale='0' anchorRadius='2' divLineAlpha='20' divLineColor='CC3300' divLineIsDashed='1' ");
+			result.append("yAxisMinValue='-2000' yAxisName='用户数' xAxisName='Date' ");
+			result.append("showAlternateHGridColor='1' alternateHGridAlpha='5' alternateHGridColor='CC3300' shadowAlpha='40' ");
+			result.append("labelStep='2' numvdivlines='5' chartRightMargin='35' bgColor='FFFFFF,CC3300' bgAngle='270' bgAlpha='10,10'>");
+			StringBuffer label = new StringBuffer("");
+			StringBuffer value = new StringBuffer("");
+			
+			List<Object[]> dataList = logDao.getNewUserData(channelIdArray);
+			
+			List<String> dayList = DateUtils.getCurrentMonthAndPreMonth();
+			
+			for (int i = dayList.size() - 1; i >= 0; i--) {
+				
+				if (i == -1)
+					break;
+				
+				String day = dayList.get(i);
+				
+				boolean flag = false;
+				
+				if (dataList != null && dataList.size() > 0) {
+					
+					for (Object[] obj : dataList) {
+						
+						if (day.equals(String.valueOf(obj[0]))) {
+							label.append("<category label='");
+							label.append(DateUtils.subDate(String.valueOf(obj[0])));
+							label.append("' />");
+							
+							value.append("<set value='");
+							value.append(String.valueOf(obj[1]));
+							value.append("' />");
+							flag = true;
+						}
+					}
+					
+				}
+				if (!flag) {
+					label.append("<category label='");
+					label.append(DateUtils.subDate(day));
+					label.append("' />");
+					value.append("<set value='");
+					value.append(0);
+					value.append("' />");
+				}
+			}
+			result.append("<categories >");
+			result.append(label.toString());
+			result.append("</categories>");
+			result.append("<dataset seriesName='新用户' color='1D8BD1' anchorBorderColor='1D8BD1' anchorBgColor='1D8BD1'>");
+			result.append(value.toString());
+			result.append("</dataset>");
+			result.append("");
+			result.append("<styles>");                
+			result.append("<definition>");
+			result.append("<style name='CaptionFont' type='font' size='12'/>");
+			result.append("</definition>");
+			result.append("<application>");
+			result.append("<apply toObject='CAPTION' styles='CaptionFont' />");
+			result.append("<apply toObject='SUBCAPTION' styles='CaptionFont' />");
+			result.append("</application>");
+			result.append("</styles>");
+			result.append("</chart>");
+			
+			baseCache.put(key, result.toString());
+			
+		} else {
+			
+			result.append(newUser);
+		}
+		response.setContentType("text/xml;charset=gbk");//解决中文乱码
+		//response.setCharacterEncoding("UTF-8");
+		response.getWriter().write(result.toString());
+		
+		return null;
+	}
+	public ActionForward changeChannel(ActionMapping mapping,
+			ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) throws Exception {
+		String idStr = request.getParameter("id");
+		Integer id = Integer.parseInt(idStr);
+		
+		ClientLog log = (ClientLog) clientDao.getById(ClientLog.class, id);
+		Integer channelId = Integer.parseInt(request.getParameter("channelId"));
+		Channel channel = (Channel) channelDao.getById(Channel.class, channelId);
+		log.setChannel(channel);
+		channelDao.modify(channel);
+		
+		request.setAttribute("log", log);
+		
+		List<Channel> channelList = getChannel(null, 1);
+		request.setAttribute("channelList", channelList);
+		return mapping.findForward("testList");
+	}
+	
+	public ActionForward updateClientLogChannel(ActionMapping mapping,
+			ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) throws Exception {
+		String message = clientDao.updateClientLogChannel();
+		request.setAttribute("message", message);
+		
+		List<Channel> channelList = getChannel(null, 1);
+		request.setAttribute("channelList", channelList);
+		return mapping.findForward("testList");
+	}
+	
+	public ActionForward exportLogToCsv(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response)
+			throws IOException {
+		String channelIdStr = request.getParameter("channelId");
+		Integer channelId = "".equals(channelIdStr) ? 0 : Integer
+				.parseInt(channelIdStr);
+		String startTime = request.getParameter("startTime");
+		String endTime = request.getParameter("endTime");
+
+		if (!StringUtil.isEmpty(startTime)) {
+			startTime = startTime + " 00:00:00";
+		}
+		if (!StringUtil.isEmpty(endTime)) {
+			endTime = endTime + " 23:59:59";
+		}
+		List<Object[]> result = channelDao.findClientLog(channelId, startTime,
+				endTime);
+
+		if (!result.isEmpty()&&result.size()<65536) {
+			String line = "所属,渠道号,手机唯一标识,机型,生产商,激活时间 \n";
+			File f = new File("D:\\temp.csv");
+			RandomAccessFile raf;
+			raf = new RandomAccessFile(f, "rw");
+			raf.write(line.getBytes("GBK"));
+			for(int j=0;j<result.size();j++){
+				Object[] obj = result.get(j);
+				for (int i = 0; i < obj.length; i++) {
+					if (i == obj.length - 1) {
+						java.sql.Timestamp time = (java.sql.Timestamp)obj[i];
+						SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");//定义格式，不显示毫秒
+						String str = df.format(time);
+						raf.write(str.getBytes("GBK"));
+						raf.write("\n".getBytes("GBK"));
+					} else {
+						String str = (String) obj[i];
+						raf.write(str.getBytes("GBK"));
+						raf.write(",".getBytes("GBK"));
+					}
+				}
+			}
+			raf.close();
+
+			// 以流的形式下载文件。
+			InputStream fis = new BufferedInputStream(new FileInputStream(f));
+			byte[] buffer = new byte[fis.available()];
+			fis.read(buffer);
+			fis.close();
+			
+			response.reset();
+			response.addHeader("Content-Disposition", "attachment;filename="
+					+ new String("激活信息列表.csv".getBytes("GBK"), "ISO-8859-1"));
+			response.addHeader("Content-Length", "" + f.length());
+			OutputStream toClient = new BufferedOutputStream(response
+					.getOutputStream());
+			response.setContentType("application/octet-stream");
+			toClient.write(buffer);
+			toClient.flush();
+			toClient.close();
+			
+			f.delete();
+			return null;
+		}
+		request.setAttribute("message", "导出的文件大小过长，程序将可能不能正确导出，请调整大小后再次进行导出操作。");
+		return mapping.findForward("message");
+	}
+}

@@ -1,0 +1,120 @@
+package com.usernet.product.tools;
+
+import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.Enumeration;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+
+import com.usernet.product.utils.ProductConfig;
+
+public class APKTools {
+
+	/**
+	 * 获取APK安装包信息
+	 * 
+	 * @param apkPath
+	 *            apk安装包绝对路径
+	 * @return
+	 */
+	public static APK getAPK(String apkPath) {
+		APK apk = null;
+		try {
+			//String cmd = "cmd /c " + aaptPath + "aapt dump badging " + apkPath; //windows命令
+			String cmd = "/data/script/platform-tools/aapt dump badging " + apkPath;
+			System.out.println(cmd);
+			Runtime run = Runtime.getRuntime();
+			Process process = run.exec(cmd);
+			InputStream is = process.getInputStream();
+			InputStreamReader isr = new InputStreamReader(is, "UTF-8");
+			BufferedReader buffer = new BufferedReader(isr);
+			StringBuffer str = new StringBuffer();
+			String line = null;
+			while ((line = buffer.readLine()) != null) {
+				str.append(line);
+			}
+			int packageNameIndex = str.indexOf("name");
+			int formPackageIndex = str.indexOf("'", packageNameIndex + 6);
+
+			int versionCodeIndex = str.indexOf("versionCode");
+			int formVersionCodeIndex = str.indexOf("'", versionCodeIndex + 13);
+
+			int versionNameIndex = str.indexOf("versionName");
+			int formVersionNameIndex = str.indexOf("'", versionNameIndex + 13);
+
+			int iconIndex = str.indexOf("icon");
+			int formIconIndex = str.indexOf("'", iconIndex + 6);
+
+			int sdkIndex = str.indexOf("sdkVersion");
+			int formSdkIndex = str.indexOf("'", sdkIndex + 12);
+
+			String packageName = str.substring(packageNameIndex + 6,
+					formPackageIndex);
+			String versionCode = str.substring(versionCodeIndex + 13,
+					formVersionCodeIndex);
+			String versionName = str.substring(versionNameIndex + 13,
+					formVersionNameIndex);
+			String iconPath = str.substring(iconIndex + 6, formIconIndex);
+			String sdkVersion = "1";
+			if (sdkIndex != -1) {
+				sdkVersion = str.substring(sdkIndex + 12, formSdkIndex);
+			}
+
+			apk = new APK();
+			apk.setIconPath(iconPath);
+			apk.setPackageName(packageName);
+			apk.setVersionCode(versionCode);
+			apk.setVersionName(versionName);
+			apk.setSdkVersion(sdkVersion);
+			is.close();
+			is = null;
+			isr.close();
+			isr = null;
+			buffer.close();
+			buffer = null;
+			process.destroy();
+			process = null;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return apk;
+	}
+
+	public static byte[] getIcon(String apkPath, String iconPath) {
+		try {
+			ZipEntry entry; // 得到zip包中文件
+			ZipFile zf = new ZipFile(apkPath);
+			byte[] b = null;
+			Enumeration<?> enu = zf.entries();
+			while (enu.hasMoreElements()) {
+				entry = (ZipEntry) enu.nextElement();
+				if (entry.getName().equalsIgnoreCase(iconPath)) {
+					InputStream is = zf.getInputStream(entry);
+					ByteArrayOutputStream bytestream = new ByteArrayOutputStream();
+					int ch;
+					while ((ch = is.read()) != -1) {
+						bytestream.write(ch);
+					}
+					b = bytestream.toByteArray();
+					bytestream.close();
+					bytestream = null;
+					is.close();
+					is = null;
+					break;
+				}
+			}
+			return b;
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+
+	}
+
+	public static void main(String[] args) throws IOException {
+	}
+}

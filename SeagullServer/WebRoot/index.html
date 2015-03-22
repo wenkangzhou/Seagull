@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>海鸥</title>
+<meta name="Description" content="海鸥">
+<meta name="Keywords" content="海鸥,分享,文艺志">
+<meta name="viewport" content="width=device-width,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<link href="css/index.css" type="text/css" rel="stylesheet">
+</head>
+<body style="display:none">
+<div id="content">
+	<div id="logo">
+		<img src="img/index/seagull.jpg">
+		<span id="title">海鸥</span>
+		<span id="detail">愿和你分享每一天</span>
+	</div>
+	<div>
+		<a href="http://weibo.com/325766767" target="_blank" class="button-green button-medium">新浪微博</a>
+		<a href="download/LazySeagull.apk" target="_self" class="button-green button-medium">下载海鸥</a>
+    </div>
+    <div id="chart">
+		<img src="img/index/chart.png">
+	</div>
+</div>
+<i id="tip">Slide me</i>
+<div class="example_1">
+	<ul>
+		<li><img src="img/index/photo.jpg" width="228" height="310" /></li>
+		<li><img src="img/index/music.jpg" width="228" height="310" /></li>
+		<li><img src="img/index/tao.jpg" width="228" height="310" /></li>
+		<li><img src="img/index/sui.jpg" width="228" height="310" /></li>
+	</ul>
+</div>
+<div class="main_footer"> 
+	<a  class="link_footer" target="_blank" href="upload.html">给我投稿</a> · 
+	<a class="link_footer" target="_blank" href="Photo.html">HTML5版本</a> · 
+	<a class="link_footer" target="_blank" href="me.html">关于我</a>
+	<br>
+	<span style="font-size:12px">
+		沪ICP备13021330号
+	</span>
+</div>
+<script type="text/javascript" src="js/jquery.js"></script>
+<script type="text/javascript" src="js/jquery.promptumenu.min.js"></script>	
+<script type="text/javascript">
+	$(function(){
+        if(!-[1,]){ 
+          window.location.href = "fuck_ie.html";
+        }else{
+          $('body').css("display","");
+          $('.example_1 ul').promptumenu({
+			'width': 228,
+			'height': 310,
+			'columns': 1,
+			'rows': 1,
+			'pages': true
+			});
+        }
+	});
+</script>
+<script type="text/javascript">
+    var _bdhmProtocol = (("https:" == document.location.protocol) ? " https://" : " http://");
+    document.write(unescape("%3Cscript src='" + _bdhmProtocol + "hm.baidu.com/h.js%3Ff7b5d8f2abef56a088876db9d2235d61' type='text/javascript'%3E%3C/script%3E"));
+</script>
+</body>
+</html>

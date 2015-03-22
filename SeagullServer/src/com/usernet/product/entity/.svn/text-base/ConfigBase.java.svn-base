@@ -1,0 +1,55 @@
+package com.usernet.product.entity;
+
+import java.sql.Timestamp;
+
+public class ConfigBase {
+	private Integer id;
+	
+	private String property;
+	
+	private String value;
+	
+	private Timestamp time;
+	
+	private Integer deleted = 0;
+	
+	public Integer getId() {
+		return id;
+	}
+
+	public void setId(Integer id) {
+		this.id = id;
+	}
+
+	public String getProperty() {
+		return property;
+	}
+
+	public void setProperty(String property) {
+		this.property = property;
+	}
+
+	public String getValue() {
+		return value;
+	}
+
+	public void setValue(String value) {
+		this.value = value;
+	}
+
+	public Timestamp getTime() {
+		return time;
+	}
+
+	public void setTime(Timestamp time) {
+		this.time = time;
+	}
+
+	public Integer getDeleted() {
+		return deleted;
+	}
+
+	public void setDeleted(Integer deleted) {
+		this.deleted = deleted;
+	}
+}

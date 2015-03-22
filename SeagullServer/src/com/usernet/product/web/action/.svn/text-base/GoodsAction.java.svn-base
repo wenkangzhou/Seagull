@@ -1,0 +1,1135 @@
+package com.usernet.product.web.action;
+
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.sql.Timestamp;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.Hashtable;
+import java.util.List;
+import java.util.Set;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import net.sf.json.JSONArray;
+
+import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionForward;
+import org.apache.struts.action.ActionMapping;
+import org.apache.struts.upload.FormFile;
+import com.opensymphony.oscache.util.StringUtil;
+import com.usernet.product.comm.BaseAction;
+import com.usernet.product.entity.Area_ExpressFee_Tab;
+import com.usernet.product.entity.Channel;
+import com.usernet.product.entity.Color_Tab;
+import com.usernet.product.entity.CommodityColorSize;
+import com.usernet.product.entity.CommodityDetailedTab;
+import com.usernet.product.entity.Commodity_Tab;
+import com.usernet.product.entity.Commodity_Type_Tab;
+import com.usernet.product.entity.OrderTab;
+import com.usernet.product.entity.Photo;
+import com.usernet.product.entity.Recommend;
+import com.usernet.product.entity.PushBlacklist;
+import com.usernet.product.entity.QuickSearchKeyword;
+import com.usernet.product.entity.Size_Tab;
+import com.usernet.product.entity.Software;
+import com.usernet.product.entity.Tag;
+import com.usernet.product.entity.Tops_Tab;
+import com.usernet.product.tools.FileTools;
+import com.usernet.product.tools.FtpTools;
+import com.usernet.product.tools.Property;
+import com.usernet.product.utils.CreateThumbnail;
+import com.usernet.product.utils.DateUtils;
+import com.usernet.product.utils.Page;
+import com.usernet.product.utils.PageResult;
+import com.usernet.product.utils.ProductConfig;
+import com.usernet.product.utils.StringUtils;
+import com.usernet.product.web.form.ColorForm;
+import com.usernet.product.web.form.GoodsForm;
+import com.usernet.product.web.form.QuickSearchKeywordForm;
+import com.usernet.product.web.form.TagForm;
+
+/**
+ * 商品管理
+ * 
+ * @author Administrator
+ * 
+ */
+public class GoodsAction extends BaseAction {
+
+	private final String UPLOAD_DIR = Property.getPara("resources",
+			"informationImage");
+
+	private final String PHOTO_DIR = Property.getPara("resources",
+			"photo_PhysicsPath");
+	
+	private final String GOODS_URL = Property.getPara("resources",
+			"goods_url");
+
+	/**
+	 * 列表
+	 * 
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 */
+	public ActionForward toList(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		GoodsForm mForm = (GoodsForm) form;
+
+		PageResult<Commodity_Tab> list = null;
+		Page page = new Page();
+		// 分页信息
+		String pageNo = mForm.getPageNo();
+		String pageSize = mForm.getPageSize();
+		if (pageSize != null)
+			page.setEveryPage(Integer.parseInt(pageSize.trim()));
+		if (pageNo != null)
+			page.setCurrentPage(Integer.parseInt(pageNo.trim()));
+		Channel channel = (Channel) request.getSession().getAttribute("admin");
+		if (mForm.getChannelId() == null) {
+			mForm.setChannelId(0);
+		}
+		if (mForm.getTagid() == null) {
+			mForm.setTagid(0);
+		}
+		List<Tag> parentTag = null;
+		if(channel.getType()==0||channel.getType() == 2){
+			parentTag = tagDao.getParentTag(channel.getId());
+		}else{
+			parentTag = tagDao.getParentTag(null);
+		}
+		
+		request.setAttribute("parentTag", parentTag);
+
+		String name = request.getParameter("name");
+		String develope = request.getParameter("develope");
+		if(channel.getType() == 2){
+			
+			develope = channel.getApplicationName();
+		}
+		
+		Integer[] channelIdArray = getChannelsArray(request, channel);
+		list = goodsDao.getPage(page,name,channelIdArray,develope,mForm.getTagid());
+
+		List<Channel> channels = getChannel(channel.getId(),channel.getType());//页面上显示的渠道
+		request.setAttribute("channels", channels);
+		request.setAttribute("name", name);
+		request.setAttribute("develope", develope);
+		request.setAttribute("form", mForm);
+		request.setAttribute("list", list.getContent());
+		request.setAttribute("page", list.getPage());
+		request.setAttribute("size", list.getSize());
+		return mapping.findForward("toList");
+	}
+
+	/**
+	 * 去修改
+	 * 
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 */
+	public ActionForward toEdit(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_MEDIA);
+		GoodsForm iform = (GoodsForm) form;	
+		String id = request.getParameter("id");
+		
+		Commodity_Tab commodity_tab = (Commodity_Tab) goodsDao.getById(Commodity_Tab.class,Integer.valueOf(id));
+		Channel channel = (Channel) request.getSession().getAttribute("admin");
+		if(channel.getType()==1){
+			List<Channel> channels = getChannel(channel.getId(),channel.getType());//页面上显示的渠道
+			request.setAttribute("channels", channels);
+		}
+		//一级分类
+		List<Tag> parentTag = null;
+		if(channel.getType()==0){
+			parentTag = tagDao.getParentTag(channel.getId());
+		}else{
+			parentTag = tagDao.getParentTag(null);
+		}
+		List<CommodityColorSize> ccs = goodsDao.getAllCommodityColorSizeById(Integer.valueOf(id));
+		request.setAttribute("ccs", ccs);
+		
+		request.setAttribute("parentTag", parentTag);
+		List<Color_Tab> color_tab = goodsDao.getAllColor();
+		request.setAttribute("color", color_tab);
+		
+		List<Size_Tab> size_tab = goodsDao.getSizeByTypeId(commodity_tab.getType_id());
+		request.setAttribute("size", size_tab);
+		
+		List<Commodity_Type_Tab> commodity_type_tab = goodsDao.getAllCommodity_Type();
+		request.setAttribute("commodity_type", commodity_type_tab);
+	
+		List<Area_ExpressFee_Tab>  area_expressfee_tab = goodsDao.getExpressFeeById(Integer.valueOf(id));
+		request.setAttribute("area_expressfee", area_expressfee_tab);
+		
+		Integer[] inventory = new Integer[ccs.size()] ;
+		String[] size = new String[ccs.size()] ;
+		String[] color = new String[ccs.size()] ;
+		int i=0;
+		for(CommodityColorSize c:ccs){
+			inventory[i]=c.getInventory();
+			size[i]=c.getSize();
+			color[i]=c.getColor();
+			i++;
+		}
+		String inventory_str = StringUtils.arrayToString(inventory, ",");
+		String size_str = StringUtils.arrayToString(size, ",");
+		String color_str = StringUtils.arrayToString(color, ",");
+		request.setAttribute("inventory_str", inventory_str);
+		request.setAttribute("size_str", size_str);
+		request.setAttribute("color_str", color_str);
+		request.setAttribute("fromSource",commodity_tab.getFrom_source_id());
+		/*
+		Set<Tag> tag_set = commodity_tab.getTagkey();
+		Integer[] tag_id = new Integer[tag_set.size()];
+		int i=0;
+		for(Tag t:tag_set){
+			tag_id[i]=t.getId();
+			i++;
+		}
+		String tag_id_str = StringUtils.arrayToString(tag_id, ",");
+		request.setAttribute("tag_id_str", tag_id_str);
+		*/
+		request.setAttribute("item", commodity_tab);
+		return mapping.findForward("toEdit");
+	}
+
+	public ActionForward doEdit(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_MEDIA);
+		GoodsForm iform = (GoodsForm) form;
+		
+		String id = request.getParameter("id");
+		String artNum = request.getParameter("artNum");
+		String title = request.getParameter("title1");
+		String msg = request.getParameter("msg");
+		String original_price = request.getParameter("original_price");
+		String current_price = request.getParameter("current_price");
+		String discount = request.getParameter("discount");
+		String isPanicBuying = request.getParameter("isPanicBuying");
+		String start_panicbuying_time = request.getParameter("start_panicbuying_time");
+		String end_panicbuying_time = request.getParameter("end_panicbuying_time");
+		String inventory = request.getParameter("inventory");
+		String phone = request.getParameter("phone");
+		String develope = request.getParameter("develope");
+		String Commodity_Type = request.getParameter("Commodity_Type");
+		String expressFree = request.getParameter("expressFree");
+//		String topsStr = request.getParameter("tops");
+//		Integer tops =0;
+//		try{
+//			tops = Integer.parseInt(topsStr);
+//		}catch (Exception e) {
+//			tops =0;
+//		}
+	//	Set<Tag> set_tag = getSetTag(iform.getTag_id());
+		
+		Commodity_Tab commodity_tab = (Commodity_Tab)goodsDao.getById(Commodity_Tab.class, Integer.valueOf(id));
+		commodity_tab .setFrom_source_id(develope);
+		commodity_tab.setArtNum(artNum);
+		commodity_tab .setName(title);
+		commodity_tab .setRemark(msg);
+		commodity_tab .setInventory(Integer.parseInt(inventory));
+		commodity_tab .setPhoneNumber(phone);
+		commodity_tab .setUrl("");
+		commodity_tab .setType_id(Integer.parseInt(Commodity_Type));
+		commodity_tab .setExpressFree(Double.parseDouble(expressFree));
+	//	commodity_tab. setTagkey(set_tag);
+//		info.setTops(tops);
+		
+		String channelIdStr = request.getParameter("channelId");
+		if(!StringUtil.isEmpty(channelIdStr)&&!"0".equals(channelIdStr)){
+			commodity_tab .setChannelId(Integer.valueOf(channelIdStr));
+		}
+		String tag_id = request.getParameter("tag_id");
+		if(!StringUtil.isEmpty(channelIdStr)){
+			commodity_tab.setTag_id(Integer.valueOf(tag_id));
+		}
+//		CommodityDetailedTab cdt = softwareDao.getCommodityDetailedTab(commodity_tab.getId());
+		if(!StringUtil.isEmpty(isPanicBuying)){
+			commodity_tab.setPanic_buying(Integer.parseInt(isPanicBuying));
+			 SimpleDateFormat sdf=new SimpleDateFormat("yyyy-MM-dd HH:mm");
+			if(!StringUtil.isEmpty(start_panicbuying_time)){
+				 try {
+					 commodity_tab.setStart_panicbuying_time(new Timestamp(sdf.parse(start_panicbuying_time).getTime()));
+				} catch (ParseException e) {
+					e.printStackTrace();
+				}
+			}
+			if(!StringUtil.isEmpty(end_panicbuying_time)){
+				 try {
+					 commodity_tab.setEnd_panicbuying_time(new Timestamp(sdf.parse(end_panicbuying_time).getTime()));
+				} catch (ParseException e) {
+					e.printStackTrace();
+				}
+			}
+			//cdt = getGoodsTag(cdt, request);
+			//goodsDao.modify(cdt);
+		}
+		else{
+			commodity_tab.setPanic_buying(0);
+			commodity_tab.setStart_panicbuying_time(null);
+			commodity_tab.setEnd_panicbuying_time(null);
+		}
+		if(!StringUtil.isEmpty(original_price))
+			commodity_tab.setOriginal_price(Double.parseDouble(original_price));
+		if(!StringUtil.isEmpty(current_price))
+			commodity_tab.setCurrent_price(Double.parseDouble(current_price));
+		if(!StringUtil.isEmpty(discount))
+			commodity_tab.setDiscount(Double.parseDouble(discount));
+		//commodity_tab.setCreate_time(new Timestamp(System.currentTimeMillis()));
+		
+		
+		
+		/**-----------------上传ICON---------------------*/
+		
+		FormFile iconFile = iform.getIconFile();
+		if(iconFile.getFileSize()>0){
+			String realPath = ProductConfig.realPath + "upload/icon/" + DateUtils.getDate() + "/";
+			// 创建文件
+			FileTools.createDateFile(realPath);
+			String fileName = StringUtils.getUUID();
+			try {
+				InputStream is = iconFile.getInputStream();
+				OutputStream out = new FileOutputStream(realPath + fileName);
+				out.write(iconFile.getFileData(), 0, iconFile.getFileSize());
+				is.close();
+				is = null;
+				out.flush();
+				out.close();
+				out = null;
+				
+				try {
+					FtpTools.uploadFtp(realPath+fileName, fileName, "icon", DateUtils.getDate());
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+				
+				commodity_tab.setSmall_picture(DateUtils.getDate() + "/" + fileName);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		
+		/**-------------新客户端首页图片----------------**/
+		FormFile thumbnailFile = iform.getThumbnailFile();
+		if(thumbnailFile.getFileSize()>0){
+			try {
+				String thumbnailName = StringUtils.getUUID();
+				String realPath1 = ProductConfig.realPath + "upload/taoicon/" + DateUtils.getDate() + "/";
+				FileTools.createDateFile(realPath1);
+				InputStream is = thumbnailFile.getInputStream();
+				OutputStream out = new FileOutputStream(realPath1 + thumbnailName);
+				out.write(thumbnailFile.getFileData(), 0, thumbnailFile.getFileSize());
+				out.flush();
+				is.close();
+				is = null;
+				out.close();
+				out = null;
+				
+				try {
+					FtpTools.uploadFtp(realPath1+thumbnailName, thumbnailName, "taoicon", DateUtils.getDate());
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+				commodity_tab.setBig_picture(DateUtils.getDate() + "/" + thumbnailName);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		
+		goodsDao.modify(commodity_tab);
+		doAddColorSize(commodity_tab.getId(), request);
+		doAddExpressFee(commodity_tab.getId(), request);
+	//	recommendDao.updateRecommendMsgBySoftwareId(commodity_tab.getId(), msg,title,develope);
+		
+		return mapping.findForward("other");
+	}
+
+	/**
+	 * 新增
+	 * 
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 */
+	public ActionForward toAdd(ActionMapping mapping,
+			ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_MEDIA);
+		Channel channel = (Channel) request.getSession().getAttribute("admin");
+		//一级分类
+		List<Tag> parentTag = null;
+		if(channel.getType()==0){
+			parentTag = tagDao.getParentTag(channel.getId());
+		}else{
+			parentTag = tagDao.getParentTag(null);
+		}
+		request.setAttribute("parentTag", parentTag);
+		List<Color_Tab> color_tab = goodsDao.getAllColor();
+		request.setAttribute("color", color_tab);
+		List<Size_Tab> size_tab = goodsDao.getAllSize();
+		request.setAttribute("size", size_tab);
+		List<Commodity_Type_Tab> commodity_type_tab = goodsDao.getAllCommodity_Type();
+		request.setAttribute("commodity_type", commodity_type_tab);
+		
+		if(channel.getType()==1){
+			List<Channel> channels = getChannel(channel.getId(),channel.getType());//页面上显示的渠道
+			request.setAttribute("channels", channels);
+		}	
+		return mapping.findForward("toAdd");
+	}
+	
+	//根据商品类型获取尺码
+	public ActionForward getSize(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) throws IOException {
+		int id = Integer.parseInt(request.getParameter("id"));
+		List<Size_Tab> sizeList = goodsDao.getSizeByTypeId(id);
+		if(sizeList==null||sizeList.isEmpty()){
+			response.getWriter().print("");
+		}else{
+			List<Size_Tab> temList = new ArrayList<Size_Tab>();
+			for(Size_Tab t:sizeList){
+				Size_Tab tm = new Size_Tab();
+				tm.setId(t.getId());
+				tm.setSize(t.getSize());
+				temList.add(tm);
+			}
+			JSONArray array = new JSONArray(temList);
+			response.getWriter().print(array.toString());
+		}
+		return null;
+	}
+
+	//商品标签
+	private CommodityDetailedTab getGoodsTag(CommodityDetailedTab cdt,HttpServletRequest request){
+		String introduction = request.getParameter("introduction");
+		String specification = request.getParameter("specification");
+		String special_note = request.getParameter("special_note");
+		String recommended_reason = request.getParameter("recommended_reason");
+		String review = request.getParameter("review");
+		String commodity_size_description = request.getParameter("commodity_size_description");
+		String use_method = request.getParameter("use_method");
+		String detailed_parameters = request.getParameter("detailed_parameters");
+		
+		cdt.setCommodity_size_description(commodity_size_description);
+		cdt.setDetailed_parameters(detailed_parameters);
+		cdt.setIntroduction(introduction);
+		cdt.setRecommended_reason(recommended_reason);
+		cdt.setReview(review);
+		cdt.setSpecial_note(special_note);
+		cdt.setSpecification(specification);
+		cdt.setUse_method(use_method);
+		return cdt;
+	}
+	
+	//颜色尺寸
+	private void doAddColorSize(Integer software_id,HttpServletRequest request){
+		goodsDao.delColorSizeBySoftwareID(software_id);	
+		String[] color = request.getParameterValues("input_color");
+		String[] size = request.getParameterValues("input_size");
+		String[] inventory = request.getParameterValues("hasInventory");
+		
+		if(color!=null&&color.length>0){
+			for(int i=0;i<color.length;i++){
+			//	System.out.print(color[i]+"##"+size[i]+"##"+inventory[i]);
+				CommodityColorSize ccs = new CommodityColorSize();
+				ccs.setCommodity_id(software_id);
+				ccs.setColor(color[i]);
+				ccs.setSize(size[i]);
+				ccs.setInventory(Integer.parseInt(inventory[i]));
+				goodsDao.save(ccs);
+			}
+		}
+		/*
+		if(color!=null&&color.length>0){
+			for(int i=0;i<color.length;i++){
+				CommodityColorSize ccs = new CommodityColorSize();
+				ccs.setCommodity_id(software_id);
+				ccs.setColor(color[i]);
+				if(size!=null&&size.length>0){
+					for(int j=0;j<size.length;j++){
+							ccs.setSize(size[j]);
+							goodsDao.save(ccs);
+					}
+				}
+				
+			}
+		}
+		*/
+	}
+	//增加地区快递费
+	private void doAddExpressFee(Integer commodity_id,HttpServletRequest request){
+		goodsDao.delAreaExpressFeeByCommodityID(commodity_id);	
+		String[] province = request.getParameterValues("province");
+		String[] areaExpressfee = request.getParameterValues("areaExpressfee");
+		
+		if(province!=null&&province.length>0){
+			for(int i=0;i<province.length;i++){
+				Area_ExpressFee_Tab ae = new Area_ExpressFee_Tab();
+				ae.setCommodity_id(commodity_id);
+				ae.setArea(province[i]);
+				ae.setPrice(Double.parseDouble(areaExpressfee[i]));
+				goodsDao.save(ae);
+			}
+		}
+	}
+	public ActionForward doAdd(ActionMapping mapping,
+			ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_MEDIA);
+		GoodsForm iForm = (GoodsForm) form;
+		Channel channel = (Channel) request.getSession().getAttribute("admin");
+		Commodity_Tab commodity_tab = new Commodity_Tab();
+		String artNum = request.getParameter("artNum");
+		String title = request.getParameter("title1");
+		String msg = request.getParameter("msg");
+		String original_price = request.getParameter("original_price");
+		String current_price = request.getParameter("current_price");
+		String discount = request.getParameter("discount");
+		String isPanicBuying = request.getParameter("isPanicBuying");
+		String start_panicbuying_time = request.getParameter("start_panicbuying_time");
+		String end_panicbuying_time = request.getParameter("end_panicbuying_time");
+		String inventory = request.getParameter("inventory");
+		String phone = request.getParameter("phone");
+		String develope = request.getParameter("develope");	
+		String channelIdStr = request.getParameter("channelId");
+		String tag_id = request.getParameter("tag_id");
+		String Commodity_Type = request.getParameter("Commodity_Type");
+		String expressFree = request.getParameter("expressFree");
+		if(!StringUtil.isEmpty(channelIdStr)&&!"0".equals(channelIdStr)){
+			commodity_tab.setChannelId(Integer.valueOf(channelIdStr));
+		}else{
+			commodity_tab.setChannelId(channel.getId());
+		}
+	
+		commodity_tab.setArtNum(artNum);
+		commodity_tab.setName(title);
+		commodity_tab.setRemark(msg);
+		commodity_tab.setFrom_source_id(develope);
+		commodity_tab.setStatus(0);
+		commodity_tab.setInventory(Integer.parseInt(inventory));
+		commodity_tab.setCreate_time(new Timestamp(new Date().getTime()));
+		commodity_tab.setPhoneNumber(phone);
+		commodity_tab.setUrl("");
+		commodity_tab.setType_id(Integer.parseInt(Commodity_Type));
+		commodity_tab.setExpressFree(Double.parseDouble(expressFree));
+		commodity_tab.setTag_id(Integer.parseInt(tag_id));	
+		if(!StringUtil.isEmpty(original_price))
+			commodity_tab.setOriginal_price(Double.parseDouble(original_price));
+		if(!StringUtil.isEmpty(current_price))
+			commodity_tab.setCurrent_price(Double.parseDouble(current_price));
+		if(!StringUtil.isEmpty(discount))
+			commodity_tab.setDiscount(Double.parseDouble(discount));
+
+		if(!StringUtil.isEmpty(isPanicBuying)){
+			commodity_tab.setPanic_buying(Integer.parseInt(isPanicBuying));
+			SimpleDateFormat sdf=new SimpleDateFormat("yyyy-MM-dd HH:mm");
+			if(!StringUtil.isEmpty(start_panicbuying_time)){
+				 try {
+					 commodity_tab.setStart_panicbuying_time(new Timestamp(sdf.parse(start_panicbuying_time).getTime()));
+				} catch (ParseException e) {
+					e.printStackTrace();
+				}
+			}
+			if(!StringUtil.isEmpty(end_panicbuying_time)){
+				 try {
+					 commodity_tab.setEnd_panicbuying_time(new Timestamp(sdf.parse(end_panicbuying_time).getTime()));
+				} catch (ParseException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+		
+		FormFile iconFile = iForm.getIconFile();
+		String realPath = ProductConfig.realPath + "upload/icon/" + DateUtils.getDate() + "/";
+		// 创建文件
+		FileTools.createDateFile(realPath);
+		String fileName = StringUtils.getUUID();
+		try {
+			InputStream is = iconFile.getInputStream();
+			OutputStream out = new FileOutputStream(realPath + fileName);
+			out.write(iconFile.getFileData(), 0, iconFile.getFileSize());
+			is.close();
+			is = null;
+			out.flush();
+			out.close();
+			out = null;
+			
+			try {
+				FtpTools.uploadFtp(realPath+fileName, fileName, "icon", DateUtils.getDate());
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			
+			commodity_tab.setSmall_picture(DateUtils.getDate() + "/" + fileName);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		/**-------------新客户端首页图片----------------**/
+		FormFile thumbnailFile = iForm.getThumbnailFile();
+		if(thumbnailFile.getFileSize()>0){
+			try {
+				String thumbnailName = StringUtils.getUUID();
+				String realPath1 = ProductConfig.realPath + "upload/taoicon/" + DateUtils.getDate() + "/";
+				FileTools.createDateFile(realPath1);
+				InputStream is = thumbnailFile.getInputStream();
+				OutputStream out = new FileOutputStream(realPath1 + thumbnailName);
+				out.write(thumbnailFile.getFileData(), 0, thumbnailFile.getFileSize());
+				out.flush();
+				is.close();
+				is = null;
+				out.close();
+				out = null;
+				
+				try {
+					FtpTools.uploadFtp(realPath1+thumbnailName, thumbnailName, "taoicon", DateUtils.getDate());
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+				commodity_tab.setBig_picture(DateUtils.getDate() + "/" + thumbnailName);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}		
+		int id = goodsDao.save(commodity_tab);	
+		commodity_tab.setUrl(GOODS_URL + id);
+		goodsDao.modify(commodity_tab);
+		doAddColorSize(id, request);
+		doAddExpressFee(id, request);
+		request.setAttribute("id", commodity_tab.getId());
+		//添加首页推荐
+		Software s = softwareDao.getSoftwareByNewId(commodity_tab.getId(),1);
+		Recommend rec = new Recommend();
+		rec.setSoftware(s);
+		rec.setTitle(title);
+		rec.setMsg(msg);
+		rec.setFromWhere(develope);
+		rec.setTime(new Date());
+		rec.setChannelId(channel.getType() == 1 ? 0 : channel.getId());
+		rec.setBriefMsg(msg.length()>=150?msg.substring(0,150):msg);
+		recommendDao.save(rec);
+		
+		ActionForward forward=new ActionForward("/goods.do?method=toPhoto&id="+id);
+		return forward;
+	}
+
+	//下架
+	public ActionForward toShelf(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_MEDIA);
+
+		String id = request.getParameter("id");
+		Commodity_Tab commodityTab = (Commodity_Tab) goodsDao.getById(Commodity_Tab.class,
+				Integer.valueOf(id));
+		if(commodityTab.getStatus()==0){
+			commodityTab.setStatus(1);
+		}else{
+			commodityTab.setStatus(0);
+		}
+		goodsDao.modify(commodityTab);
+		return mapping.findForward("other");
+	}
+	@SuppressWarnings("unchecked")
+	public ActionForward toPhoto(ActionMapping mapping, ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) {
+		int id = Integer.parseInt(request.getParameter("id"));
+		List<Photo> photos = goodsDao.getAllByHql("from Photo where softId='" + id +"' and flag = 1");
+		request.setAttribute("id", id);
+		request.setAttribute("flag", "1");
+		request.setAttribute("photos", photos);
+		return mapping.findForward("photo");
+	}
+	/***
+	 * 去上传商品图片
+	 * 
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 * @throws IOException
+	 */
+	public ActionForward toUploadPicture(ActionMapping mapping,
+			ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) throws IOException {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_MEDIA);
+
+		Integer id = (Integer) request.getAttribute("id");
+
+		request.setAttribute("id", id);
+		return mapping.findForward("toUploadPicture");
+	}
+
+	/***
+	 * 上传商品图片
+	 * 
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 * @throws FileNotFoundException
+	 * @throws IOException
+	 */
+	public ActionForward doUploadPicture(ActionMapping mapping,
+			ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) throws FileNotFoundException,
+			IOException {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_MEDIA);
+
+		int informationId = Integer.parseInt(request
+				.getParameter("id"));
+		Hashtable<?, ?> files = form.getMultipartRequestHandler()
+				.getFileElements();
+		int count = 0;
+		if (files != null & files.size() > 0) {
+			Enumeration<?> enums = files.keys();
+			String fileKey = null;
+			int i = 0;
+			String filePath = UPLOAD_DIR + "/" + DateUtils.getDate() + "/";
+			FileTools.createDateFile(filePath);
+			while (enums.hasMoreElements()) {
+				// 取得key
+				fileKey = (String) (enums.nextElement());
+				// 初始化每一个FormFile(接口)
+				FormFile file = (FormFile) files.get(fileKey);
+				// 分别上传
+				String name = file.getFileName();
+				if (name != null && !"".equals(name.trim())) {
+					String fileType = name.substring(name.lastIndexOf("."),
+							name.length());
+					if (!".png".equals(fileType.toLowerCase())
+							&& !".jpg".equals(fileType.toLowerCase())) {
+						request.setAttribute("msg", "已经添加成功了" + count
+								+ "张,图片类型错误,必须为PNG或JPG");
+						request.setAttribute("return",
+								"/admin/page/software_add_3.jsp&id="
+										+ informationId);
+						return mapping.findForward("admin_msg");
+					} else {
+						String photpName = StringUtils.getUUID();
+
+						InputStream in = file.getInputStream();
+
+						OutputStream out = new FileOutputStream(filePath
+								+ photpName);
+						out.write(file.getFileData(), 0, file.getFileSize());
+						in.close();
+						in = null;
+						out.close();
+						out = null;
+						Photo informationPicture = new Photo();
+						informationPicture.setPhoto(DateUtils.getDate() + "/"
+								+ photpName);
+						informationPicture.setStatus(0);// 可用
+						Software software = new Software();
+						software.setId(informationId);
+						informationPicture.setTime(new Timestamp(System
+								.currentTimeMillis()));
+						int informationPictureId = informationPictureDao
+								.save(informationPicture);
+						if (informationPictureId > 0) {
+							count++;
+						} else {
+							request.setAttribute("msg", "添加失败,(已经添加成功了" + count
+									+ "张)");
+							request.setAttribute("return",
+									"software.do?method=toList");
+							return mapping.findForward("admin_msg");
+						}
+					}
+				}
+				i++;
+			}
+		}
+
+		List<Photo> infoPicture = productDao.getByImgId(informationId,1);
+
+		if (infoPicture != null && infoPicture.size() > 0) {
+
+			Photo photo = infoPicture.get(0);
+
+			// 原图路径
+			String oldImageName = photo.getPhoto();
+			String oldPath = PHOTO_DIR + oldImageName;
+			// 缩略图路径
+			String thumbnailPhoto = oldPath + "_thumbnail";
+			String thumbnailFile = photo.getPhoto() + "_thumbnail";
+			
+			// 生成缩略图
+			try {
+
+				CreateThumbnail.saveImageAsJpg(oldPath, thumbnailPhoto, 500,
+						500);
+				
+				FtpTools.uploadFtp(PHOTO_DIR + thumbnailFile, oldImageName.substring(oldImageName.lastIndexOf("/")+1) + "_thumbnail", "photo", DateUtils.getDate());
+				FtpTools.uploadFtp(PHOTO_DIR + thumbnailFile, oldImageName.substring(oldImageName.lastIndexOf("/")+1) + "_thumbnail", "icon", DateUtils.getDate());
+				
+			} catch (Exception e) {
+
+				log.error("生成缩略图失败");
+			}
+			productDao.updateInformationImg(thumbnailFile, informationId);
+		}
+
+		return mapping.findForward("other");
+	}
+	
+	private Set<Tag> getSetTag(Integer[] id){
+		if(id==null){
+			return null;
+		}
+		Set<Tag> set_tag = new HashSet<Tag>();
+		for(Integer temp:id){
+				Tag t = (Tag) tagDao.getById(Tag.class,temp);
+				set_tag.add(t);
+		}
+		return set_tag;
+	}
+	
+	/**
+	 * 列表
+	 */
+	public ActionForward toShouye(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_MEDIA);
+		GoodsForm mForm = (GoodsForm) form;
+		PageResult<Software> list = null;
+		Page page = new Page();
+		// 分页信息
+		String pageNo = mForm.getPageNo();
+		String pageSize = mForm.getPageSize();
+		if (pageSize != null)
+			page.setEveryPage(Integer.parseInt(pageSize.trim()));
+		if (pageNo != null)
+			page.setCurrentPage(Integer.parseInt(pageNo.trim()));
+		Channel channel = (Channel) request.getSession().getAttribute("admin");
+		if (mForm.getChannelId() == null) {
+			mForm.setChannelId(0);
+		}
+		
+		list = goodsDao.getShouyePage(page);
+
+		List<Channel> channels = getChannel(channel.getId(),channel.getType());//页面上显示的渠道
+		request.setAttribute("channels", channels);
+		
+		
+		request.setAttribute("form", mForm);
+		request.setAttribute("list", list.getContent());
+		request.setAttribute("page", list.getPage());
+		request.setAttribute("size", list.getSize());
+		return mapping.findForward("toList");
+	}
+	
+	
+	public ActionForward getGoodsTops(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) throws IOException {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_MEDIA);
+		String softId = request.getParameter("softId");
+		Software goods = (Software) goodsDao.getById(Software.class, Integer.parseInt(softId));
+		
+		response.getWriter().print(goods.getTops());
+		
+		return null;
+	}
+	public ActionForward toGoodsTops(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) throws IOException {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_MEDIA);
+		String id = request.getParameter("id");
+		List<Tops_Tab> tops_tab = goodsDao.isExistTops(Integer.parseInt(id),1);
+		if(tops_tab.isEmpty())
+		{
+			Tops_Tab t = new Tops_Tab();
+			t.setTops(99);
+			t.setNewId(Integer.parseInt(id));
+			t.setFlag(1);
+			goodsDao.save(t);
+			response.getWriter().print("推荐成功！");
+		}
+		else
+		{
+			response.getWriter().print("此商品已推荐！");
+		}		
+		return null;
+	}
+	public ActionForward editGoodsTops(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) throws IOException {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_MEDIA);
+		String softId = request.getParameter("softId");
+		Software goods = (Software) goodsDao.getById(Software.class, Integer.parseInt(softId));
+		String topsStr = request.getParameter("tops");
+		Integer tops =0;
+		try{
+			tops = Integer.parseInt(topsStr);
+		}catch (Exception e) {
+			tops =0;
+		}
+		
+		goods.setTops(tops);
+		try{
+			goodsDao.modify(goods);
+			response.getWriter().print(0);
+		}catch (Exception e) {
+			response.getWriter().print(1);
+		}
+		return null;
+	}
+	public ActionForward getInventory(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) throws IOException {
+
+		String id = request.getParameter("id");
+		String color = request.getParameter("color");
+		String size = request.getParameter("size");
+		int inventory=goodsDao.getInventory(Integer.parseInt(id),color,size);
+		response.getWriter().print(inventory);
+		return null;
+	}
+	/**
+	 * 首页商品列表
+	 * 
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 */
+	public ActionForward toSyList(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		GoodsForm mForm = (GoodsForm) form;
+		PageResult<Object[]> list = null;
+		Page page = new Page();
+		// 分页信息
+		String pageNo = mForm.getPageNo();
+		String pageSize = mForm.getPageSize();
+		if (pageSize != null)
+			page.setEveryPage(Integer.parseInt(pageSize.trim()));
+		if (pageNo != null)
+			page.setCurrentPage(Integer.parseInt(pageNo.trim()));
+		String name = request.getParameter("name");
+		request.setAttribute("name", name);
+		list = goodsDao.getsyList(page,name);
+		if(null == list){			
+			list = new PageResult<Object[]>(page,null);
+		}
+		request.setAttribute("form", mForm);
+		request.setAttribute("list", list.getContent());
+		request.setAttribute("page", list.getPage());
+		request.setAttribute("size", list.getSize());
+		return mapping.findForward("toSyList");
+	}
+	public ActionForward doDelSyGoods(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+			String id = request.getParameter("id");
+			goodsDao.doDelSyGoods(Integer.parseInt(id));
+			return mapping.findForward("toOther");
+	}
+	public ActionForward getGoodsTopsById(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) throws IOException {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_MEDIA);
+		String id = request.getParameter("id");
+		int tops = goodsDao.getTops(Integer.parseInt(id),1);
+		response.getWriter().print(tops);
+		
+		return null;
+	}
+	public ActionForward editGoodsTopsById(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) throws IOException {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_MEDIA);
+		String id = request.getParameter("id");
+		String tops = request.getParameter("tops");
+		if(goodsDao.updateGoodsTops(Integer.parseInt(id),Integer.parseInt(tops)))
+		{
+			response.getWriter().print(0);
+		}
+		else
+		{
+			response.getWriter().print(1);
+		}
+		return null;
+	}
+	/**
+	 * 颜色管理列表
+	 * 
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 */
+	public ActionForward colorList(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		
+		GoodsForm mForm = (GoodsForm) form;
+		PageResult<Color_Tab> result = null;
+		Page page = new Page();
+		// 分页信息
+		String pageNo = mForm.getPageNo();
+		String pageSize = mForm.getPageSize();
+		if (pageSize != null) {
+			page.setEveryPage(Integer.parseInt(pageSize.trim()));
+		}
+		if (pageNo != null) {
+			page.setCurrentPage(Integer.parseInt(pageNo.trim()));
+		}
+		result = goodsDao.getAllColor(page);
+		request.setAttribute("form", mForm);
+		request.setAttribute("list", result.getContent());
+		request.setAttribute("page", result.getPage());
+		request.setAttribute("size", result.getSize());	
+		return mapping.findForward("colorlist");
+	}
+	public ActionForward doDeleteColor(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+			String id = request.getParameter("id");
+			goodsDao.doDeleteColor(Integer.parseInt(id));
+			return mapping.findForward("toColorOther");
+	}
+	public ActionForward toAddColor(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		return mapping.findForward("toAddColor");
+	}
+	public ActionForward doAddColor(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		String color = request.getParameter("keyword");
+		Color_Tab color_tab = new Color_Tab();
+		color_tab.setColor(color);
+		goodsDao.save(color_tab);
+		return mapping.findForward("toColorOther");
+	}
+	/**
+	 * 商品管理列表
+	 * 
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 */
+	public ActionForward sizeList(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		
+		GoodsForm mForm = (GoodsForm) form;
+		PageResult<Size_Tab> result = null;
+		Page page = new Page();
+		// 分页信息
+		String pageNo = mForm.getPageNo();
+		String pageSize = mForm.getPageSize();
+		if (pageSize != null) {
+			page.setEveryPage(Integer.parseInt(pageSize.trim()));
+		}
+		if (pageNo != null) {
+			page.setCurrentPage(Integer.parseInt(pageNo.trim()));
+		}
+		result = goodsDao.getAllSize(page);
+		request.setAttribute("form", mForm);
+		request.setAttribute("list", result.getContent());
+		request.setAttribute("page", result.getPage());
+		request.setAttribute("size", result.getSize());	
+		return mapping.findForward("sizelist");
+	}
+	public ActionForward doDeleteSize(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+			String id = request.getParameter("id");
+			goodsDao.doDeleteSize(Integer.parseInt(id));
+			return mapping.findForward("toSizeOther");
+	}
+	public ActionForward toAddSize(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		List<Commodity_Type_Tab> commodity_type = goodsDao.getAllCommodityType();
+		request.setAttribute("commodity_type", commodity_type);	
+		return mapping.findForward("toAddSize");
+	}
+	public ActionForward doAddSize(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		String size = request.getParameter("keyword");
+		String type = request.getParameter("type");	
+		Size_Tab size_tab = new Size_Tab();
+		size_tab.setSize(size);
+		size_tab.setType_id(Integer.parseInt(type));
+		goodsDao.save(size_tab);
+		return mapping.findForward("toSizeOther");
+	}
+	public ActionForward doViewReadOnly(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		String id_str = request.getParameter("id");
+		Integer id = Integer.parseInt(id_str);
+		Commodity_Tab commodity_tab = (Commodity_Tab) goodsDao.getById(Commodity_Tab.class,id);
+		Channel channel = (Channel) request.getSession().getAttribute("admin");
+		if(channel.getType()==1){
+			List<Channel> channels = getChannel(channel.getId(),channel.getType());//页面上显示的渠道
+			request.setAttribute("channels", channels);
+		}
+		//一级分类
+		List<Tag> parentTag = null;
+		if(channel.getType()==0){
+			parentTag = tagDao.getParentTag(channel.getId());
+		}else{
+			parentTag = tagDao.getParentTag(null);
+		}
+		List<CommodityColorSize> ccs = goodsDao.getAllCommodityColorSizeById(Integer.valueOf(id));
+		request.setAttribute("ccs", ccs);
+		
+		request.setAttribute("parentTag", parentTag);
+		List<Color_Tab> color_tab = goodsDao.getAllColor();
+		request.setAttribute("color", color_tab);
+		
+		List<Size_Tab> size_tab = goodsDao.getSizeByTypeId(commodity_tab.getType_id());
+		request.setAttribute("size", size_tab);
+
+		List<Commodity_Type_Tab> commodity_type_tab = goodsDao.getAllCommodity_Type();
+		request.setAttribute("commodity_type", commodity_type_tab);
+	
+		List<Area_ExpressFee_Tab>  area_expressfee_tab = goodsDao.getExpressFeeById(Integer.valueOf(id));
+		request.setAttribute("area_expressfee", area_expressfee_tab);
+		
+		Integer[] inventory = new Integer[ccs.size()] ;
+		String[] size = new String[ccs.size()] ;
+		String[] color = new String[ccs.size()] ;
+		int i=0;
+		for(CommodityColorSize c:ccs){
+			inventory[i]=c.getInventory();
+			size[i]=c.getSize();
+			color[i]=c.getColor();
+			i++;
+		}
+		String inventory_str = StringUtils.arrayToString(inventory, ",");
+		String size_str = StringUtils.arrayToString(size, ",");
+		String color_str = StringUtils.arrayToString(color, ",");
+		request.setAttribute("inventory_str", inventory_str);
+		request.setAttribute("size_str", size_str);
+		request.setAttribute("color_str", color_str);
+		request.setAttribute("fromSource",commodity_tab.getFrom_source_id());
+		request.setAttribute("item", commodity_tab);
+		return mapping.findForward("viewreadonly");
+	}		
+}

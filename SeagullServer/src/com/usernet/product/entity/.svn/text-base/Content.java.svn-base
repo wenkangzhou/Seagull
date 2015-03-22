@@ -1,0 +1,28 @@
+package com.usernet.product.entity;
+
+import java.io.Serializable;
+
+public class Content implements Serializable {
+	
+	private static final long serialVersionUID = 757072345501334225L;
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+	
+	private Integer id;
+	
+	public Integer getId() {
+		return id;
+	}
+
+	public void setId(Integer id) {
+		this.id = id;
+	}
+
+	private String name;
+}

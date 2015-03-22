@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+"http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+
+<hibernate-mapping>
+	<class name="com.usernet.product.entity.UserGift" table="user_gift">
+		<id name="id" type="java.lang.Integer">
+			<column name="id" />
+			<generator class="native" />
+		</id>
+		<property name="userId" type="java.lang.Integer">
+			<column name="userId" />
+		</property>
+		<many-to-one name="gift" class="com.usernet.product.entity.Gift" not-found="ignore">
+			<column name="giftId" />
+		</many-to-one>
+		<property name="count" type="java.lang.Integer">
+			<column name="count" />
+		</property>
+		<property name="giveTime" type="java.sql.Timestamp">
+			<column name="giveTime" />
+		</property>
+		<property name="gived" type="java.lang.Integer">
+			<column name="gived" />
+		</property>
+		<property name="fromType" type="java.lang.Integer">
+			<column name="fromType" />
+		</property>
+	</class>
+</hibernate-mapping>

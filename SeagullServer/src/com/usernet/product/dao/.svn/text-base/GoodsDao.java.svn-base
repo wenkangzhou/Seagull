@@ -1,0 +1,236 @@
+package com.usernet.product.dao;
+
+import java.util.List;
+
+import org.hibernate.HibernateException;
+import org.hibernate.Query;
+import org.hibernate.Session;
+import org.hibernate.Transaction;
+
+import com.opensymphony.oscache.util.StringUtil;
+import com.usernet.product.comm.BaseDao;
+import com.usernet.product.entity.Area_ExpressFee_Tab;
+import com.usernet.product.entity.Color_Tab;
+import com.usernet.product.entity.CommodityColorSize;
+import com.usernet.product.entity.CommodityDetailedTab;
+import com.usernet.product.entity.Commodity_Tab;
+import com.usernet.product.entity.Commodity_Type_Tab;
+import com.usernet.product.entity.Photo;
+import com.usernet.product.entity.Size_Tab;
+import com.usernet.product.entity.Software;
+import com.usernet.product.entity.Tops_Tab;
+import com.usernet.product.utils.Page;
+import com.usernet.product.utils.PageResult;
+
+/**
+ * 增值产品信息
+ */
+public class GoodsDao extends BaseDao {	
+	/**
+	 * 查询
+	 * @return
+	 */
+	@SuppressWarnings("unchecked")
+	public List<Software> getAll(Integer[] channelId){
+		String hql = "from Software";
+		if (channelId != null && channelId.length > 0) {
+
+			hql += " where channelId=" + channelId[0];
+
+			for (int i = 1; i < channelId.length; i++) {
+
+				hql += " OR channelId = " + channelId[i];
+				}
+		}
+		return getAllByHql(hql);
+	}
+	/**
+	 * 获取所有颜色
+	 * @return
+	 */
+	@SuppressWarnings("unchecked")
+	public List<Color_Tab> getAllColor(){
+		String hql = "from Color_Tab";
+		return getAllByHql(hql);
+	}
+	/**
+	 * 初始化尺寸
+	 * @return
+	 */
+	@SuppressWarnings("unchecked")
+	public List<Size_Tab> getAllSize(){
+		String hql = "from Size_Tab where type_id=1";
+		return getAllByHql(hql);
+	}
+	/**
+	 * 获取所有商品类型
+	 * @return
+	 */
+	@SuppressWarnings("unchecked")
+	public List<Commodity_Type_Tab> getAllCommodity_Type(){
+		String hql = "from Commodity_Type_Tab";
+		return getAllByHql(hql);
+	}	
+	/*
+	@SuppressWarnings("unchecked")
+	public List<Photo> getByImgId(Integer id){
+		String hql = "from Photo where softId="+id+"";
+		return getAllByHql(hql);
+	}
+	*/
+	@SuppressWarnings("unchecked")
+	public PageResult<Software> getAllByPage(Page page) {
+		String hql = " from Software as s where s.type.flag= 7 and isCommodity = 1 order by time desc";
+		return super.getAllByPageAndHql(page, hql);
+	}
+	
+	@SuppressWarnings("unchecked")
+	public PageResult<Commodity_Tab> getPage(Page page,String name,Integer[] channelId,String develope,Integer tag_id) {
+		String hql = " from Commodity_Tab as ct where 1 = 1";
+		if(!StringUtil.isEmpty(name)){
+			hql = hql +" and ct.name like '%"+name+"%' ";
+		}
+		if(!StringUtil.isEmpty(develope)){
+			hql = hql +" and ct.from_source_id = '"+develope+"' ";
+		}
+		if(tag_id!=null &tag_id>0){
+			hql += " and ct.tag_id=" + tag_id;
+		}
+		if(channelId!=null&&channelId.length>0){
+			hql += " and (";
+			hql += "  ct.channelId=" + channelId[0];
+			for (int i = 1; i < channelId.length; i++) {
+				hql += " OR ct.channelId = " + channelId[i];
+			}
+			hql += ") ";
+		}
+		hql = hql + " order by create_time desc";
+		return super.getAllByPageAndHql(page, hql);
+	}
+	
+	@SuppressWarnings("unchecked")
+	public PageResult<Software> getShouyePage(Page page) {
+		String hql = " from Software as s where s.type.flag= 7 and isCommodity = 1 and tops>0 order by tops desc";
+		return super.getAllByPageAndHql(page, hql);
+	}
+	
+	public void delColorSizeBySoftwareID(Integer id) {
+		String hql = " delete from CommodityColorSize where commodity_id = "+id;
+		this.deleteByHql(hql);
+	}
+	public void delAreaExpressFeeByCommodityID(Integer id) {
+		String hql = " delete from Area_ExpressFee_Tab where commodity_id = "+id;
+		this.deleteByHql(hql);
+	}
+	public List<CommodityColorSize> getAllCommodityColorSizeById(Integer id)
+	{
+		String hql = " from CommodityColorSize where commodity_id = "+id;
+		return getAllByHql(hql);
+	}
+	@SuppressWarnings("unchecked")
+	public List<Size_Tab> getSizeByTypeId(Integer id){
+		String hql = "from Size_Tab where type_id="+id+"";
+		return getAllByHql(hql);
+	}
+	public List<Area_ExpressFee_Tab> getExpressFeeById(Integer id)
+	{
+		String hql = " from Area_ExpressFee_Tab where commodity_id = "+id;
+		return getAllByHql(hql);
+	}
+	public Integer  getInventory(Integer id,String color,String size)
+	{
+		Session session = getSession();
+		Transaction tr = null;
+		try {
+		tr = session.beginTransaction();
+		String sql = " select inventory from commodity_color_size_tab where commodity_id = "+id+" and color='"+color+"' and size='"+size+"'";
+		Query query = session.createSQLQuery(sql);
+		Object num = query.uniqueResult();
+		tr.commit();
+		if(num == null){
+			return 0;
+		}else{
+			return Integer.valueOf(String.valueOf(num));
+		}
+		} catch (HibernateException e) {
+			if (tr != null) {
+				tr.rollback();
+			}
+			throw e;
+		}
+	}
+	public List<Tops_Tab> isExistTops(Integer id,Integer flag)
+	{
+		String hql = " from Tops_Tab where newId = "+id+" and flag="+flag+"";
+		return getAllByHql(hql);
+	}
+	/***
+	 * 首页商品
+	 * 
+	 * @return
+	 */
+	public PageResult<Object[]> getsyList(Page page, String name) {
+		String hql = "SELECT name,tops,commodity_tab.id from tops_tab,commodity_tab where tops_tab.newId=commodity_tab.id ";
+
+
+		if (!StringUtil.isEmpty(name)) {
+			hql = hql + " and commodity_tab.name like '%"+name+"%'";
+		}
+
+		hql = hql + " order by tops_tab.tops desc";
+		return super.getAllByPageAndSql(page, hql);
+	}
+	public void doDelSyGoods(Integer id) {
+		String hql = " delete from Tops_Tab where newId = "+id;
+		this.deleteByHql(hql);
+	}
+	public void doDeleteColor(Integer id) {
+		String hql = " delete from Color_Tab where id = "+id;
+		this.deleteByHql(hql);
+	}
+	public void doDeleteSize(Integer id) {
+		String hql = " delete from Size_Tab where id = "+id;
+		this.deleteByHql(hql);
+	}
+	public Integer  getTops(Integer id,Integer flag)
+	{
+		Session session = getSession();
+		Transaction tr = null;
+		try {
+		tr = session.beginTransaction();
+		String sql = " select tops from tops_tab where newId = "+id+" and flag=1 ";
+		Query query = session.createSQLQuery(sql);
+		Object num = query.uniqueResult();
+		tr.commit();
+		if(num == null){
+			return 0;
+		}else{
+			return Integer.valueOf(String.valueOf(num));
+		}
+		} catch (HibernateException e) {
+			if (tr != null) {
+				tr.rollback();
+			}
+			throw e;
+		}
+	}
+	public boolean updateGoodsTops(Integer id,Integer tops) {
+		String sql = "update  Tops_Tab set tops= "+tops+"  where newId="+id+" and flag=1";
+		return save(sql);
+	}
+	@SuppressWarnings("unchecked")
+	public PageResult<Color_Tab> getAllColor(Page page) {
+		String hql = " from Color_Tab order by id desc";
+		return super.getAllByPageAndHql(page, hql);
+	}
+	@SuppressWarnings("unchecked")
+	public PageResult<Size_Tab> getAllSize(Page page) {
+		String hql = " from Size_Tab order by id desc";
+		return super.getAllByPageAndHql(page, hql);
+	}
+	public List<Commodity_Type_Tab> getAllCommodityType()
+	{
+		String hql = " from Commodity_Type_Tab";
+		return getAllByHql(hql);
+	}
+}

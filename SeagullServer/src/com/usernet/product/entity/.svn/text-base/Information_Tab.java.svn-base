@@ -1,0 +1,94 @@
+package com.usernet.product.entity;
+
+import java.sql.Timestamp;
+import java.util.Set;
+
+public class Information_Tab implements java.io.Serializable {
+	private static final long serialVersionUID = -6622940433996513438L;
+
+	private Integer id;
+	private String title; // 软件名称
+	private String content; // 应用说明	
+	private String from_where; // 来源
+	private String details_url; // url
+	private Timestamp create_time;//创建时间
+	private String contact_phone; // 联系电话
+	private Integer channelId; // 渠道
+	private Integer count; // 下载次数
+	private Integer isWebContent = 0;//是否是网页资讯
+	private String icon; // 联系电话
+	private Integer tag_id;//
+	public Integer getId() {
+		return id;
+	}
+	public void setId(Integer id) {
+		this.id = id;
+	}
+	public String getTitle() {
+		return title;
+	}
+	public void setTitle(String title) {
+		this.title = title;
+	}
+	public String getContent() {
+		return content;
+	}
+	public void setContent(String content) {
+		this.content = content;
+	}
+	public String getFrom_where() {
+		return from_where;
+	}
+	public void setFrom_where(String from_where) {
+		this.from_where = from_where;
+	}
+	public String getDetails_url() {
+		return details_url;
+	}
+	public void setDetails_url(String details_url) {
+		this.details_url = details_url;
+	}
+	public Timestamp getCreate_time() {
+		return create_time;
+	}
+	public void setCreate_time(Timestamp create_time) {
+		this.create_time = create_time;
+	}
+	public String getContact_phone() {
+		return contact_phone;
+	}
+	public void setContact_phone(String contact_phone) {
+		this.contact_phone = contact_phone;
+	}
+	public Integer getChannelId() {
+		return channelId;
+	}
+	public void setChannelId(Integer channelId) {
+		this.channelId = channelId;
+	}
+	public Integer getCount() {
+		return count;
+	}
+	public void setCount(Integer count) {
+		this.count = count;
+	}
+	public Integer getIsWebContent() {
+		return isWebContent;
+	}
+	public void setIsWebContent(Integer isWebContent) {
+		this.isWebContent = isWebContent;
+	}
+	public Integer getTag_id() {
+		return tag_id;
+	}
+	public void setTag_id(Integer tag_id) {
+		this.tag_id = tag_id;
+	}
+	public String getIcon() {
+		return icon;
+	}
+	public void setIcon(String icon) {
+		this.icon = icon;
+	}
+	
+}

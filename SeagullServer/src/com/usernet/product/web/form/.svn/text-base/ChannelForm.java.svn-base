@@ -1,0 +1,128 @@
+package com.usernet.product.web.form;
+
+import com.usernet.product.comm.BaseForm;
+import com.usernet.product.entity.Channel;
+
+public class ChannelForm extends BaseForm {
+
+	private static final long serialVersionUID = 1L;
+
+	private String pageNo;
+	private String pageSize;
+
+	private Integer parentId;
+	private String name;
+	private String code;
+	private String contractTime;
+	private String startTime;
+	private String endTime;
+	private String orderBy;
+	private String[] str;
+	private String applicationName;
+	private Integer role_id;
+	private Channel channel = new Channel();
+	
+	public String getPageNo() {
+		return pageNo;
+	}
+
+	public void setPageNo(String pageNo) {
+		this.pageNo = pageNo;
+	}
+
+	public String getPageSize() {
+		return pageSize;
+	}
+
+	public void setPageSize(String pageSize) {
+		this.pageSize = pageSize;
+	}
+
+	public Integer getParentId() {
+		return parentId;
+	}
+
+	public void setParentId(Integer parentId) {
+		this.parentId = parentId;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public String getCode() {
+		return code;
+	}
+
+	public void setCode(String code) {
+		this.code = code;
+	}
+
+	public String getContractTime() {
+		return contractTime;
+	}
+
+	public void setContractTime(String contractTime) {
+		this.contractTime = contractTime;
+	}
+
+	public String getStartTime() {
+		return startTime;
+	}
+
+	public void setStartTime(String startTime) {
+		this.startTime = startTime;
+	}
+
+	public Channel getChannel() {
+		return channel;
+	}
+
+	public void setChannel(Channel channel) {
+		this.channel = channel;
+	}
+
+	public String getOrderBy() {
+		return orderBy;
+	}
+
+	public void setOrderBy(String orderBy) {
+		this.orderBy = orderBy;
+	}
+
+	public String getEndTime() {
+		return endTime;
+	}
+
+	public void setEndTime(String endTime) {
+		this.endTime = endTime;
+	}
+
+	public String[] getStr() {
+		return str;
+	}
+
+	public void setStr(String[] str) {
+		this.str = str;
+	}
+
+	public String getApplicationName() {
+		return applicationName;
+	}
+
+	public void setApplicationName(String applicationName) {
+		this.applicationName = applicationName;
+	}
+
+	public void setRole_id(Integer role_id) {
+		this.role_id = role_id;
+	}
+
+	public Integer getRole_id() {
+		return role_id;
+	}
+}

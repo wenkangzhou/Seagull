@@ -1,0 +1,82 @@
+ul, ol{margin:0;padding:0;list-style: none}
+#main_sub{margin-left: -50px;}
+#avatar-w{position: relative;width:160px;height:160px;margin:50px auto 0 auto;}
+#avatar{ 
+  width:200px;
+  height:200px;
+  text-align:center;
+  border: 4px solid rgba(255, 255, 255, 0.4);
+  border-radius:50%;
+  box-shadow:0 0 5px rgba(0,0,0,0.5);
+}
+#avatar img{border-radius:50%;}
+#avatar li{
+  left:65px;
+  top:65px;
+  display:none;
+}
+#avatar li#a-b{
+  left:0;
+  top:0;
+  display:block;
+}
+#avatar li a{
+  display: inline-block;
+  width:20px;
+  height:20px;
+  padding:5px;
+  line-height:20px;
+  color:#333;
+  border-radius:50%;
+  text-indent:-999em;
+  overflow: hidden;
+  box-shadow:0 0 3px rgba(0,0,0,0.4);
+  background:url(sns.png) 0 0 no-repeat;
+}
+#avatar li a:hover{
+	-webkit-transform: rotate(360deg); /* for Chrome || Safari */
+	-moz-transform: rotate(360deg); /* for Firefox */
+	-ms-transform: rotate(360deg); /* for IE */
+	-o-transform: rotate(360deg); /* for Opera */
+	-webkit-transition: 0.4s;
+  -moz-transition: 0.4s;
+  transition: 0.4s;
+  opacity: 0.8;
+  -moz-opacity: 0.8;
+  filter:alpha(opacity=8);
+}
+#avatar li#a-b a{
+  display:inline-block;
+  width:auto;height:auto;
+  padding:0;
+  background:none;
+  line-height:auto;
+  outline:none;
+  text-indent:0;
+  cursor: move;
+}
+#avatar li#a-b a:hover{
+	-webkit-transform: rotate(0deg); /* for Chrome || Safari */
+	-moz-transform: rotate(0deg); /* for Firefox */
+	-ms-transform: rotate(0deg); /* for IE */
+	-o-transform: rotate(0deg); /* for Opera */
+	opacity: 1;   -moz-opacity:1;
+  filter:alpha(opacity=10);
+}
+#avatar a.icon_1{background-position:0 0;}
+#avatar a.icon_2{background-position:0 -30px;}
+#avatar a.icon_3{background-position:0 -60px;}
+#avatar a.icon_4{background-position:0 -90px;}
+#avatar a.icon_5{background-position:0 -120px;}
+#avatar a.icon_6{background-position:0 -150px;}
+#avatar a.icon_7{background-position:0 -180px;}
+#avatar a.icon_8{background-position:0 -210px;}
+#avatar a.icon_9{background-position:0 -240px;}
+#avatar a.icon_10{background-position:0 -270px;}
+#avatar a.icon_11{background-position:0 -300px;}
+#avatar a.icon_12{background-position:0 -330px;}
+.subli{
+  margin-left: 20px;
+  margin-top: 20px;
+}
+

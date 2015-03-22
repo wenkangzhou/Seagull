@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+"http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+<hibernate-mapping>
+	<class name="com.usernet.product.entity.ClientModel" table="client_model">
+		<cache usage="read-write" />
+		<id name="id" type="java.lang.Integer">
+			<column name="id" />
+			<generator class="native" />
+		</id>
+		<property name="model" type="java.lang.String">
+			<column name="model" />
+		</property>
+		<property name="manufacturer" type="java.lang.String">
+			<column name="manufacturer" />
+		</property>
+		<property name="screenWidth" type="java.lang.Integer">
+			<column name="screenWidth" />
+		</property>
+		<property name="screenHeight" type="java.lang.Integer">
+			<column name="screenHeight" />
+		</property>
+
+		<property name="display" type="java.lang.String">
+			<column name="display" />
+		</property>
+		<property name="product" type="java.lang.String">
+			<column name="product" />
+		</property>
+		<property name="device" type="java.lang.String">
+			<column name="device" />
+		</property>
+		<property name="board" type="java.lang.String">
+			<column name="board" />
+		</property>
+		<property name="brand" type="java.lang.String">
+			<column name="brand" />
+		</property>
+		<property name="time" type="java.lang.String">
+			<column name="time" />
+		</property>
+		<property name="users" type="java.lang.String">
+			<column name="users" />
+		</property>
+		<property name="host" type="java.lang.String">
+			<column name="host" />
+		</property>
+		<property name="versionSdk" type="java.lang.String">
+			<column name="versionSdk" />
+		</property>
+		<property name="versionRelease" type="java.lang.String">
+			<column name="versionRelease" />
+		</property>
+		<property name="phoneNumber" type="java.lang.String">
+			<column name="phoneNumber" />
+		</property>
+	</class>
+</hibernate-mapping>

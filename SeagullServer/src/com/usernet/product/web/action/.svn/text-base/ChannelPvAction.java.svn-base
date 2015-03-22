@@ -1,0 +1,159 @@
+package com.usernet.product.web.action;
+
+import java.io.IOException;
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.apache.commons.lang.StringUtils;
+import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionForward;
+import org.apache.struts.action.ActionMapping;
+import com.usernet.product.comm.BaseAction;
+import com.usernet.product.entity.Channel;
+import com.usernet.product.tools.BaseCache;
+import com.usernet.product.utils.DateUtils;
+import com.usernet.product.utils.Page;
+import com.usernet.product.utils.PageResult;
+import com.usernet.product.utils.ProductConfig;
+import com.usernet.product.web.form.InformationForm;
+
+public class ChannelPvAction extends BaseAction {
+
+	BaseCache baseCache = new BaseCache("channelPvStatistics", 10800);
+
+	public ActionForward getChannelPv(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response)
+			throws IOException {
+
+		Channel channel = (Channel) request.getSession().getAttribute("admin");
+		Integer[] channelIdArray = getChannelIdArray(request, channel);
+
+		String result = "";
+
+		result = (String) baseCache.get("channelPvData_" + channel.getId());
+
+		if (StringUtils.isEmpty(result)) {
+
+			String tody = DateUtils.getDate();
+			String yesterDay = DateUtils.getYestaday();
+			int todyPv = channelPvDao.findAllPvCount(channelIdArray, tody,
+					false);
+			int yesterDayPv = channelPvDao.findAllPvCount(channelIdArray,
+					yesterDay, false);
+			int todyIndependenceIpPv = channelPvDao.findAllPvCount(
+					channelIdArray, tody, true);
+			int yesTodyIndependenceIpPv = channelPvDao.findAllPvCount(
+					channelIdArray, yesterDay, true);
+			int totalPv = channelPvDao.findAllPvCount(channelIdArray, null,
+					false);
+
+			result = "{todyPv:" + todyPv + ",yesterDayPv:" + yesterDayPv
+					+ ",todyIndependenceIpPv:" + todyIndependenceIpPv
+					+ ",yesTodyIndependenceIpPv:" + yesTodyIndependenceIpPv
+					+ ",totalPv:" + totalPv + "}";
+
+			baseCache.put("channelPvData_" + channel.getId(), result);
+		}
+
+		response.setCharacterEncoding("UTF-8");
+		response.getWriter().write(result);
+
+		return null;
+	}
+
+	/***
+	 * 数据PV统计
+	 * 
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 * @throws IOException
+	 */
+	public ActionForward findSoftPvStatistics(ActionMapping mapping,
+			ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) throws IOException {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_DATA_SERVER);
+		InformationForm mForm = (InformationForm) form;
+		
+		List list = channelPvDao.SoftPvStatistics(mForm.getStartTime(),
+				mForm.getEndTime(), mForm.getName(),mForm.getFlag() == null ? 0 : mForm.getFlag());
+		
+		request.setAttribute("form", mForm);
+		request.setAttribute("list", list);
+		return mapping.findForward("infrmationPvStatistics");
+	}
+	/***
+	 * 资讯PV统计
+	 * 
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 * @throws IOException
+	 */
+	public ActionForward findInformationPvStatistics(ActionMapping mapping,
+			ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) throws IOException {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_DATA_SERVER);
+		InformationForm mForm = (InformationForm) form;
+		
+		List list = channelPvDao.InformationPvStatistics(mForm.getStartTime(),mForm.getEndTime(), mForm.getName());
+		
+		request.setAttribute("form", mForm);
+		request.setAttribute("list", list);
+		return mapping.findForward("informationPv");
+	}
+	/***
+	 * 商品PV统计
+	 * 
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 * @throws IOException
+	 */
+	public ActionForward findCommodityPvStatistics(ActionMapping mapping,
+			ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) throws IOException {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_DATA_SERVER);
+		InformationForm mForm = (InformationForm) form;
+		
+		List list = channelPvDao.CommodityPvStatistics(mForm.getStartTime(),mForm.getEndTime(), mForm.getName());
+		
+		request.setAttribute("form", mForm);
+		request.setAttribute("list", list);
+		return mapping.findForward("commodityPv");
+	}	
+	
+	public ActionForward findSoftPvById(ActionMapping mapping,
+			ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) throws IOException {
+		InformationForm mForm = (InformationForm) form;
+		int flag = Integer.parseInt(request.getParameter("flag"));
+		Page page = new Page();
+		// 分页信息
+		String pageNo = mForm.getPageNo();
+		String pageSize = mForm.getPageSize();
+		if (pageSize != null)
+			page.setEveryPage(Integer.parseInt(pageSize.trim()));
+		if (pageNo != null)
+			page.setCurrentPage(Integer.parseInt(pageNo.trim()));
+		
+		PageResult list = channelPvDao.findPvBySoftId(mForm.getId(), page,flag);
+		
+		request.setAttribute("form", mForm);
+		request.setAttribute("list", list.getContent());
+		request.setAttribute("page", list.getPage());
+		request.setAttribute("size", list.getSize());
+		
+		return mapping.findForward("info_pv_list");
+	}
+}

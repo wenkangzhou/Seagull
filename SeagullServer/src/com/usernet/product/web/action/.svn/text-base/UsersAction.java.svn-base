@@ -1,0 +1,65 @@
+package com.usernet.product.web.action;
+
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionForward;
+import org.apache.struts.action.ActionMapping;
+
+import com.usernet.product.comm.BaseAction;
+import com.usernet.product.dao.UsersDao;
+import com.usernet.product.entity.Users;
+import com.usernet.product.utils.Page;
+import com.usernet.product.utils.PageResult;
+import com.usernet.product.web.form.UsersForm;
+
+public class UsersAction extends BaseAction{
+	
+	public ActionForward toList(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		UsersForm mForm = (UsersForm) form;
+		UsersDao usersDao = new UsersDao();
+		PageResult list = null;
+		Page page = new Page();
+		// 分页信息
+		String pageNo = mForm.getPageNo();
+		String pageSize = mForm.getPageSize();
+		String name = mForm.getName();
+		if (pageSize != null)
+			page.setEveryPage(Integer.parseInt(pageSize.trim()));
+		if (pageNo != null)
+			page.setCurrentPage(Integer.parseInt(pageNo.trim()));
+		
+		list = usersDao.getAllByPage(page,name);
+		
+		request.setAttribute("form", mForm);
+		request.setAttribute("list", list.getContent());
+		request.setAttribute("page", list.getPage());
+		request.setAttribute("size", list.getSize());
+		
+		return mapping.findForward("list");
+	}
+	
+	public ActionForward toPvByUserId(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		UsersForm mForm = (UsersForm) form;
+		UsersDao usersDao = new UsersDao();
+		Integer userId = mForm.getUserId();
+		List list = usersDao.getPvByUserId(userId);
+		request.setAttribute("list", list);
+		return mapping.findForward("user_pv");
+	}
+	
+	public ActionForward toView(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		UsersForm mForm = (UsersForm) form;
+		UsersDao usersDao = new UsersDao();
+		Integer userId = mForm.getUserId();
+		Users u = usersDao.getUserId(userId);
+		request.setAttribute("item", u);
+		return mapping.findForward("user_view");
+	}
+}

@@ -1,0 +1,45 @@
+package com.usernet.product.web.form;
+
+import com.usernet.product.comm.BaseForm;
+
+public class UsersForm extends BaseForm {
+	private String pageNo;
+
+	private String pageSize;
+
+	private String name;
+	
+	private Integer userId;
+	
+	public String getPageNo() {
+		return pageNo;
+	}
+
+	public void setPageNo(String pageNo) {
+		this.pageNo = pageNo;
+	}
+
+	public String getPageSize() {
+		return pageSize;
+	}
+
+	public void setPageSize(String pageSize) {
+		this.pageSize = pageSize;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setUserId(Integer userId) {
+		this.userId = userId;
+	}
+
+	public Integer getUserId() {
+		return userId;
+	}
+}

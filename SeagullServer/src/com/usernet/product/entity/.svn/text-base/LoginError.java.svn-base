@@ -1,0 +1,85 @@
+package com.usernet.product.entity;
+
+import java.io.Serializable;
+import java.sql.Timestamp;
+
+/**
+ * 登录错误信息
+ *
+ */
+public class LoginError implements Serializable {
+	private static final long serialVersionUID = 3197978192895774661L;
+	
+	private Integer id;
+	private String loginName;
+	private String ip;
+	private Integer count;
+	private Timestamp time;
+	private String remark;
+	private Integer status;
+	private Integer flag;
+
+	public Integer getId() {
+		return id;
+	}
+
+	public void setId(Integer id) {
+		this.id = id;
+	}
+
+	public String getLoginName() {
+		return loginName;
+	}
+
+	public void setLoginName(String loginName) {
+		this.loginName = loginName;
+	}
+
+	public String getIp() {
+		return ip;
+	}
+
+	public void setIp(String ip) {
+		this.ip = ip;
+	}
+
+	public Integer getCount() {
+		return count;
+	}
+
+	public void setCount(Integer count) {
+		this.count = count;
+	}
+
+	public Timestamp getTime() {
+		return time;
+	}
+
+	public void setTime(Timestamp time) {
+		this.time = time;
+	}
+
+	public String getRemark() {
+		return remark;
+	}
+
+	public void setRemark(String remark) {
+		this.remark = remark;
+	}
+
+	public Integer getStatus() {
+		return status;
+	}
+
+	public void setStatus(Integer status) {
+		this.status = status;
+	}
+
+	public Integer getFlag() {
+		return flag;
+	}
+
+	public void setFlag(Integer flag) {
+		this.flag = flag;
+	}
+}

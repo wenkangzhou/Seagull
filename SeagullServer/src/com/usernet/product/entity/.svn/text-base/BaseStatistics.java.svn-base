@@ -1,0 +1,46 @@
+package com.usernet.product.entity;
+
+public class BaseStatistics {
+
+	private String startNum;
+	
+	private String activeUserNum;
+	
+	private String newUserNum;
+	
+	public BaseStatistics(){
+		
+	}
+	
+	public BaseStatistics(String startNum,String activeUserNum,String newUserNum){
+		
+		this.startNum = startNum;
+		this.activeUserNum = activeUserNum;
+		this.newUserNum = newUserNum;
+	}
+
+	public String getStartNum() {
+		return startNum;
+	}
+
+	public void setStartNum(String startNum) {
+		this.startNum = startNum;
+	}
+
+	public String getActiveUserNum() {
+		return activeUserNum;
+	}
+
+	public void setActiveUserNum(String activeUserNum) {
+		this.activeUserNum = activeUserNum;
+	}
+
+	public String getNewUserNum() {
+		return newUserNum;
+	}
+
+	public void setNewUserNum(String newUserNum) {
+		this.newUserNum = newUserNum;
+	}
+	
+}

@@ -1,0 +1,35 @@
+package com.usernet.product.dao;
+
+import java.util.List;
+
+import com.usernet.product.comm.BaseDao;
+import com.usernet.product.entity.MessagePush;
+import com.usernet.product.utils.Page;
+import com.usernet.product.utils.PageResult;
+
+/**
+ * 消息推送数据管理
+ * 
+ * @author tangdehao
+ * 
+ */
+public class MessagePushDao extends BaseDao {
+
+	@SuppressWarnings("unchecked")
+	public List<MessagePush> getAll() {
+
+		String hql = "from MessagePush";
+
+		return super.getAllByHql(hql);
+	}
+
+	@SuppressWarnings("unchecked")
+	public PageResult<MessagePush> getPage(Page page, int channelId) {
+
+		String hql = "from MessagePush where channelId=" + channelId;
+
+		hql += " order by createTime desc";
+		return super.getAllByPageAndHql(page, hql);
+	}
+
+}

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<!-- manifest="offline.manifest" -->
+<html lang="en" manifest="offline.manifest">
+  <head>
+    <meta charset="utf-8">
+    <title>PHOTO</title>
+    <link rel="stylesheet" href="css/common.css" >  
+    <link rel="stylesheet" href="css/photo.css" >  
+    <link rel="stylesheet" href="css/scroll.css" media="all"> 
+    <link rel="shortcut icon" type="image/x-icon" href="img/sys/fac.png" >
+    <meta name="viewport" content="width=device-width,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    
+  </head>
+  <body>
+    
+    <div id="header">
+      <h2 class="title">SEAGULL</h2>
+      <a onclick="toshare()"><img src="img/sys/share.png"/></a>
+    </div>
+    
+    <div id="wrapper">
+      <div id="hscroller">
+
+      </div>  
+    </div>  
+
+    <script type="text/javascript" src="js/footer_offline.js"></script>
+    <script type="text/javascript" src="js/zepto.js"></script>
+    <script type="text/javascript" src="js/iscroll.js"></script>
+    <script type="text/javascript" src="js/vhscroll.js"></script>
+    <script type="text/javascript" src="js/share.js"></script>
+    <script type="text/javascript">
+      $(document).ready(function(){
+         $("a").removeClass("active");
+         $("#foot_photo").addClass("active");
+         var photo = window.localStorage.getItem("photo");
+         showPhotoData(photo);
+      })
+      function toshare(){
+        var nowStyle=$("#hscroller").css("-webkit-transform");
+        var nowPosition=nowStyle.substring(nowStyle.indexOf("(")+1,nowStyle.indexOf("px"));
+        var nowPage=Math.abs(nowPosition)/320;
+        var quotation=$(".quotation").eq(nowPage).html();//eq() 赞
+        quotation="分享了一句话："+quotation.trim(); 
+        var photoSrc=$("#page"+(nowPage+1) +" img").attr("src");
+        share(quotation,photoSrc);
+      }
+      function showPhotoData(result){
+        var data = eval('('+ result +')').data;//注意要加（）
+        var sHtml="<ul>";
+        for(var i=0;i<data.length;i++){
+          sHtml+= "<li><div class=\"standard\" id=\"page"+(i+1)+"\"><div class=\"vscroller\"><div class=\"container\">";
+          sHtml+= "<header><ul><li>V."+data[i].vol+"</li></ul></header>";
+          if(i==0)
+                sHtml+= "<div class=\"main\"><img  src="+data[i].src+" data-original="+data[i].src+" >";
+              else
+                sHtml+= "<div class=\"main\"><img  src=\"img/sys/loading.gif\" data-original="+data[i].src+">";
+              sHtml+= "<div class=\"etc\">"+data[i].name+"<hr/>by "+data[i].author+"</div></div>";                
+              sHtml+= "<div class=\"sub\"><div class=\"date\"><h4>"+getWeek(data[i].time)+"</h4>";  
+              sHtml+= "<div class=\"YMD\">"+getFormatData(data[i].time) +"</div></div>";              
+              sHtml+= "<div class=\"quotation\">"+data[i].quotation+"</div></div>";             
+              sHtml+= "</div></div></div></li>";
+        }
+        sHtml+="</ul>";
+        $("#hscroller").html(sHtml);
+      }
+      function getWeek(now){
+        var dt = new Date(now); 
+        var aryWeek=new Array("星期日","星期一","星期二","星期三","星期四","星期五","星期六"); 
+        var week=aryWeek[dt.getDay()]; 
+        return week;
+      }
+      function getFormatData(now){
+        var aryNow = now.split("-");
+        return aryNow[0]+"/"+aryNow[1]+"/"+aryNow[2];
+      }
+    </script>
+  </body>
+</html>

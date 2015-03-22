@@ -1,0 +1,57 @@
+package com.usernet.product.web.form;
+
+import com.usernet.product.comm.BaseForm;
+
+public class TagForm extends BaseForm{
+	private static final long serialVersionUID = -6427890040831622007L;
+
+	private String pageNo;
+
+	private String pageSize;
+	
+	private String name;
+
+	private Integer parnetId;
+	
+	private Integer channelId;
+	
+	public String getPageNo() {
+		return pageNo;
+	}
+
+	public void setPageNo(String pageNo) {
+		this.pageNo = pageNo;
+	}
+
+	public String getPageSize() {
+		return pageSize;
+	}
+
+	public void setPageSize(String pageSize) {
+		this.pageSize = pageSize;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public void setParnetId(Integer parnetId) {
+		this.parnetId = parnetId;
+	}
+
+	public Integer getParnetId() {
+		return parnetId;
+	}
+
+	public void setChannelId(Integer channelId) {
+		this.channelId = channelId;
+	}
+
+	public Integer getChannelId() {
+		return channelId;
+	}
+}

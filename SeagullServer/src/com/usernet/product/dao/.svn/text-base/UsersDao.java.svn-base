@@ -1,0 +1,63 @@
+package com.usernet.product.dao;
+
+import java.util.List;
+
+import org.hibernate.Query;
+import org.hibernate.Session;
+
+import com.opensymphony.oscache.util.StringUtil;
+import com.usernet.product.comm.BaseDao;
+import com.usernet.product.comm.HibernateSessionFactory;
+import com.usernet.product.entity.Users;
+import com.usernet.product.utils.Page;
+import com.usernet.product.utils.PageResult;
+import com.usernet.product.utils.PageUtils;
+
+public class UsersDao extends BaseDao{
+	public PageResult getAllByPage(Page page,String name) {
+		String hql = "select id,niceName,sex,(select count(id) from channel_pv where user_id=u.id) as 'pv' from users as u";
+		String countHql = "select count(id) from users";
+		if(!StringUtil.isEmpty(name)){
+			hql = hql +" where niceName = '"+name+"' ";
+			countHql = countHql +" where niceName = '"+name+"' ";
+		}
+		hql = hql +" order by 'pv' desc";
+		
+		Session session = HibernateSessionFactory.getSessionFactory().openSession();
+		
+		int totalRecords = 0;
+		Query query = session.createSQLQuery(countHql);
+		Object num = query.uniqueResult();
+		if (num instanceof Number) {
+			totalRecords = ((Number) num).intValue();
+		}
+		page = PageUtils.createPage(page, totalRecords);
+
+		query = session.createSQLQuery(hql);
+		query.setFirstResult(page.getBeginIndex());
+		query.setMaxResults(page.getEveryPage());
+		List content = query.list();
+		if (content.size() == 0) {
+			content = null;
+		}
+		session.close();
+		
+		return new PageResult(page, content);
+	}
+	
+	public List getPvByUserId(Integer userId){
+		String sql = "select s.name,count(soft_id) as num from channel_pv as c left join software as s on s.id = c.soft_id where user_id =:user_id group by s.name order by num desc";
+		Session session = HibernateSessionFactory.getSessionFactory().openSession();
+		
+		Query q = session.createSQLQuery(sql);
+		q.setInteger("user_id", userId);
+		List l = q.list();
+		session.close();
+		
+		return l;
+	}
+	
+	public Users getUserId(Integer userId){
+		return (Users) this.getById(Users.class, userId);
+	}
+}

@@ -1,0 +1,232 @@
+package com.usernet.product.web.action;
+
+import java.io.IOException;
+import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionForward;
+import org.apache.struts.action.ActionMapping;
+import com.usernet.product.comm.BaseAction;
+import com.usernet.product.entity.AdminLog;
+import com.usernet.product.entity.Channel;
+import com.usernet.product.entity.ChannelSettle;
+import com.usernet.product.utils.DateUtils;
+import com.usernet.product.utils.ProductConfig;
+import com.usernet.product.web.form.StatisticsForm;
+
+public class StatisticsAction extends BaseAction {
+
+	/***
+	 * 未出账单
+	 * 
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 */
+	public ActionForward toUnPayList(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_SETTLEMENT_MANAGER);
+
+		StatisticsForm mForm = (StatisticsForm) form;
+
+		List<Object[]> list = null;
+
+		if (mForm.getChannelId() != null) {
+
+			Channel channel = (Channel) channelDao.getById(Channel.class,
+					mForm.getChannelId());
+
+			// 每个月15号后可查看上个月的账单
+			//String time = DateUtils.getPreMonth();
+
+			// 分成比例采用顶级渠道商的
+			list = statisticsDao.getList(mForm.getSoftName(),
+					mForm.getTime(), channel.getChannel());
+		}
+
+		Channel admin = (Channel) request.getSession().getAttribute("admin");
+		List<Channel> channels = channelDao.getAll(admin.getType() == 0 ? admin
+				.getId() : null);
+		if (channels == null)
+			channels = new ArrayList<Channel>();
+		if (admin.getType() != 1)
+			channels.add(0, admin);
+
+		// 记录用户登陆记录
+		AdminLog adminLog = new AdminLog(admin.getChannel(), "访问未出帐页面",
+				request.getRemoteAddr());
+		adminLogDao.save(adminLog);
+
+		request.setAttribute("timeList", DateUtils.getOneToCurrentMonth());
+		request.setAttribute("channels", channels);
+		request.setAttribute("form", mForm);
+		request.setAttribute("list", list);
+
+		if (admin.getType() == 0) {
+
+			return mapping.findForward("statistics_list_channel");
+		}
+
+		return mapping.findForward("unPayList");
+	}
+
+	/***
+	 * 级联获取结账时间
+	 * 
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 * @throws IOException
+	 */
+	public ActionForward getSettleTimeList(ActionMapping mapping,
+			ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) throws IOException {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_SETTLEMENT_MANAGER);
+
+		String channelId = request.getParameter("channelId");
+		List<String> settleTimeList = channelDao.getSelltTimeList(Integer
+				.valueOf(channelId));
+		if (settleTimeList.size() > 0) {
+			String result = "";
+			for (String str : settleTimeList) {
+
+				result += str + ",";
+			}
+			result = result.substring(0, result.length() - 1);
+
+			response.setCharacterEncoding("UTF-8");
+			response.getWriter().write(result);
+		}
+		return null;
+	}
+
+	/***
+	 * 已出账单
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 */
+	public ActionForward toPayList(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_SETTLEMENT_MANAGER);
+
+		StatisticsForm mForm = (StatisticsForm) form;
+
+		List<Object[]> list = null;
+		if (mForm.getChannelId() != null) {
+			Channel channel = (Channel) channelDao.getById(Channel.class,
+					mForm.getChannelId());
+			Channel top = channel;
+			while (top.getParent() != null)
+				top = top.getParent();
+			ChannelSettle settle = channelDao.getPaySettle(
+					mForm.getChannelId(), mForm.getSettle());
+			if (settle != null) {
+				List<String[]> time = DateUtils.getTimePeriod(
+						settle.getStartTime(), settle.getSettleTime());
+				if (time != null) {
+
+					List<Integer> ids = channelDao
+							.getAllId(new Integer[] { channel.getId() });
+					if (ids == null)
+						ids = new ArrayList<Integer>();
+					ids.add(0, channel.getId());
+
+					// 获取渠道下的所有子渠道
+					// Integer[] channelArray =
+					// channelDao.getChildIdChannelId(channel.getId());
+					list = statisticsDao.getList(mForm.getSoftName(),
+							mForm.getTime(), mForm.getChannel());
+					request.setAttribute("list", list);
+				}
+			}
+		}
+
+		Channel admin = (Channel) request.getSession().getAttribute("admin");
+		List<Channel> channels = channelDao.getAll(admin.getType() == 0 ? admin
+				.getId() : null);
+		if (channels == null)
+			channels = new ArrayList<Channel>();
+		if (admin.getType() != 1)
+			channels.add(0, admin);
+
+		String channelId = request.getParameter("channelId");
+		
+		if (channelId != null) {
+			List<String> settleTimeList = channelDao.getSelltTimeList(Integer
+					.valueOf(channelId));
+			request.setAttribute("settleTimeList", settleTimeList);
+		}
+
+		// 记录用户登陆记录
+		AdminLog adminLog = new AdminLog(admin.getChannel(), "访问已出账页面",
+				request.getRemoteAddr());
+		adminLogDao.save(adminLog);
+		
+		request.setAttribute("timeList", DateUtils.getOneToCurrentMonth());
+		request.setAttribute("channels", channels);
+		request.setAttribute("form", mForm);
+		return mapping.findForward("payList");
+	}
+
+	/***
+	 * 结账
+	 * 
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 */
+	public ActionForward settle(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_SETTLEMENT_MANAGER);
+		StatisticsForm mForm = (StatisticsForm) form;
+
+		Channel channel = (Channel) channelDao.getById(Channel.class,
+				mForm.getChannelId());
+		ChannelSettle settle = channelDao.getLastUnSettle(mForm.getChannelId());
+		settle.setPayTime(DateUtils.getDate());
+		settle.setSquared(1);
+		channelDao.modify(settle);
+		ChannelSettle s = new ChannelSettle();
+		s.setChannelId(mForm.getChannelId());
+		s.setSquared(0);
+		Calendar time = Calendar.getInstance();
+		time.setTime(DateUtils.stringToTimestampBegin(settle.getSettleTime()));
+		time.add(Calendar.DAY_OF_MONTH, 1);
+		s.setStartTime(settle.getSettleTime());
+		time.add(Calendar.MONTH, channel.getSettleType());
+		time.add(Calendar.DAY_OF_MONTH, -1);
+		Timestamp contract = DateUtils.stringToTimestampBegin(channel
+				.getContractTime());
+		s.setSettleTime(DateUtils
+				.format(time.getTime().after(contract) ? contract : time
+						.getTime()));
+		channelDao.save(s);
+
+		mForm.setChannelId(null);
+
+		request.setAttribute("channels",
+				channelDao.getAll(mForm.getChannelId()));
+		request.setAttribute("form", mForm);
+		return mapping.findForward("other");
+	}
+
+}

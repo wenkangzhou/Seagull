@@ -1,0 +1,8 @@
+package com.usernet.product.dao;
+
+
+import com.usernet.product.comm.BaseDao;
+
+public class PhotoDao extends BaseDao {
+	
+}

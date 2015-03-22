@@ -1,0 +1,108 @@
+package com.usernet.product.web.action;
+
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionForward;
+import org.apache.struts.action.ActionMapping;
+import org.apache.struts.actions.DispatchAction;
+import org.apache.struts.upload.FormFile;
+
+import com.usernet.product.dao.LotteryTicketDao;
+import com.usernet.product.entity.LotteryTicket;
+import com.usernet.product.utils.Page;
+import com.usernet.product.utils.PageResult;
+import com.usernet.product.web.form.LotteryTicketForm;
+
+public class LotteryTicketAction extends DispatchAction {
+
+	public ActionForward toList(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response){
+		try {
+			LotteryTicketForm mForm = (LotteryTicketForm) form;
+			LotteryTicketDao lotteryTicketDao = new LotteryTicketDao();
+			PageResult<LotteryTicket> list = null;
+			Page page = new Page();
+			// 分页信息
+			String pageNo = mForm.getPageNo();
+			String pageSize = mForm.getPageSize();
+			if (pageSize != null)
+				page.setEveryPage(Integer.parseInt(pageSize.trim()));
+			if (pageNo != null)
+				page.setCurrentPage(Integer.parseInt(pageNo.trim()));
+			
+			list = lotteryTicketDao.getAll(page);
+			
+			request.setAttribute("form", mForm);
+			request.setAttribute("list", list.getContent());
+			request.setAttribute("page", list.getPage());
+			request.setAttribute("size", list.getSize());
+			
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+		return mapping.findForward("list");
+	}
+	
+	public ActionForward doUploadLotteryTicketFile(ActionMapping mapping,
+			ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) throws Exception {
+		LotteryTicketForm lotteryTicketForm = (LotteryTicketForm) form;
+		FormFile file = lotteryTicketForm.getFile();
+		String filesrc = doUploadLotteryTicketFile(file.getInputStream());
+		
+		LotteryTicketDao lotteryTicketDao = new LotteryTicketDao();
+		lotteryTicketDao.uploadLotteryTicketCsv(filesrc);
+		
+		return mapping.findForward("other");
+	}
+	
+	public ActionForward receiveLotteryTicket(ActionMapping mapping,
+			ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) throws Exception {
+		String message = "";
+		LotteryTicketForm lotteryTicketForm = (LotteryTicketForm) form;
+		String imei = lotteryTicketForm.getImei();
+		if(imei.length()>5){
+			LotteryTicketDao lotteryTicketDao = new LotteryTicketDao();
+			if(lotteryTicketDao.isValidByImei(imei)){
+				LotteryTicket l = lotteryTicketDao.isReceiveByImei(imei);
+				if(l==null){
+					l = lotteryTicketDao.receiveLotteryTicket(imei);
+					if(l!=null){
+						message = "卡号:"+l.getCardNum()+"<br/>密码:"+l.getPassword();
+					}else{
+						message = "<font color=red>抱歉本次活动所有彩票充值卡已全部领取完了，期待您的下次参与。</font>";
+					}
+				}else{
+					message = "卡号:"+l.getCardNum()+"<br/>密码:"+l.getPassword()+"<br/><font color=red>请勿重复领取。</font>";
+				}
+			}else{
+				message = "<font color=red>imei号无效 请确认无误后重新输入。</font>";
+			}
+		}else{
+			message = "<font color=red>imei号无效 请确认无误后重新输入。</font>";
+		}
+		
+		response.getWriter().write(message);
+		return null;
+	}
+	
+	private String doUploadLotteryTicketFile(InputStream is) throws IOException{
+		String temp = "D:\\temp\\LotteryTicket.csv";
+		FileOutputStream fos = new FileOutputStream(temp);
+		byte[] b = new byte[1024*8];
+		int a=0;
+		while((a=is.read(b, 0, 1024*8))!=-1){
+			fos.write(b, 0, a);
+		}
+		fos.flush();
+		fos.close();
+		return temp;
+	}
+}

@@ -1,0 +1,15 @@
+package com.usernet.product.tools;
+
+/**
+ * 权限
+ * @author Administrator
+ *
+ */
+public class AdminRight {
+
+	public static final int update = 4; // 更新人员
+
+	public static final int supers = 2; // 超级管理员
+	
+	public static final int admin = 3; // 普通管理员
+}

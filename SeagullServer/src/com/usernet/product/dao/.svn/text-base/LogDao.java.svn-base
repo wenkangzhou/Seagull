@@ -1,0 +1,400 @@
+package com.usernet.product.dao;
+import java.sql.Timestamp;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import org.apache.commons.lang.StringUtils;
+import org.hibernate.HibernateException;
+import org.hibernate.Query;
+import org.hibernate.Session;
+import org.hibernate.Transaction;
+import com.usernet.product.comm.BaseDao;
+import com.usernet.product.entity.ClientLog;
+import com.usernet.product.utils.DateUtils;
+import com.usernet.product.utils.Page;
+import com.usernet.product.utils.PageResult;
+
+/**
+ * 激活日志信息
+ */
+public class LogDao extends BaseDao {
+
+	@SuppressWarnings("unchecked")
+	public PageResult<ClientLog> getPage(Page page, Integer[] channelId,
+			String model, String startTime, String endTime,String versionName) {
+		String sql = "select * from client_log  where 1=1";
+		
+		if (channelId != null && channelId.length > 0) {
+			sql += " and (channelid=" + channelId[0];
+			for (int i = 1; i < channelId.length; i++) {
+				sql += " OR channelid = " + channelId[i];
+			}
+			sql+=")";
+		}
+		
+		if (StringUtils.isNotEmpty(startTime)&&StringUtils.isEmpty(endTime)) {
+			sql = sql +" and convert(varchar(100), time, 23) between '"
+					+ startTime + "' and '" + DateUtils.getDate() + "'"; 
+		}else if(StringUtils.isNotEmpty(startTime)&&StringUtils.isNotEmpty(endTime)){
+			sql = sql +" and convert(varchar(100), time, 23) between '"
+					+ startTime + "' and '" + endTime + "'"; 
+		}
+		
+		if(StringUtils.isNotEmpty(versionName) && !"0".equals(versionName)){
+			
+			sql += " and versionName = '" + versionName + "'";
+		}
+		
+		sql = sql + " order by time desc";
+		return super.getAllByPageAndSql(page, sql, ClientLog.class);
+	}
+
+	public List manufacturerList() {
+
+		String sql = "select manufacturer from client_model group by manufacturer";
+
+		return super.getAllByPageAndSql(sql);
+	}
+	
+	public List getChannelId(String[] channel){
+		String sql=" select id from channel where type=0 ";
+		if(channel!=null && channel.length>0){
+			sql+=" and channel like '"+channel[0]+"'";
+			for (int i = 1; i < channel.length; i++) {
+			sql += " OR channel like '" + channel[i]+"'";
+			}
+		}
+		return super.getAllByPageAndSql(sql);
+	}
+
+	public List modelList(Integer[] channelIdArray) {
+		/*
+		 * String sql = "select model from client_model cm"; sql +=
+		 * " left join client_log cl on cm.id = cl.modelId "; sql +=
+		 * " left join channel c on c.id = cl.channelId ";
+		 * 
+		 * if (channelId != null) {
+		 * 
+		 * sql += " where c.id = " + channelId; } sql += " group by model";
+		 */
+		String sql = "select model from view_model";
+		if (channelIdArray != null && channelIdArray[0] != null) {
+
+			sql += " where (channelId = " + channelIdArray[0];
+			for (int i = 1; i < channelIdArray.length; i++) {
+
+				sql += " OR channelId = " + channelIdArray[i];
+			}
+			sql += ")";
+		}
+
+		return super.getAllByPageAndSql(sql);
+	}
+
+	public List modelStatistics(String model, String channel,
+			String manufacturer, String orderBy) {
+
+		String sql = "select cm.model,cm.manufacturer,cm.screenWidth,cm.screenHeight,count(*) as modelCount ,count(d.imei) as downCount,count(p.softid) as productCount ";
+		sql += " from client_model cm";
+		sql += " left join client_log cl on cl.modelid = cm.id";
+		sql += " left join download d on d.imei = cl.imei";
+		sql += " left join product p on d.softid = p.softid";
+
+		if (StringUtils.isNotEmpty(channel)) {
+
+			sql += " left join channel c on c.id = cl.channelId";
+		}
+
+		sql += " where cm.id is not null";
+
+		if (StringUtils.isNotEmpty(model)) {
+
+			sql += " and cm.model like '%" + model + "%'";
+		}
+		if (StringUtils.isNotEmpty(manufacturer)) {
+
+			sql += " and cm.manufacturer like '%" + manufacturer + "%'";
+		}
+		if (StringUtils.isNotEmpty(channel)) {
+
+			sql += " and c.channel like '%" + channel + "%'";
+		}
+
+		sql += " group by cm.model,cm.manufacturer,cm.screenWidth,cm.screenHeight ";
+
+		if (StringUtils.isNotEmpty(orderBy)) {
+
+			sql += " order by " + orderBy + " desc";
+		} else {
+
+			sql += " order by count(d.imei)+count(p.softid) desc";
+		}
+
+		return super.getAllByPageAndSql(sql.toString());
+	}
+
+	/**
+	 * 30天活跃用户
+	 * 
+	 * @param channelId
+	 * @return
+	 */
+	public List getActiveUserData(Integer[] channelIdArray) {
+
+		StringBuilder sql = new StringBuilder();
+		sql.append("select top 30 s.formatTime,count(s.formatTime) as activeCount from(");
+		sql.append("select formatTime as formatTime,count(imei) as startCount from view_reback");
+
+		if (channelIdArray != null && channelIdArray[0] != null) {
+
+			sql.append(" where (channelId = " + channelIdArray[0]);
+			for (int i = 1; i < channelIdArray.length; i++) {
+
+				sql.append(" OR channelId = " + channelIdArray[i]);
+			}
+			sql.append(")");
+		}
+
+		sql.append(" group by formatTime,imei) s");
+		sql.append(" group by formatTime");
+		sql.append(" order by formatTime desc");
+
+		return super.getAllByPageAndSql(sql.toString());
+	}
+
+	/**
+	 * 30天启动次数数据统计
+	 * 
+	 * @return
+	 */
+	public List getStartUserData(Integer[] channelIdArray) {
+
+		String sql = "select top 30 formatTime  as formatTime,count(imei) as startCount from view_reback ";
+
+		if (channelIdArray != null && channelIdArray[0] != null) {
+
+			sql += " where channelId = " + channelIdArray[0];
+			for (int i = 1; i < channelIdArray.length; i++) {
+
+				sql += " OR channelId = " + channelIdArray[i];
+			}
+		}
+
+		sql += " group by formatTime";
+		sql += " order by formatTime desc";
+
+		return super.getAllByPageAndSql(sql);
+	}
+
+	/***
+	 * 30天新用户数据
+	 * 
+	 * @return
+	 */
+	public List getNewUserData(Integer[] channelIdArray) {
+
+		String sql = "select top 30 formatTime  as formatTime,count(imei) as userCount from view_client_log ";
+		if (channelIdArray != null && channelIdArray[0] != null) {
+
+			sql += " where (channelId = " + channelIdArray[0];
+			for (int i = 1; i < channelIdArray.length; i++) {
+
+				sql += " OR channelId = " + channelIdArray[i];
+			}
+			sql += ")";
+		}
+		sql += " group by formatTime ";
+		sql += " order by formatTime desc ";
+
+		return super.getAllByPageAndSql(sql);
+	}
+
+	public List getNewUserStatic(Integer[] channelIdArray) {
+		String sql = "select top 30 formatTime  as formatTime,count(imei) as userCount ,(select channel  from channel  "
+				+ "where id = ";
+
+		if (channelIdArray != null && channelIdArray[0] != null) {
+			sql += channelIdArray[0];
+			for (int i = 1; i < channelIdArray.length; i++) {
+				sql += " OR channelId = " + channelIdArray[i];
+			}
+		}
+		sql += ") from view_client_log ";
+		if (channelIdArray != null && channelIdArray[0] != null) {
+			sql += " where channelId = " + channelIdArray[0];
+			for (int i = 1; i < channelIdArray.length; i++) {
+
+				sql += " OR channelId = " + channelIdArray[i];
+			}
+		}
+		sql += " group by formatTime ";
+		sql += " order by formatTime desc ";
+
+		return super.getAllByPageAndSql(sql);
+	}
+
+	public List getCountByEndDate(String endDate, Integer[] channelIdArray) {
+
+		String sql = "select count(*) from view_client_log where formatTime < '"
+				+ endDate + "' ";
+		if (channelIdArray != null && channelIdArray[0] != null) {
+
+			sql += " and (channelId = " + channelIdArray[0];
+			for (int i = 1; i < channelIdArray.length; i++) {
+
+				sql += " OR channelId = " + channelIdArray[i];
+			}
+			sql += ")";
+		}
+
+		return super.getAllByPageAndSql(sql);
+	}
+
+	/**
+	 * 根据时间获取启动次数和活跃用户还有新用户
+	 * 
+	 * @param startTime
+	 * @param endTime
+	 * @return
+	 */
+	public List baseStatistik(Integer[] channelIdArray, String time) {
+
+		StringBuilder sb = new StringBuilder();
+		sb.append("select COUNT(1) as startNum,");
+
+		sb.append("(select COUNT(1) from view_reback where formatTime = '" + time + "' ");
+
+		if (channelIdArray != null && channelIdArray[0] != null) {
+
+			sb.append(" and (channelId = " + channelIdArray[0]);
+
+			for (int i = 1; i < channelIdArray.length; i++) {
+
+				sb.append(" OR channelId = " + channelIdArray[i]);
+			}
+			sb.append(")");
+		}
+
+		sb.append(") as currentStartNum,");
+		sb.append("(select count(a.c) from (select COUNT(1) c from view_reback where formatTime ='" + time + "'");
+		if (channelIdArray != null && channelIdArray[0] != null) {
+
+			sb.append(" and (channelId = " + channelIdArray[0]);
+
+			for (int i = 1; i < channelIdArray.length; i++) {
+
+				sb.append(" OR channelId = " + channelIdArray[i]);
+			}
+			sb.append(")");
+		}                                                     
+
+		sb.append("group by imei) a) as activeUser,");
+		sb.append(" (select count(1) from view_client_log where formatTime = '" + time + "'");
+
+		if (channelIdArray != null && channelIdArray[0] != null) {
+
+			sb.append(" and (channelId = " + channelIdArray[0]);
+
+			for (int i = 1; i < channelIdArray.length; i++) {
+
+				sb.append(" OR channelId = " + channelIdArray[i]);
+			}
+			sb.append(")");
+		}
+
+		sb.append(") as newUser");
+		sb.append(" from view_reback");
+
+		if (channelIdArray != null && channelIdArray[0] != null) {
+
+			sb.append(" where (channelId = " + channelIdArray[0]);
+
+			for (int i = 1; i < channelIdArray.length; i++) {
+
+				sb.append(" OR channelId = " + channelIdArray[i]);
+			}
+			sb.append(")");
+		}
+		return super.getAllByPageAndSql(sb.toString());
+	}
+	
+	/***
+	 * 获取所有激活数据数
+	 * @return
+	 */
+	public int getClientLogCount(Integer[] channelIdArray,String startTime,String endTime){
+		
+		Session session = getSession();
+		Transaction tr = null;
+		try {
+			tr = session.beginTransaction();
+			String sql = "select count(*) from view_client_log ";
+			if(StringUtils.isNotEmpty(startTime) && StringUtils.isNotEmpty(endTime)){
+				
+				sql += " where formatTime >= '" + startTime + "' and formatTime <= '" + endTime + "'" ;
+			}
+			
+			if (channelIdArray != null && channelIdArray[0] != null) {
+
+				sql += " and (channelId = " + channelIdArray[0];
+				for (int i = 1; i < channelIdArray.length; i++) {
+
+					sql += " OR channelId = " + channelIdArray[i];
+				}
+				sql += ")";
+			}
+			
+			Query query = session.createSQLQuery(sql);
+			Object num = query.uniqueResult();
+			tr.commit();
+			if(num == null){
+				
+				return 0;
+			}else{
+				
+				return Integer.valueOf(String.valueOf(num));
+			}
+		} catch (HibernateException e) {
+			if (tr != null) {
+				tr.rollback();
+			}
+			throw e;
+		}
+	}
+	
+	public List<Object> getCurrentMonthRegionStatistik(Integer[] channelIdArray,String startTime,String endTime) {
+		String sql = "select top 5 isnull(cl.address,'其他'),count(imei) as modelCount from view_client_log cl where";
+		
+		sql += " formatTime >= '" + startTime + "' and formatTime <= '" + endTime + "'";
+		
+		if (channelIdArray != null && channelIdArray[0] != null) {
+
+			sql += " and (channelId = " + channelIdArray[0];
+			for (int i = 1; i < channelIdArray.length; i++) {
+
+				sql += " OR channelId = " + channelIdArray[i];
+			}
+			sql += ")";
+		}
+		
+		sql	+= " group by cl.address";
+		sql += " order by modelCount desc ";
+		return super.getAllByPageAndSql(sql.toString());
+	}
+
+	public List<Object[]> getAreaStatistics(Integer channelId){
+		String hql = "select address,count(id) as activeCount,(select count(*) from client_log ";
+			   if(channelId!=null&&channelId!=0){
+				   hql+="where channelid = "+channelId;
+			   }
+			   hql+= ") as activeSum  from client_log ";
+			   if(channelId!=null&&channelId!=0){
+			   hql+= " where channelid = "+channelId;
+			   }
+			   hql+= "group by address order by activeCount  desc";
+		Session session = getSession();
+		Transaction ts = session.beginTransaction();
+		Query q = session.createSQLQuery(hql);
+		return q.list(); 
+	}
+}

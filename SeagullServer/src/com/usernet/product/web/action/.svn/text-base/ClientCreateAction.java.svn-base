@@ -1,0 +1,750 @@
+package com.usernet.product.web.action;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.Iterator;
+import java.util.List;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.apache.commons.fileupload.FileItem;
+import org.apache.commons.fileupload.FileUploadException;
+import org.apache.commons.fileupload.FileUploadBase.SizeLimitExceededException;
+import org.apache.commons.fileupload.disk.DiskFileItemFactory;
+import org.apache.commons.fileupload.servlet.ServletFileUpload;
+import org.apache.commons.lang.StringUtils;
+import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionForward;
+import org.apache.struts.action.ActionMapping;
+import org.jdom2.Attribute;
+import org.jdom2.Document;
+import org.jdom2.Element;
+import org.jdom2.JDOMException;
+import org.jdom2.input.SAXBuilder;
+import org.jdom2.output.Format;
+import org.jdom2.output.XMLOutputter;
+import com.usernet.product.comm.BaseAction;
+import com.usernet.product.entity.Channel;
+import com.usernet.product.tools.FileTools;
+import com.usernet.product.utils.DateUtils;
+import com.usernet.product.utils.ProductConfig;
+
+/***
+ * 客户端生成向导
+ * 
+ * @author tangdehao
+ * 
+ */
+public class ClientCreateAction extends BaseAction {
+
+	private final long MAX_SIZE = 1 * 1024 * 1024;// 设置上传文件最大为 1M
+
+	// 允许上传的文件格式的列表
+	private final String[] allowtype = new String[] {"jpg","png" };
+
+	/***
+	 * 去客户端生成向导页面
+	 * 
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 */
+	public ActionForward toCreateClient(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		super.settingCurrentNavigation(request.getSession(), ProductConfig.PAGE_MEDIA);
+
+		// 当前工程路径根目录
+		final String CURRENT_PROJECT_FOLDER = request.getRealPath("/");
+		String channelId = request.getParameter("channelId");
+		
+		Channel channel = (Channel) request.getSession().getAttribute("admin");
+		
+		if(StringUtils.isNotEmpty(channelId) && !channelId.equals("undefined")){
+			
+			channel = (Channel)channelDao.getById(Channel.class, Integer.valueOf(channelId));
+		}
+		
+		// 管理员是没有渠道号的所以可能为NULL 所以如果没有渠道号则默认渠道号为NET
+		//channel.setChannel(channel.getChannel() == null ? "NET" : channel
+		//		.getChannel());
+		
+		String currentIcon = "channelClientFolder/" + channel.getChannel() + "/icon.png";
+		String currentLoadImage = "channelClientFolder/" + channel.getChannel() + "/logo_main.jpg";
+		String currentStartImage = "channelClientFolder/" + channel.getChannel() + "/start1.jpg";
+		
+		// 将用户上传的ICON和载入背景图复制到APK目录下
+		File iconFile = new File(CURRENT_PROJECT_FOLDER + "/" + currentIcon);
+		if (!iconFile.exists()) {
+			
+			currentIcon = "channelClientFolder/DEFAULT/res/drawable-hdpi-v4/icon.png";
+		}
+		
+		File loadImage = new File(CURRENT_PROJECT_FOLDER + "/" + currentLoadImage);
+		if (!loadImage.exists()) {
+			
+			currentLoadImage = "channelClientFolder/DEFAULT/res/drawable-hdpi-v4/logo_main.jpg";
+		}
+		
+		File startImage = new File(CURRENT_PROJECT_FOLDER + "/" + currentStartImage);
+		if (!startImage.exists()) {
+			
+			currentStartImage = "channelClientFolder/DEFAULT/res/drawable-hdpi-v4/start1.jpg";
+		}
+
+		List<Channel> channels = channelDao.getAll(null);
+		
+		request.setAttribute("channels", channels);
+		request.setAttribute("channelId", channelId);
+		request.setAttribute("currentIcon", currentIcon);
+		request.setAttribute("currentLoadImage", currentLoadImage);
+		request.setAttribute("currentStartImage", currentStartImage);
+		return mapping.findForward("createClient");
+	}
+
+	/***
+	 * 开始生成客户端
+	 * 
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 * @throws IOException
+	 * @throws InterruptedException
+	 * @throws JDOMException
+	 */
+	public ActionForward doCreateClient(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response)
+			throws IOException, InterruptedException, JDOMException {
+		super.settingCurrentNavigation(request.getSession(), ProductConfig.PAGE_MEDIA);
+
+		// 当前工程路径根目录
+		final String CURRENT_PROJECT_FOLDER = request.getRealPath("/");
+		String channelId = request.getParameter("channelId");
+
+		response.setCharacterEncoding("UTF-8");
+		Channel channel = (Channel) request.getSession().getAttribute("admin");
+		
+		if(StringUtils.isNotEmpty(channelId) && !channelId.equals("undefined")){
+			
+			channel = (Channel)channelDao.getById(Channel.class, Integer.valueOf(channelId));
+		}
+		
+		String applicationName = channel.getApplicationName();
+
+		// 渠道包APK目录
+		String APK_FOLDER = CURRENT_PROJECT_FOLDER + "/channelClientFolder/"
+				+ channel.getChannel();
+
+		// 编译后的输出文件的路径
+		String OUT_FILE = APK_FOLDER + "/dist/";
+
+		// 复制目录到渠道下
+		FileTools.copyDirectiory(CURRENT_PROJECT_FOLDER
+				+ "/channelClientFolder/DEFAULT", APK_FOLDER);
+
+		String result = "";
+
+		// APK包文件路径
+		String channelApkFolder = CURRENT_PROJECT_FOLDER
+				+ "/channelClientFolder/" + channel.getChannel();
+		// 客户端主配置文件
+		String manifestPath = channelApkFolder + "/AndroidManifest.xml";
+		// 客户端文字资源配置文件
+		String stringXmlPath = channelApkFolder + "/res/values/strings.xml";
+
+		/** 命令文件目录路径 **/
+		// 前面批处理
+		final String SIGNAPK_BAT_PATH = CURRENT_PROJECT_FOLDER
+				+ "/cmdfolder/signapkbat.bat ";
+		// 命令行所在目录(当前工程目录下的 cmdfolder下)
+		final String CMD_APKTOOL = CURRENT_PROJECT_FOLDER
+				+ "/cmdfolder/apktool ";
+
+		final String KEYSTORE_PATH = CURRENT_PROJECT_FOLDER
+				+ "/cmdfolder/keystore2";
+		/** 命令文件目录路径结束 **/
+
+		// 记录开始时间 用于计算全程耗时
+		Long tempTime = System.currentTimeMillis();
+
+		/** 开始修改AndroidManifest.xml 配置文件 **/
+
+		File file = new File(manifestPath);
+		SAXBuilder builder = new SAXBuilder();
+		Document document = null;
+		try {
+
+			document = (Document) builder.build(file);
+		} catch (JDOMException e) {
+
+			response.getWriter().write("打包出现严重错误!");
+		}
+		Element root = document.getRootElement();
+		List<Element> elements = root.getChild("application").getChildren();
+
+		// 遍历修改渠道
+		for (Element element : elements) {
+
+			if (element.getName().equals("meta-data")) {
+
+				List<Attribute> attributeList = element.getAttributes();
+
+				for (Attribute attr : attributeList) {
+
+					if (attr.getValue().equals("UMENG_CHANNEL")) {
+
+						attr.getParent().getAttributes().get(1)
+								.setValue(channel.getChannel());
+					}
+				}
+			}
+		}
+
+		log.info("渠道包:" + channel.getChannel() + " 修改渠道号完成");
+		
+		// 保存修改过的XML文件
+		Format format = Format.getRawFormat();
+		format.setEncoding("UTF-8");
+		XMLOutputter output = new XMLOutputter(format);
+		output.output(document, new FileOutputStream(file));
+
+		/** AndroidManifest.xml 文件修改完成 **/
+
+		/** 开始修改 string.xml 配置文件 **/
+
+		// APK中配置文件的路径
+		file = new File(stringXmlPath);
+		builder = new SAXBuilder();
+		document = builder.build(file);
+
+		root = document.getRootElement();
+		elements = root.getChildren("string");
+
+		for (Iterator<Element> iter = elements.iterator(); iter.hasNext();) {
+
+			Element string = (Element) iter.next();
+			
+			List<Attribute> attributeList = string.getAttributes();
+			for (Attribute attr : attributeList) {
+
+				if (attr.getValue().equals("app_name")) {
+
+					string.setText(applicationName);
+				}
+
+				if (attr.getValue().equals("title")) {
+
+					string.setText(applicationName);
+				}
+				
+				if (attr.getValue().equals("title_type_danren")) {
+
+					string.setText(applicationName + "达人");
+				}
+				
+				if (attr.getValue().equals("setting_clean_data_summary")) {
+
+					string.setText("清理" + applicationName + "缓存的图标,APK安装包");
+				}
+				
+				if (attr.getValue().equals("agree")) {
+
+					StringBuilder sb = new StringBuilder();
+					sb.append(applicationName + "最终用户协议\n 1 说明\n 1.1 本协议适用于上海诞客网络科技有限公司 （以下称“本公司”）开发的" + applicationName + "（以下称“本产品”）。使用本产品以及与其相关联的各项技术服务和网络服务之前，您必须同意接受本协议。若不接受本协议，您将无法使用本产品及相关服务。\n \n 1.2 您可以通过以下任何一种方式接受本协议：\n (A) 在本产品任一用户界面中，点击表示接受或同意本协议的全部条款的选项；\n (B) 实际使用本产品或其相关服务。您对本产品及其相关服务的使用将被视为您自实际使用起便接受了本协议的全部条款。\n \n 2 个人信息与隐私保护\n 2.1 本产品涉及的个人数据的网络存储功能及数据共享服务，是用户自愿申请与参与的。产品本身对用户数据采用高安全级别的加密方案，以保护用户的隐私安全。但因用户保管不周而导致的用户信息丢失、密码泄露等非软件本身原因，或由其他网络环境因素及外界不可控因素导致的任何损失和风险，本公司不承担任何责任。\n \n 2.2 用户在使用本产品及其相关服务，以及在进行用户注册时，应保证用户信息的真实、准确和完整。如果上述信息实际发生变化，用户应及时进行更新和修改。对于任何上述信息的不真实、不准确、不完整或未能及时更新所导致的任何损失和风险，本公司不承担任何责任。\n \n 3 使用许可\n 3.1 本产品授权个人用户非商业性、非专有性地免费使用，用户可以为非商业性目的下载、安装、使用、复制和传播本产品。但未经本公司特别授权，用户不得以任何商业目的或其他非个人使用的目的对本产品进行复制、销售以及传播，包括但不限于软件产品预装以及捆绑。\n \n 4 特别注意事项\n 4.1 本产品为正式版本。目前本公司对本产品仅提供试用，试用阶段本产品有可能出现无法预料的异常情况和故障，用户在安装、使用本产品前须充分理解与此有关的一切风险，本公司对于此种风险造成的一切可能损害后果，不承担任何责任。\n \n 4.2 为进一步对本系统的功能和服务进行优化，我们可能通过本系统收集用户某些数据并与关联服务分享该数据。这些收集和分享的目的仅限于提高本系统的功能和服务，均不指向任何特定用户，且不会被公开或用于其它目的。这些数据将仅被用于提高系统的质量、改进系统性能，同时提供更有价值的服务。\n \n 5 所有权及知识产权\n 5.1 本产品（包括但不限于本");
+					sb.append("产品中所含的任何图像、动画、录像、录音、音乐、文字和附加程序(dll、exe等)）、随附的说明材料、及本产品的任何副本的所有法定权利、所有权和利益，包括其中包含的所有知识产权（无论这些权利是否已经注册），均由本公司拥有，用户不得复制、修改、租赁、出租、借贷、出售、分发这些内容（无论是全部还是部分），或在该内容（无论是全部还是部分）的基础上创作衍生作品。\n \n 5.2 未经本公司特别授权，用户不得复制、修改本产品或其中的任何部分；对本产品或其中的任何部分创作衍生作品；对本产品进行反向工程（reverse engineer）、反向编译（decompile）或反汇编（disassemble），或者试图从软件或软件的任何部分提取源代码。用户不得删除、掩藏或修改相关服务所附加的或包含的任何所有权声明（包括版权和商标声明）。\n \n 5.3 本产品和其主页上涉及的由他人合法享有权益的内容、信息和资料，未经权利人授权许可，用户不得擅自复制、修改、或使用这些内容。用户因此对其他权利人的权利侵犯，造成的一切责任由用户自行承担，本公司不承担任何责任。\n \n 6 免责声明与责任限制\n 6.1 鉴于本产品可通过网络等途径下载、传播，对于从非本公司指定站点或途径下载的本产品以及从非本公司发行的介质上获得的本产品，本公司无法保证该产品是否包含计算机病毒、木马程序或者黑客软件等；对于由此引起的用户直接或间接的损害后果，本公司不承担任何责任。\n \n 6.2 鉴于用户计算机、手机品牌和安卓版本设备软件与硬件环境的差异性和复杂性，本产品提供的各项功能与服务并不能保证在任何情况下都能正常执行或达到用户所期望的结果。对于用户使用本产品产生的一切后果，本公司均不承担任何责任。\n \n 6.3 鉴于本产品的功能和服务涉及到互联网服务和移动通信服务，可能会受到各个环节不稳定因素的影响，存在因不可抗力、计算机病毒、黑客攻击、系统不稳定、用户所在位置以及其他任何网络、技术、通信线路等原因造成的服务中断或不能满足用户要求的风险，用户须明白并自行承担以上风险可能造成的一切后果，本公司不承担任何责任。对于任何第三方如电信部门的通讯线路故障、技术问题、网络、硬件故障、系统不稳定性及其他各种不可抗力因素（如洪水、暴风雨、地震、火灾、战争、起义、暴动、骚乱、劳工纠纷、意外事故、政府行为、通信和能源故障等）而造成的用户损失，本公司亦不承担任何责任。\n \n");
+					sb.append("6.4 用户必须在法律许可的范围内使用本产品，不得将本产品用于任何非法或侵权活动，包括但不限于将本产品用于展示、传播包含色情、种族主义、低级趣味、淫秽、诽谤中伤、污辱性质的资料，以及传播任何针对宗教、民族传统、人种、性别、年龄的各种仇恨、歧视和偏见的内容。对于用户此类行为造成的一切后果，本公司不承担任何责任。\n \n 7 协议的解释、变更与终止\n 7.1 在适用法律允许的范围内，本公司保留对本协议任何条款的解释权和随时变更的权利。 本公司可能会随时根据需要修改本协议的任一条款。如发生此类变更，本公司会提供新版本的最终用户协议。用户在变更后对本产品的使用将视为已接受变更后的协议条款。\n \n 7.2 本协议在根据下述规定终止前，将会一直适用。当下列情况出现时，本公司可以随时中止与用户的协议：\n （A）用户违反了本协议中的任何规定；\n （B）法律法规要求终止本协议；\n （C）本公司认为实际情形不再适宜继续执行本协议。\n \n 8 法律适用与司法管辖\n 8.1 本协议及因本协议产生的一切法律关系及纠纷，均适用中华人民共和国法律。用户与本公司在此同意以本公司营业所在地法院管辖。\n \n");
+					string.setText(sb.toString());
+				}
+				
+				if (attr.getValue().equals("phone_browser")) {
+
+					string.setText(applicationName + "云端互动平台");
+				}
+				
+				if (attr.getValue().equals("feedback_mail1")) {
+
+					string.setText("发邮件给" + applicationName);
+				}
+				if (attr.getValue().equals("exit_dlg_msg")) {
+
+					string.setText("发邮件给" + applicationName);
+				}
+				if (attr.getValue().equals("share")) {
+
+					string.setText(applicationName + "分享软件");
+				}
+				if (attr.getValue().equals("btn_dankeset")) {
+
+					string.setText(applicationName + "设置");
+				}
+				if (attr.getValue().equals("hot_man")) {
+
+					string.setText(applicationName + "达人");
+				}
+				if (attr.getValue().equals("set_about")) {
+
+					string.setText("关于" + applicationName );
+				}
+				if (attr.getValue().equals("friend_list_head")) {
+					
+					string.setText("从通讯录添加" + applicationName + "好友");
+				}
+				if (attr.getValue().equals("friend_share_danke_title")) {
+
+					string.setText(applicationName);
+				}
+				if (attr.getValue().equals("share_message")) {
+
+					string.setText("给你分享了" + applicationName);
+				}
+				if (attr.getValue().equals("renwu_down_tip")) {
+
+					string.setText("本软件不通过" + applicationName + "下载，不予加分");
+				}
+				
+			}
+
+		}
+		
+		log.info("渠道包:" + channel.getChannel() + " 修改string.xml完成");
+
+		// 保存修改过的XML文件
+		format = Format.getRawFormat();
+		format.setEncoding("UTF-8");
+		output = new XMLOutputter(format);
+		output.output(document, new FileOutputStream(file));
+		
+		/** -------------------------string.xml 文件修改完成------------------------- **/
+
+		// 将用户上传的ICON和载入背景图复制到APK目录下
+		File iconFile = new File(CURRENT_PROJECT_FOLDER
+				+ "/channelClientFolder/" + channel.getChannel() + "/icon.png");
+		if (iconFile.exists()) {
+
+			FileTools.copyFile(iconFile, new File(CURRENT_PROJECT_FOLDER
+					+ "/channelClientFolder/" + channel.getChannel()
+					+ "/res/drawable-hdpi-v4/icon.png"));
+//			FileTools.copyFile(iconFile, new File(CURRENT_PROJECT_FOLDER
+//					+ "/channelClientFolder/" + channel.getChannel()
+//					+ "/res/drawable-hdpi-v4/icon.png"));
+		}
+		File loadImage = new File(CURRENT_PROJECT_FOLDER
+				+ "/channelClientFolder/" + channel.getChannel()
+				+ "/logo_main.jpg");
+		if (loadImage.exists()) {
+
+			FileTools.copyFile(loadImage, new File(CURRENT_PROJECT_FOLDER
+					+ "/channelClientFolder/" + channel.getChannel()
+					+ "/res/drawable-hdpi-v4/logo_main.jpg"));
+//			FileTools.copyFile(loadImage, new File(CURRENT_PROJECT_FOLDER
+//					+ "/channelClientFolder/" + channel.getChannel()
+//					+ "/res/drawable-hdpi-v4/logo_main.jpg"));
+		}
+		//开始图片
+		File startImage = new File(CURRENT_PROJECT_FOLDER
+				+ "/channelClientFolder/" + channel.getChannel()
+				+ "/logo_main.jpg");
+		if (startImage.exists()) {
+
+			FileTools.copyFile(startImage, new File(CURRENT_PROJECT_FOLDER
+					+ "/channelClientFolder/" + channel.getChannel()
+					+ "/res/drawable-hdpi-v4/start1.jpg"));
+//			FileTools.copyFile(startImage, new File(CURRENT_PROJECT_FOLDER
+//					+ "/channelClientFolder/" + channel.getChannel()
+//					+ "/res/drawable-hdpi-v4/start1.jpg"));
+		}
+
+		log.info("渠道包:" + channel.getChannel() + " 开始编译");
+		// 重新打包APK
+		Process pro = Runtime.getRuntime().exec(
+				"cmd.exe /c " + CMD_APKTOOL + " b " + APK_FOLDER);
+		pro.waitFor();
+		pro.destroy();
+
+		// 生成文件名
+		String channelFileName = "WeiDanKe_" + channel.getChannel() + "_"
+				+ DateUtils.getDate() + ".apk";
+		
+		//如果文件已经存在则删掉已存在的
+		File channelApk = new File(OUT_FILE + channelFileName);
+		if(channelApk.exists()){
+			
+			channelApk.delete();
+		}
+
+		File outfile = new File(OUT_FILE + "out.apk");
+		outfile.renameTo(new File(OUT_FILE + channelFileName));
+
+		log.info("渠道包:" + channel.getChannel() + " 编译完成");
+		
+		log.info("开始为渠道:" + channel.getChannel() + " 签名");
+		// 给APK签名
+		pro = Runtime.getRuntime().exec(
+				"cmd.exe /c " + SIGNAPK_BAT_PATH + "  " + KEYSTORE_PATH + "  "
+						+ OUT_FILE + channelFileName + " > D:\\logs\\createClientError.txt");
+		pro.waitFor();
+		pro.destroy();
+		
+		log.info("渠道包:" + channel.getChannel() + " 签名完成");
+
+		String userTime = (System.currentTimeMillis() - tempTime) / 1000 + "";
+
+		result = "{userTime:" + userTime + ",href:\"" + channel.getChannel()
+				+ "/dist/" + channelFileName + "\"}";
+
+		response.setCharacterEncoding("UTF-8");
+		response.getWriter().write(result);
+
+		return null;
+	}
+
+	/***
+	 * 上传应用ICON
+	 * 
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 * @throws IOException
+	 */
+	public ActionForward uploadIcon(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response)
+			throws IOException {
+
+		response.setContentType("text/html");
+		// 设置字符编码为UTF-8, 这样支持汉字显示
+		response.setCharacterEncoding("UTF-8");
+		
+		String channelId = request.getParameter("channelId");
+		Channel channel = (Channel) channelDao.getById(Channel.class, Integer.valueOf(channelId));
+
+		String channelClientFolder = request.getRealPath("/")
+				+ "/channelClientFolder/" + channel.getChannel();
+		File iconFile = new File(channelClientFolder);
+		if (!iconFile.exists()) {
+
+			iconFile.mkdir();
+		}
+
+		// 实例化一个硬盘文件工厂,用来配置上传组件ServletFileUpload
+		DiskFileItemFactory dfif = new DiskFileItemFactory();
+		dfif.setSizeThreshold(4096);// 设置上传文件时用于临时存放文件的内存大小,这里是4K.多于的部分将临时存在硬盘
+		dfif.setRepository(new File(channelClientFolder));// 设置存放临时文件的目录
+		// 用以上工厂实例化上传组件
+		ServletFileUpload sfu = new ServletFileUpload(dfif);
+		// 设置最大上传尺寸
+		sfu.setSizeMax(MAX_SIZE);
+
+		PrintWriter out = response.getWriter();
+		// 从request得到 所有 上传域的列表
+		List fileList = null;
+		try {
+			fileList = sfu.parseRequest(request);
+		} catch (FileUploadException e) {// 处理文件尺寸过大异常
+			if (e instanceof SizeLimitExceededException) {
+				out.println("{message:'文件尺寸超过规定大小:" + MAX_SIZE + "字节'}");
+				return null;
+			}
+			e.printStackTrace();
+		}
+		// 没有文件上传
+		if (fileList == null || fileList.size() == 0) {
+			out.println("{message:'请选择上传文件'}");
+			return null;
+		}
+		// 得到所有上传的文件
+		Iterator fileItr = fileList.iterator();
+		// 循环处理所有文件
+		while (fileItr.hasNext()) {
+			FileItem fileItem = null;
+			String path = null;
+			long size = 0;
+			// 得到当前文件
+			fileItem = (FileItem) fileItr.next();
+			// 忽略简单form字段而不是上传域的文件域(<input type="text" />等)
+			if (fileItem == null || fileItem.isFormField()) {
+				continue;
+			}
+			// 得到文件的完整路径
+			path = fileItem.getName();
+			// 得到文件的大小
+			size = fileItem.getSize();
+			if ("".equals(path) || size == 0) {
+				out.println("{message:'请选择上传文件'}");
+				return null;
+			}
+
+			// 得到去除路径的文件名
+			String t_name = path.substring(path.lastIndexOf("\\") + 1);
+			// 得到文件的扩展名(无扩展名时将得到全名)
+			String t_ext = t_name.substring(t_name.lastIndexOf(".") + 1);
+			// 拒绝接受规定文件格式之外的文件类型
+			int allowFlag = 0;
+			int allowedExtCount = allowtype.length;
+			for (; allowFlag < allowedExtCount; allowFlag++) {
+				if (allowtype[allowFlag].equals(t_ext))
+					break;
+			}
+			if (allowFlag == allowedExtCount) {
+				String message = "";
+				for (allowFlag = 0; allowFlag < allowedExtCount; allowFlag++) {
+					message += "*." + allowtype[allowFlag] + " ";
+				}
+				out.println("{message:'请上传以下类型的文件" + message + "'}");
+				return null;
+			}
+
+			String fileName = "icon" + "." + t_ext;
+			// 原来的文件名
+			path = channelClientFolder + "/" + fileName;
+			try {
+				// 保存文件
+				fileItem.write(new File(path));
+				response.setStatus(200);
+
+				out.println("{message:\"文件上传成功. " + " 文件大小: " + size + "字节\"}");
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+		}
+
+		return null;
+	}
+
+	/***
+	 * 上传应用Loading图
+	 * 
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 * @throws IOException
+	 */
+	public ActionForward uploadLodingPicture(ActionMapping mapping,
+			ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) throws IOException {
+
+		response.setContentType("text/html");
+		// 设置字符编码为UTF-8, 这样支持汉字显示
+		response.setCharacterEncoding("UTF-8");
+
+		String channelId = request.getParameter("channelId");
+		Channel channel = (Channel) channelDao.getById(Channel.class, Integer.valueOf(channelId));
+
+		String channelClientFolder = request.getRealPath("/")
+				+ "/channelClientFolder/" + channel.getChannel();
+		File iconFile = new File(channelClientFolder);
+		if (!iconFile.exists()) {
+
+			iconFile.mkdir();
+		}
+
+		// 实例化一个硬盘文件工厂,用来配置上传组件ServletFileUpload
+		DiskFileItemFactory dfif = new DiskFileItemFactory();
+		dfif.setSizeThreshold(4096);// 设置上传文件时用于临时存放文件的内存大小,这里是4K.多于的部分将临时存在硬盘
+		dfif.setRepository(new File(channelClientFolder));// 设置存放临时文件的目录
+		// 用以上工厂实例化上传组件
+		ServletFileUpload sfu = new ServletFileUpload(dfif);
+		// 设置最大上传尺寸
+		sfu.setSizeMax(MAX_SIZE);
+
+		PrintWriter out = response.getWriter();
+		// 从request得到 所有 上传域的列表
+		List fileList = null;
+		try {
+			fileList = sfu.parseRequest(request);
+		} catch (FileUploadException e) {// 处理文件尺寸过大异常
+			if (e instanceof SizeLimitExceededException) {
+				out.println("{message:'文件尺寸超过规定大小:" + MAX_SIZE + "字节'}");
+				return null;
+			}
+			e.printStackTrace();
+		}
+		// 没有文件上传
+		if (fileList == null || fileList.size() == 0) {
+			out.println("{message:'请选择上传文件'}");
+			return null;
+		}
+		// 得到所有上传的文件
+		Iterator fileItr = fileList.iterator();
+		// 循环处理所有文件
+		while (fileItr.hasNext()) {
+			FileItem fileItem = null;
+			String path = null;
+			long size = 0;
+			// 得到当前文件
+			fileItem = (FileItem) fileItr.next();
+			// 忽略简单form字段而不是上传域的文件域(<input type="text" />等)
+			if (fileItem == null || fileItem.isFormField()) {
+				continue;
+			}
+			// 得到文件的完整路径
+			path = fileItem.getName();
+			// 得到文件的大小
+			size = fileItem.getSize();
+			if ("".equals(path) || size == 0) {
+				out.println("{message:'请选择上传文件'}");
+				return null;
+			}
+
+			// 得到去除路径的文件名
+			String t_name = path.substring(path.lastIndexOf("\\") + 1);
+			// 得到文件的扩展名(无扩展名时将得到全名)
+			String t_ext = t_name.substring(t_name.lastIndexOf(".") + 1);
+			// 拒绝接受规定文件格式之外的文件类型
+			int allowFlag = 0;
+			int allowedExtCount = allowtype.length;
+			for (; allowFlag < allowedExtCount; allowFlag++) {
+				if (allowtype[allowFlag].equals(t_ext))
+					break;
+			}
+			if (allowFlag == allowedExtCount) {
+				String message = "";
+				for (allowFlag = 0; allowFlag < allowedExtCount; allowFlag++) {
+					message += "*." + allowtype[allowFlag] + " ";
+				}
+				out.println("{message:'请上传以下类型的文件" + message + "'}");
+				return null;
+			}
+
+			String fileName = "logo_main" + "." + t_ext;
+			// 原来的文件名
+			path = channelClientFolder + "/" + fileName;
+			try {
+				// 保存文件
+				fileItem.write(new File(path));
+				response.setStatus(200);
+
+				out.println("{message:\"文件上传成功. " + " 文件大小: " + size + "字节\"}");
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+		}
+
+		return null;
+	}
+	
+	/***
+	 * 上传应用开始图片1
+	 * 
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 * @throws IOException
+	 */
+	public ActionForward uploadStartPicture(ActionMapping mapping,
+			ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) throws IOException {
+
+		response.setContentType("text/html");
+		// 设置字符编码为UTF-8, 这样支持汉字显示
+		response.setCharacterEncoding("UTF-8");
+
+		String channelId = request.getParameter("channelId");
+		Channel channel = (Channel) channelDao.getById(Channel.class, Integer.valueOf(channelId));
+
+		String channelClientFolder = request.getRealPath("/")
+				+ "/channelClientFolder/" + channel.getChannel();
+		File iconFile = new File(channelClientFolder);
+		if (!iconFile.exists()) {
+
+			iconFile.mkdir();
+		}
+
+		// 实例化一个硬盘文件工厂,用来配置上传组件ServletFileUpload
+		DiskFileItemFactory dfif = new DiskFileItemFactory();
+		dfif.setSizeThreshold(4096);// 设置上传文件时用于临时存放文件的内存大小,这里是4K.多于的部分将临时存在硬盘
+		dfif.setRepository(new File(channelClientFolder));// 设置存放临时文件的目录
+		// 用以上工厂实例化上传组件
+		ServletFileUpload sfu = new ServletFileUpload(dfif);
+		// 设置最大上传尺寸
+		sfu.setSizeMax(MAX_SIZE);
+
+		PrintWriter out = response.getWriter();
+		// 从request得到 所有 上传域的列表
+		List fileList = null;
+		try {
+			fileList = sfu.parseRequest(request);
+		} catch (FileUploadException e) {// 处理文件尺寸过大异常
+			if (e instanceof SizeLimitExceededException) {
+				out.println("{message:'文件尺寸超过规定大小:" + MAX_SIZE + "字节'}");
+				return null;
+			}
+			e.printStackTrace();
+		}
+		// 没有文件上传
+		if (fileList == null || fileList.size() == 0) {
+			out.println("{message:'请选择上传文件'}");
+			return null;
+		}
+		// 得到所有上传的文件
+		Iterator fileItr = fileList.iterator();
+		// 循环处理所有文件
+		while (fileItr.hasNext()) {
+			FileItem fileItem = null;
+			String path = null;
+			long size = 0;
+			// 得到当前文件
+			fileItem = (FileItem) fileItr.next();
+			// 忽略简单form字段而不是上传域的文件域(<input type="text" />等)
+			if (fileItem == null || fileItem.isFormField()) {
+				continue;
+			}
+			// 得到文件的完整路径
+			path = fileItem.getName();
+			// 得到文件的大小
+			size = fileItem.getSize();
+			if ("".equals(path) || size == 0) {
+				out.println("{message:'请选择上传文件'}");
+				return null;
+			}
+
+			// 得到去除路径的文件名
+			String t_name = path.substring(path.lastIndexOf("\\") + 1);
+			// 得到文件的扩展名(无扩展名时将得到全名)
+			String t_ext = t_name.substring(t_name.lastIndexOf(".") + 1);
+			// 拒绝接受规定文件格式之外的文件类型
+			int allowFlag = 0;
+			int allowedExtCount = allowtype.length;
+			for (; allowFlag < allowedExtCount; allowFlag++) {
+				if (allowtype[allowFlag].equals(t_ext))
+					break;
+			}
+			if (allowFlag == allowedExtCount) {
+				String message = "";
+				for (allowFlag = 0; allowFlag < allowedExtCount; allowFlag++) {
+					message += "*." + allowtype[allowFlag] + " ";
+				}
+				out.println("{message:'请上传以下类型的文件" + message + "'}");
+				return null;
+			}
+
+			String fileName = "start1" + "." + t_ext;
+			// 原来的文件名
+			path = channelClientFolder + "/" + fileName;
+			try {
+				// 保存文件
+				fileItem.write(new File(path));
+				response.setStatus(200);
+				
+				out.println("{message:\"文件上传成功. " + " 文件大小: " + size + "字节\"}");
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+		}
+
+		return null;
+	}
+	
+}

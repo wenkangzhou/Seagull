@@ -1,0 +1,1026 @@
+package com.usernet.product.web.action;
+
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.RandomAccessFile;
+import java.net.URLEncoder;
+import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.List;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.apache.commons.lang.StringUtils;
+import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionForward;
+import org.apache.struts.action.ActionMapping;
+
+import com.opensymphony.oscache.util.StringUtil;
+import com.usernet.product.comm.BaseAction;
+import com.usernet.product.dao.RoleDao;
+import com.usernet.product.entity.Channel;
+import com.usernet.product.entity.ChannelSettle;
+import com.usernet.product.entity.Role;
+import com.usernet.product.tools.BaseCache;
+import com.usernet.product.tools.Print;
+import com.usernet.product.utils.DateUtils;
+import com.usernet.product.utils.Page;
+import com.usernet.product.utils.PageResult;
+import com.usernet.product.utils.ProductConfig;
+import com.usernet.product.utils.ProductUtils;
+import com.usernet.product.web.form.ChannelForm;
+
+public class ChannelAction extends BaseAction {
+	
+	BaseCache baseCache = new BaseCache("regionStatistics", 10800);
+
+	public ActionForward toList(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_SYSTEM_MANAGER);
+		ChannelForm mForm = (ChannelForm) form;
+		PageResult<Channel> result = null;
+		Page page = new Page();
+		// 分页信息
+		String pageNo = mForm.getPageNo();
+		String pageSize = mForm.getPageSize();
+		if (pageSize != null)
+			page.setEveryPage(Integer.parseInt(pageSize.trim()));
+		if (pageNo != null)
+			page.setCurrentPage(Integer.parseInt(pageNo.trim()));
+		result = channelDao.getPage(page, mForm.getCode());
+		if (result.getContent() != null) {
+			long curr = System.currentTimeMillis();
+			long m = 0;
+			for (Channel c : result.getContent()) {
+				if (StringUtils.isEmpty(c.getStartTime())) // 无合同开始时间
+					continue;
+				if (StringUtils.isEmpty(c.getContractTime())) // 无合同期限
+					continue;
+				// 合同未开始
+				if (DateUtils.stringToTimestampBegin(c.getStartTime())
+						.getTime() > curr)
+					continue;
+				m = DateUtils.stringToTimestampEnd(c.getContractTime())
+						.getTime() - curr;
+				c.setOver(m > ProductConfig.DAYS_TO_TIME ? 0 : (m <= 0 ? 1 : 2));
+			}
+		}
+		request.setAttribute("form", mForm);
+		request.setAttribute("list", result.getContent());
+		request.setAttribute("page", result.getPage());
+		request.setAttribute("size", result.getSize());
+
+		return mapping.findForward("list");
+	}
+
+	public ActionForward toEdit(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_SYSTEM_MANAGER);
+		ChannelForm mForm = (ChannelForm) form;
+
+		if (mForm.getId() != null)
+			mForm.setChannel((Channel) channelDao.getById(Channel.class,
+					mForm.getId()));
+		RoleDao roleDao = new RoleDao();
+		List<Role> listRole = roleDao.getAllRole();
+		
+		request.setAttribute("listRole", listRole);
+		
+		request.setAttribute("channel", mForm.getChannel());
+		request.setAttribute("channels",channelDao.getIncludeAll(mForm.getId()));
+
+		return mapping.findForward("edit");
+	}
+
+	public ActionForward save(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_SYSTEM_MANAGER);
+		ChannelForm mForm = (ChannelForm) form;
+
+		Channel channel = channelDao.checkChannel(mForm.getChannel().getId(),
+				mForm.getChannel().getChannel());
+		String type = request.getParameter("type");
+		if (channel != null) {
+			request.setAttribute("channel", mForm.getChannel());
+			request.setAttribute("errMsg", "识别码已存在");		
+			return mapping.findForward("edit");
+		}
+
+		Channel parent = null;
+		Integer manufacturersType = null;
+		if (mForm.getParentId() != null && mForm.getParentId().intValue() != 0)
+			parent = (Channel) channelDao.getById(Channel.class,
+					mForm.getParentId());
+		Channel c = mForm.getChannel();
+		ChannelSettle settle = new ChannelSettle();
+		
+		Integer role_id = mForm.getRole_id();
+		Role role = (Role) channelDao.getById(Role.class, role_id);
+		c.setRole(role);
+		
+		if (c.getId() != null && c.getId() != 0) {
+			if (channel == null) {
+				channel = (Channel) channelDao
+						.getById(Channel.class, c.getId());
+			}
+			channel.setChannel(c.getChannel());
+			channel.setParent(parent);
+			channel.setName(c.getName());
+			channel.setRate(c.getRate());
+			channel.setContractTime(c.getContractTime());
+			channel.setManufacturersType(c.getManufacturersType());
+			channel.setRole(role);
+			if (parent == null) {
+				settle = channelDao.getLastUnSettle(c.getId());
+				if (channel.getSettleType() != c.getSettleType()
+						|| settle == null) {
+					Calendar time = Calendar.getInstance();
+					time.setTime(DateUtils.stringToTimestampBegin(c
+							.getStartTime()));
+					if (settle == null) {
+						settle = new ChannelSettle();
+						settle.setChannelId(c.getId());
+						settle.setSquared(0);
+						settle.setStartTime(c.getStartTime());
+					} else {
+						if (!channel.getStartTime().equals(
+								settle.getStartTime()))
+							settle.setStartTime(c.getStartTime());
+						time.setTime(DateUtils.stringToTimestampBegin(settle
+								.getStartTime()));
+					}
+					time.add(Calendar.MONTH, c.getSettleType());
+					time.add(Calendar.DAY_OF_MONTH, -1);
+					Timestamp contract = DateUtils.stringToTimestampBegin(c
+							.getContractTime());
+					settle.setSettleTime(DateUtils.format(time.getTime().after(
+							contract) ? contract : time.getTime()));
+					if (settle.getId() != null
+							&& settle.getId().intValue() != 0)
+						channelDao.modify(settle);
+					else
+						channelDao.save(settle);
+				}
+			}
+			channel.setStartTime(c.getStartTime());
+			channel.setSettleType(c.getSettleType());
+			channel.setManufacturersType(c.getManufacturersType());
+			channel.setApplicationName(mForm.getChannel().getApplicationName());
+			channel.setType(Integer.parseInt(type));
+			channelDao.modify(channel);
+		} else {
+			c.setId(null);
+			c.setParent(parent);
+			c.setPassword(ProductUtils
+					.getMD5String(ProductConfig.DEFAULT_PASSWORD));
+			c.setTime(new Timestamp(System.currentTimeMillis()));
+			//c.setType(0);
+			c.setType(Integer.parseInt(type));
+			c.setManufacturersType(manufacturersType);
+			c.setStatus(0);
+			channelDao.save(c);
+
+			if (parent == null) {
+				settle.setChannelId(c.getId());
+				settle.setSquared(0);
+				// 新建时计算第一次结算期
+				Calendar time = Calendar.getInstance();
+				time.setTime(DateUtils.stringToTimestampBegin(c.getStartTime()));
+				time.add(Calendar.MONTH, c.getSettleType());
+				time.add(Calendar.DAY_OF_MONTH, -1);
+				Timestamp contract = DateUtils.stringToTimestampBegin(c
+						.getContractTime());
+				settle.setStartTime(c.getStartTime());
+				settle.setSettleTime(DateUtils.format(time.getTime().after(
+						contract) ? contract : time.getTime()));
+				channelDao.save(settle);
+			}
+		}
+
+		return mapping.findForward("other");
+	}
+	public ActionForward toChannelStatistics(ActionMapping mapping,
+			ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_DATA_SERVER);
+		ChannelForm mForm = (ChannelForm) form;
+		Channel admin = (Channel) request.getSession().getAttribute("admin");
+		List<Channel> channels = channelDao.getAll(admin.getType() == 0 ? admin
+				.getId() : null);
+		request.setAttribute("form", mForm);
+		request.setAttribute("channels", channels);
+		return mapping.findForward("channelStatistics");
+	}
+
+	public ActionForward channelStatistics(ActionMapping mapping,
+			ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_ACCOUNT_MANAGER);
+		ChannelForm mForm = (ChannelForm) form;
+		String startTime = request.getParameter("startTime");
+		String endTime = request.getParameter("endTime");
+		List list = channelDao.getChannelStatistics(
+				Integer.valueOf(mForm.getChannel().getManufacturersType()),
+				startTime, endTime, mForm.getOrderBy());
+		Channel channel = mForm.getChannel();
+		request.setAttribute("channel", channel);
+		request.setAttribute("form", mForm);
+		request.setAttribute("list", list);
+		return mapping.findForward("channelStatistics");
+	}
+
+	public ActionForward toManufacturersTypeStatistics(ActionMapping mapping,
+			ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_ACCOUNT_MANAGER);
+
+		return mapping.findForward("manufacturersTypeStatistics");
+	}
+
+	public ActionForward doManufacturersTypeStatistics(ActionMapping mapping,
+			ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_ACCOUNT_MANAGER);
+
+		ChannelForm mForm = (ChannelForm) form;
+		Channel channel = mForm.getChannel();
+
+		List channels = channelDao.getStatisticsByManufacturersType(channel
+				.getManufacturersType());
+		request.setAttribute("channel", channel);
+		request.setAttribute("channels", channels);
+
+		return mapping.findForward("manufacturersTypeStatistics");
+	}
+
+	/**
+	 * 下载文件
+	 * 
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 */
+	public ActionForward PrintAction(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) throws IOException{
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_ACCOUNT_MANAGER);
+
+		String startTime = request.getParameter("startTime");
+		String endTime = request.getParameter("endTime");
+		String type = request.getParameter("type");
+		List<Object[]> list = channelDao.getChannelStatisticsByPrint(Integer.parseInt(type.toString()), startTime, endTime, null);
+		
+		if (!list.isEmpty()&&list.size()<65536) {
+			String line = "ID,渠道号,渠道商,总激活数,总下载数,增值产品 \n";
+			File f = new File("D:\\temp.csv");
+			RandomAccessFile raf;
+			raf = new RandomAccessFile(f, "rw");
+			raf.write(line.getBytes("GBK"));
+			for(int j=0;j<list.size();j++){
+				Object[] obj = list.get(j);
+				
+				for (int i = 0; i < obj.length; i++) {
+					if (i == obj.length - 1) {
+						String str = obj[i].toString();
+						raf.write(str.getBytes("GBK"));
+						raf.write("\n".getBytes("GBK"));
+					}
+					else
+					{
+						String str = obj[i].toString();
+						raf.write(str.getBytes("GBK"));
+						raf.write(",".getBytes("GBK"));
+					}
+				}
+			}
+			raf.close();
+
+			// 以流的形式下载文件。
+			InputStream fis = new BufferedInputStream(new FileInputStream(f));
+			byte[] buffer = new byte[fis.available()];
+			fis.read(buffer);
+			fis.close();
+			
+			response.reset();
+			response.addHeader("Content-Disposition", "attachment;filename="
+					+ new String("渠道商统计列表.csv".getBytes("GBK"), "ISO-8859-1"));
+			response.addHeader("Content-Length", "" + f.length());
+			OutputStream toClient = new BufferedOutputStream(response
+					.getOutputStream());
+			response.setContentType("application/octet-stream");
+			toClient.write(buffer);
+			toClient.flush();
+			toClient.close();
+			
+			f.delete();
+			return null;
+		}
+		System.out.println("导出的文件大小过长，程序将可能不能正确导出，请调整大小后再次进行导出操作。");
+		return mapping.findForward("channelStatistics");
+	
+		/*
+		Print.printOut(list);
+		File file = new File(Print.file.getPath());
+		OutputStream out = null;
+		InputStream in = null;
+		try {
+			String filename = URLEncoder.encode(file.getName(), "GBK");
+			response.setContentType("application/force-download");
+			response.setHeader("Location", filename);
+			response.setHeader("Content-Disposition", "attachment;filename="
+					+ filename);
+			out = response.getOutputStream();
+			in = new FileInputStream(file.getPath());
+			byte[] buffer = new byte[1024];
+			int i = -1;
+			while ((i = in.read(buffer)) != -1)
+				out.write(buffer, 0, i);
+		} catch (IOException e) {
+			e.printStackTrace();
+		} finally {
+			if (in != null)
+				try {
+					in.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			if (out != null)
+				try {
+					out.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			if (file.exists()) {
+				if (file.isFile()) {
+					file.delete();
+				}
+			}
+		}
+		return null;
+		*/
+	}
+
+	/**
+	 * 渠道下载趋势统计
+	 * 
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 */
+	public ActionForward client_Log(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_DATA_SERVER);
+
+		List<Object[]> dataList = logDao
+				.getNewUserStatic(new Integer[] { Integer.valueOf(92) });
+		List<Object> list = channelDao.getChannelTrend();
+		// 获取30天的日期
+		List<String> dayList = DateUtils.getCurrentMonthAndPreMonth();
+		String date = "";
+		String newUserCount = "";
+
+		for (int j = dayList.size() - 1; j >= 0; j--) {
+
+			if (j == -1)
+
+				break;
+
+			String day = dayList.get(j);
+
+			boolean flag = false;
+
+			if (dataList != null && dataList.size() > 0) {
+
+				for (Object[] obj1 : dataList) {
+
+					if (day.equals(String.valueOf(obj1[0]))) {
+
+						date += "\'"
+								+ DateUtils.subDate(String.valueOf(obj1[0]))
+								+ "\',";
+						newUserCount += String.valueOf(obj1[1]) + ",";
+						flag = true;
+					}
+				}
+			}
+			if (!flag) {
+
+				date += "\'" + DateUtils.subDate(day) + "\',";
+				newUserCount += 0 + ",";
+			}
+		}
+
+		date = date.substring(0, date.length() - 1);
+		newUserCount = newUserCount.substring(0, newUserCount.length() - 1);
+		String result = date;
+		String newUserCount1 = newUserCount;
+		String msg = "TONGLING";
+		request.setAttribute("channel", msg);
+		request.setAttribute("result", result);
+		request.setAttribute("newUserCount1", newUserCount1);
+		request.setAttribute("list", list);
+		return mapping.findForward("client_Log");
+	}
+
+	/**
+	 * 渠道下载趋势
+	 * 
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 */
+	public ActionForward toclient_Log(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_ACCOUNT_MANAGER);
+
+		String sss = request.getParameter("channelIdList");
+		String[] v_ids = sss.split(",");
+		List<Object[]> dataList1 = null;
+		List<Object[]> dataList = null;
+		List<Object[]> dataList2 = null;
+		List<Object[]> dataList3 = null;
+		List<Object[]> dataList4 = null;
+		if (v_ids.length <= 1) {
+			String channel = v_ids[0];
+			List listNum = channelDao.getChannelTrendId(channel);
+			for (int i = 0; i < listNum.size(); i++) {
+				Object[] obj = (Object[]) listNum.get(i);
+				String s = obj[0].toString();
+				dataList = logDao.getNewUserStatic(new Integer[] { Integer
+						.valueOf(s) });
+				// 获取30天的日期
+				List<String> dayList = DateUtils.getCurrentMonthAndPreMonth();
+				String date = "";
+				String newUserCount = "";
+
+				for (int j = dayList.size() - 1; j >= 0; j--) {
+
+					if (j == -1)
+
+						break;
+
+					String day = dayList.get(j);
+
+					boolean flag = false;
+
+					if (dataList != null && dataList.size() > 0) {
+
+						for (Object[] obj1 : dataList) {
+
+							if (day.equals(String.valueOf(obj1[0]))) {
+
+								date += "\'"
+										+ DateUtils.subDate(String
+												.valueOf(obj1[0])) + "\',";
+								newUserCount += String.valueOf(obj1[1]) + ",";
+								flag = true;
+							}
+						}
+					}
+					if (!flag) {
+
+						date += "\'" + DateUtils.subDate(day) + "\',";
+						newUserCount += 0 + ",";
+					}
+				}
+
+				date = date.substring(0, date.length() - 1);
+				newUserCount = newUserCount.substring(0,
+						newUserCount.length() - 1);
+				String result = date;
+				String newUserCount1 = newUserCount;
+				request.setAttribute("channel", channel);
+				request.setAttribute("result", result);
+				request.setAttribute("newUserCount1", newUserCount1);
+			}
+		}
+		if (v_ids.length > 1) {
+			String channel = v_ids[0];
+			String channel1 = v_ids[1];
+			List listNum = channelDao.getChannelTrendId(channel);
+			for (int i = 0; i < listNum.size(); i++) {
+				Object[] obj = (Object[]) listNum.get(i);
+				String s = obj[0].toString();
+				dataList = logDao.getNewUserStatic(new Integer[] { Integer
+						.valueOf(s) });
+				// 获取30天的日期
+				List<String> dayList = DateUtils.getCurrentMonthAndPreMonth();
+				String date = "";
+				String newUserCount = "";
+
+				for (int j = dayList.size() - 1; j >= 0; j--) {
+
+					if (j == -1)
+
+						break;
+
+					String day = dayList.get(j);
+
+					boolean flag = false;
+
+					if (dataList != null && dataList.size() > 0) {
+
+						for (Object[] obj1 : dataList) {
+
+							if (day.equals(String.valueOf(obj1[0]))) {
+
+								date += "\'"
+										+ DateUtils.subDate(String
+												.valueOf(obj1[0])) + "\',";
+								newUserCount += String.valueOf(obj1[1]) + ",";
+								flag = true;
+							}
+						}
+					}
+					if (!flag) {
+
+						date += "\'" + DateUtils.subDate(day) + "\',";
+						newUserCount += 0 + ",";
+					}
+				}
+
+				date = date.substring(0, date.length() - 1);
+				newUserCount = newUserCount.substring(0,
+						newUserCount.length() - 1);
+				String result = date;
+				String newUserCount1 = newUserCount;
+				request.setAttribute("channel", channel);
+				request.setAttribute("result", result);
+				request.setAttribute("newUserCount1", newUserCount1);
+			}
+			List listNum1 = channelDao.getChannelTrendId(channel1);
+			for (int i = 0; i < listNum1.size(); i++) {
+				Object[] obj = (Object[]) listNum1.get(i);
+				String s1 = obj[0].toString();
+				dataList1 = logDao.getNewUserStatic(new Integer[] { Integer
+						.valueOf(s1) });
+				// 获取30天的日期
+				List<String> dayList = DateUtils.getCurrentMonthAndPreMonth();
+				String date = "";
+				String newUserCount = "";
+
+				for (int j = dayList.size() - 1; j >= 0; j--) {
+
+					if (j == -1)
+
+						break;
+
+					String day = dayList.get(j);
+
+					boolean flag = false;
+
+					if (dataList1 != null && dataList1.size() > 0) {
+
+						for (Object[] obj1 : dataList1) {
+
+							if (day.equals(String.valueOf(obj1[0]))) {
+
+								date += "\'"
+										+ DateUtils.subDate(String
+												.valueOf(obj1[0])) + "\',";
+								newUserCount += String.valueOf(obj1[1]) + ",";
+								flag = true;
+							}
+						}
+					}
+					if (!flag) {
+
+						date += "\'" + DateUtils.subDate(day) + "\',";
+						newUserCount += 0 + ",";
+					}
+				}
+
+				date = date.substring(0, date.length() - 1);
+				newUserCount = newUserCount.substring(0,
+						newUserCount.length() - 1);
+				String result = date;
+				String newUserCount11 = newUserCount;
+				request.setAttribute("channel1", channel1);
+				request.setAttribute("newUserCount11", newUserCount11);
+			}
+			if (v_ids.length > 2) {
+				String channel2 = v_ids[2];
+				List listNum2 = channelDao.getChannelTrendId(channel2);
+				for (int i = 0; i < listNum2.size(); i++) {
+					Object[] obj = (Object[]) listNum2.get(i);
+					String s = obj[0].toString();
+					dataList2 = logDao.getNewUserStatic(new Integer[] { Integer
+							.valueOf(s) });
+					// 获取30天的日期
+					List<String> dayList = DateUtils
+							.getCurrentMonthAndPreMonth();
+					String date = "";
+					String newUserCount = "";
+
+					for (int j = dayList.size() - 1; j >= 0; j--) {
+
+						if (j == -1)
+
+							break;
+
+						String day = dayList.get(j);
+
+						boolean flag = false;
+
+						if (dataList2 != null && dataList2.size() > 0) {
+
+							for (Object[] obj1 : dataList2) {
+
+								if (day.equals(String.valueOf(obj1[0]))) {
+
+									date += "\'"
+											+ DateUtils.subDate(String
+													.valueOf(obj1[0])) + "\',";
+									newUserCount += String.valueOf(obj1[1])
+											+ ",";
+									flag = true;
+								}
+							}
+						}
+						if (!flag) {
+
+							date += "\'" + DateUtils.subDate(day) + "\',";
+							newUserCount += 0 + ",";
+						}
+					}
+
+					date = date.substring(0, date.length() - 1);
+					newUserCount = newUserCount.substring(0,
+							newUserCount.length() - 1);
+					String result = date;
+					String newUserCount1 = newUserCount;
+					request.setAttribute("channel2", channel2);
+					request.setAttribute("newUserCount111", newUserCount1);
+				}
+				if (v_ids.length > 3) {
+					String channel3 = v_ids[3];
+					List listNum3 = channelDao.getChannelTrendId(channel3);
+					for (int i = 0; i < listNum3.size(); i++) {
+						Object[] obj = (Object[]) listNum3.get(i);
+						String s = obj[0].toString();
+						dataList3 = logDao
+								.getNewUserStatic(new Integer[] { Integer
+										.valueOf(s) });
+						// 获取30天的日期
+						List<String> dayList = DateUtils
+								.getCurrentMonthAndPreMonth();
+						String date = "";
+						String newUserCount = "";
+
+						for (int j = dayList.size() - 1; j >= 0; j--) {
+
+							if (j == -1)
+
+								break;
+
+							String day = dayList.get(j);
+
+							boolean flag = false;
+
+							if (dataList3 != null && dataList3.size() > 0) {
+
+								for (Object[] obj1 : dataList3) {
+
+									if (day.equals(String.valueOf(obj1[0]))) {
+
+										date += "\'"
+												+ DateUtils.subDate(String
+														.valueOf(obj1[0]))
+												+ "\',";
+										newUserCount += String.valueOf(obj1[1])
+												+ ",";
+										flag = true;
+									}
+								}
+							}
+							if (!flag) {
+
+								date += "\'" + DateUtils.subDate(day) + "\',";
+								newUserCount += 0 + ",";
+							}
+						}
+
+						date = date.substring(0, date.length() - 1);
+						newUserCount = newUserCount.substring(0,
+								newUserCount.length() - 1);
+						String result = date;
+						String newUserCount1 = newUserCount;
+						request.setAttribute("channel3", channel3);
+						request.setAttribute("newUserCount1111", newUserCount1);
+					}
+					if (v_ids.length > 4) {
+						String channel4 = v_ids[4];
+						List listNum4 = channelDao.getChannelTrendId(channel4);
+						for (int i = 0; i < listNum4.size(); i++) {
+							Object[] obj = (Object[]) listNum4.get(i);
+							String s = obj[0].toString();
+							dataList4 = logDao
+									.getNewUserStatic(new Integer[] { Integer
+											.valueOf(s) });
+							// 获取30天的日期
+							List<String> dayList = DateUtils
+									.getCurrentMonthAndPreMonth();
+							String date = "";
+							String newUserCount = "";
+
+							for (int j = dayList.size() - 1; j >= 0; j--) {
+
+								if (j == -1)
+
+									break;
+
+								String day = dayList.get(j);
+
+								boolean flag = false;
+
+								if (dataList4 != null && dataList4.size() > 0) {
+
+									for (Object[] obj1 : dataList4) {
+
+										if (day.equals(String.valueOf(obj1[0]))) {
+
+											date += "\'"
+													+ DateUtils.subDate(String
+															.valueOf(obj1[0]))
+													+ "\',";
+											newUserCount += String
+													.valueOf(obj1[1]) + ",";
+											flag = true;
+										}
+									}
+								}
+								if (!flag) {
+
+									date += "\'" + DateUtils.subDate(day)
+											+ "\',";
+									newUserCount += 0 + ",";
+								}
+							}
+
+							date = date.substring(0, date.length() - 1);
+							newUserCount = newUserCount.substring(0,
+									newUserCount.length() - 1);
+							String result = date;
+							String newUserCount1 = newUserCount;
+							request.setAttribute("channel4", channel4);
+							request.setAttribute("newUserCount11111",
+									newUserCount1);
+						}
+					}
+				}
+			}
+		}
+		List<Object> list = channelDao.getChannelTrend();
+		request.setAttribute("list", list);
+		return mapping.findForward("client_Log");
+	}
+
+	/**
+	 * 地区统计
+	 * 
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 */
+	public ActionForward toAreaStatistics(ActionMapping mapping,
+			ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_DATA_SERVER);
+
+		Channel channel = (Channel) request.getSession().getAttribute("admin");
+		List<Channel> channels = getChannel(channel.getId(),channel.getType());//页面上显示的渠道
+		request.setAttribute("channels", channels);
+
+		String channelIdStr = request.getParameter("channelId");
+		Integer channelId = null;
+		
+		if(channel.getType()==0&&channelIdStr==null){
+			channelId = channel.getId();
+		}else if(channel.getType()==0&&channelIdStr!=null){
+			channelId = Integer.parseInt(channelIdStr);
+		}
+		
+		if(channel.getType()==1&&channelIdStr!=null){
+			channelId = Integer.parseInt(channelIdStr);
+		}
+		
+		List<Object[]> list = logDao.getAreaStatistics(channelId);
+		
+		request.setAttribute("resutl", list);
+		request.setAttribute("channelId", channelId);
+		
+		return mapping.findForward("toAreaStatistics");
+	}
+
+	public ActionForward AreaStatistics(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_DATA_SERVER);
+
+		String channelId = request.getParameter("channelId");
+		String startTime = request.getParameter("startTime");
+		String endTime = request.getParameter("endTime");
+
+		Channel channel = (Channel) request.getSession().getAttribute("admin");
+		List<Channel> channelList = new ArrayList<Channel>();
+		Integer[] channelArray = null;
+
+		// 如果是管理员则读取所有渠道商列表 如果是渠道商则只读取 自己及其子渠道
+		if (channel.getType() == 1) {
+			// 如果是管理员则读取所有渠道列表
+			channelList = channelDao.getAll(null);
+		} else {
+			channelList = channelDao.getAll(channel.getId());
+			channelList.add(channel);
+			// 得到子渠道ID 集合
+			channelArray = new Integer[channelList.size()];
+			for (int i = 0; i < channelList.size(); i++) {
+				Channel temp = channelList.get(i);
+				channelArray[i] = temp.getId();
+			}
+		}
+		List<Object> list = channelDao.getAddressStatistics(
+				StringUtils.isNotEmpty(channelId) ? new Integer[] { Integer
+						.valueOf(channelId) } : channelArray, startTime,
+				endTime);
+		request.setAttribute("startTime", startTime);
+		request.setAttribute("endTime", endTime);
+		request.setAttribute("list", list);
+		request.setAttribute("channelList", channelList);
+		request.setAttribute("channelId", channelId);
+		return mapping.findForward("toAreaStatistics");
+	}
+
+	/***
+	 * 获取当月地区激活数据
+	 * 
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 */
+	public ActionForward findCurrentMonthActivate(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+
+		Channel channel = (Channel) request.getSession().getAttribute("admin");
+		Integer[] channelIdArray = null;
+		Integer channelId = channel.getType() == 1 ? null : channel.getId();
+
+		if (channel.getType() == 0) {
+
+			List<Channel> channelList = channelDao.getAll(channelId);
+			if (channelList != null && channelList.size() > 0) {
+
+				channelIdArray = new Integer[channelList.size()];
+				for (int i = 0; i < channelList.size(); i++) {
+
+					Channel temp = channelList.get(i);
+					channelIdArray[i] = temp.getId();
+				}
+			}
+			if(channelIdArray == null){
+				
+				channelIdArray = new Integer[1];
+				channelIdArray[0] = channel.getId();
+			}
+		}
+		
+		String currentRegion = (String) baseCache.get("currentMonthRegion_"
+				+ channel.getId());
+		
+		String result = "";
+
+		if(StringUtils.isEmpty(currentRegion)){
+			
+			//获取当月的1号日期
+			String startTime = DateUtils.getCurrentMonthOne();
+			String endTime = DateUtils.getDate();
+			
+			List list = logDao.getCurrentMonthRegionStatistik(channelIdArray,startTime,endTime);
+			String data = "";
+			int total = logDao.getClientLogCount(channelIdArray,startTime,endTime);
+
+			if (list != null && list.size() > 0) {
+
+				for (int i = 0; i < list.size(); i++) {
+
+					Object[] obj = (Object[]) list.get(i);
+					data += "{region:\"" + String.valueOf(obj[0])
+							+ "\",";
+					data += "count:" + String.valueOf(obj[1]) + "},";
+				}
+				data = data.substring(0, data.length() - 1);
+			}
+
+			result += "{'data' : [" + data + "],'totalCount':" + total + "}";
+			
+			if(StringUtils.isNotEmpty(data)){
+			
+				baseCache.put("currentMonthRegion_" + channel.getId(), result);
+			}
+		}else{
+			
+			result = currentRegion;
+		}
+		
+//		String name = null;
+//		String star = null;
+//		String result = "";
+//		Integer sum = 0;
+//		
+//		List<Object> list = logDao.getToday();
+//		if (list != null && list.size() > 0) {
+//			result = "[";
+//			for (int i = 0; i < list.size(); i++) {
+//				Object[] obj = (Object[]) list.get(i);
+//				if (obj[0] == null) {
+//					obj[0] = "未知地区";
+//				}
+//				name = obj[0].toString();
+//				star = obj[1].toString();
+//				result += "'" + name + "','" + star + "',";
+//				Integer item = Integer.parseInt(star);
+//				sum = item + sum;
+//			}
+//		}
+//		result += "'" + sum + "']";
+		
+		// 判断是否是异步请求 注: 为NULL则是普通请求
+		if (StringUtils.isNotEmpty(request.getParameter("isAjax"))) {
+			response.setCharacterEncoding("UTF-8");
+			try {
+				response.getWriter().write(result);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			return null;
+		}
+		
+		return null;
+	}
+
+	/**
+	 * 用户类型统计
+	 * 
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 */
+	public ActionForward getChannelType(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_ACCOUNT_MANAGER);
+
+		return mapping.findForward("getChannelType");
+	}
+	
+	/***
+	 * 删除渠道(假删除)
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 */
+	public ActionForward doDelete(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		
+		String id = request.getParameter("id");
+		
+		Channel channel = (Channel)channelDao.getById(Channel.class, Integer.valueOf(id));
+		
+		channel.setStatus(1);
+		
+		channelDao.modify(channel);
+		
+		return mapping.findForward("other");
+	}
+	
+}

@@ -1,0 +1,38 @@
+package com.usernet.product.dao;
+
+import org.apache.commons.lang.StringUtils;
+
+import com.usernet.product.comm.BaseDao;
+import com.usernet.product.entity.AppAccount;
+import com.usernet.product.utils.Page;
+import com.usernet.product.utils.PageResult;
+
+public class AppAccountDao extends BaseDao {
+
+	
+	@SuppressWarnings("unchecked")
+	public PageResult<AppAccount> getPage(Page page, Integer productId,Integer isSettlement,String time) {
+		
+		String hql = "select ap from AppAccount ap where ap.time is not null";
+		
+		if(isSettlement != null){
+			
+			hql += "  and ap.isSettlement=" + isSettlement;
+		}
+		
+		if(productId != null && productId > 0){
+			
+			hql += " and ap.product.id=" + productId;
+		}
+		
+		if(StringUtils.isNotEmpty(time)){
+			
+			hql += " and ap.time =	'" + time + "'";
+		}
+		
+		hql += " order by ap.time desc";
+			
+		return super.getAllByPageAndHql(page, hql);
+	}
+	
+}

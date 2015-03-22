@@ -1,0 +1,126 @@
+package com.usernet.product.entity;
+
+import java.io.Serializable;
+import java.util.Date;
+
+/**
+ * 推荐
+ * @author Administrator
+ *
+ */
+public class Recommend implements Serializable{
+	
+	private static final long serialVersionUID = 7570082850135553325L;
+	
+	private Integer id;
+	private String title;
+	private String msg;
+	private String briefMsg;
+	private String fromWhere;
+	private Users user;
+	private Users friend;
+	private Software software;
+	private Channel channel;
+	private Date time;
+	private Integer showFrequency;
+	private Date deadline;
+	private Integer channelId;
+	private Integer isTop = 0;
+	private String color;
+	
+	public Integer getId() {
+		return id;
+	}
+	public void setId(Integer id) {
+		this.id = id;
+	}
+	public String getTitle() {
+		return title;
+	}
+	public void setTitle(String title) {
+		this.title = title;
+	}
+	public String getMsg() {
+		return msg;
+	}
+	public void setMsg(String msg) {
+		this.msg = msg;
+	}
+	public String getBriefMsg() {
+		return briefMsg;
+	}
+	public void setBriefMsg(String briefMsg) {
+		this.briefMsg = briefMsg;
+	}
+	public String getFromWhere() {
+		return fromWhere;
+	}
+	public void setFromWhere(String fromWhere) {
+		this.fromWhere = fromWhere;
+	}
+	public Users getUser() {
+		return user;
+	}
+	public void setUser(Users user) {
+		this.user = user;
+	}
+	public Users getFriend() {
+		return friend;
+	}
+	public void setFriend(Users friend) {
+		this.friend = friend;
+	}
+	public Software getSoftware() {
+		return software;
+	}
+	public void setSoftware(Software software) {
+		this.software = software;
+	}
+	public Channel getChannel() {
+		return channel;
+	}
+	public void setChannel(Channel channel) {
+		this.channel = channel;
+	}
+	public Date getTime() {
+		return time;
+	}
+	public void setTime(Date time) {
+		this.time = time;
+	}
+	public Integer getShowFrequency() {
+		return showFrequency;
+	}
+	public void setShowFrequency(Integer showFrequency) {
+		this.showFrequency = showFrequency;
+	}
+	public Date getDeadline() {
+		return deadline;
+	}
+	public void setDeadline(Date deadline) {
+		this.deadline = deadline;
+	}
+
+	public Integer getChannelId() {
+		return channelId;
+	}
+
+	public void setChannelId(Integer channelId) {
+		this.channelId = channelId;
+	}
+	public Integer getIsTop() {
+		return isTop;
+	}
+	public void setIsTop(Integer isTop) {
+		this.isTop = isTop;
+	}
+	public String getColor() {
+		return color;
+	}
+	public void setColor(String color) {
+		this.color = color;
+	}
+	
+
+	
+}

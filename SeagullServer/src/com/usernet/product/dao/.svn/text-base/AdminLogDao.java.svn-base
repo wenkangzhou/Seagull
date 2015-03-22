@@ -1,0 +1,40 @@
+package com.usernet.product.dao;
+
+import java.util.List;
+import org.hibernate.HibernateException;
+import org.hibernate.Query;
+import org.hibernate.Session;
+import org.hibernate.Transaction;
+import com.usernet.product.comm.BaseDao;
+import com.usernet.product.entity.AdminLog;
+
+public class AdminLogDao extends BaseDao  {
+
+	public AdminLog getLastLogin(String username) {
+		
+		Session session = getSession();
+		Transaction tr = null;
+		try {
+			tr = session.beginTransaction();
+			String hql = "from AdminLog a where a.username = '" + username + "' order by a.time desc";
+			Query query = session.createQuery(hql);
+			
+			List<AdminLog> list = query.list();
+			tr.commit();
+			
+			if(list != null && list.size() > 0){
+				
+				return (AdminLog)list.get(0);
+			}else{
+				
+				return null;
+			}
+			
+		} catch (HibernateException e) {
+			if (tr != null)
+				tr.rollback();
+			//throw e;
+			return null;
+		}
+	}
+}

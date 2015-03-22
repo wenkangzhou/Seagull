@@ -1,0 +1,262 @@
+package com.usernet.product.web.action;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.sql.Timestamp;
+import java.util.Enumeration;
+import java.util.Hashtable;
+import java.util.UUID;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionForward;
+import org.apache.struts.action.ActionMapping;
+import org.apache.struts.upload.FormFile;
+
+import com.usernet.product.comm.BaseAction;
+import com.usernet.product.entity.Admin;
+import com.usernet.product.entity.App_Tab;
+import com.usernet.product.entity.Commodity_Tab;
+import com.usernet.product.entity.Information_Tab;
+import com.usernet.product.entity.Photo;
+import com.usernet.product.entity.Software;
+import com.usernet.product.tools.FileTools;
+import com.usernet.product.tools.FtpTools;
+import com.usernet.product.utils.DateUtils;
+import com.usernet.product.utils.LogConstants;
+import com.usernet.product.utils.ProductConfig;
+import com.usernet.product.utils.ProductUtils;
+
+public class PhotoAction extends BaseAction {
+
+	/**
+	 * 删除截图
+	 * 
+	 * @throws IOException
+	 */
+	public ActionForward doDelete(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response)
+			throws IOException {
+		try {
+			int id = Integer.parseInt(request.getParameter("id"));
+			Photo photo = (Photo) photoDao.getById(Photo.class, id);
+			if (photoDao.delete(photo)) {
+				String photoPath = ProductConfig.realPath + "/upload/photo/"
+						+ photo.getPhoto();
+				File file = new File(photoPath);
+				if (file.exists()) {
+					file.delete();
+				}
+				response.getWriter().write("1");
+			} else {
+				response.getWriter().write("0");
+			}
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			response.getWriter().write("0");
+		}
+		response.getWriter().flush();
+		return null;
+	}
+
+	/** 锁定截图 */
+	public ActionForward doCancle(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response)
+			throws IOException {
+		try {
+			int id = Integer.parseInt(request.getParameter("id"));
+			Photo photo = (Photo) photoDao.getById(Photo.class, id);
+			photo.setStatus(1);
+			if (photoDao.modify(photo)) {
+				response.getWriter().write("1");
+			} else {
+				response.getWriter().write("0");
+			}
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			response.getWriter().write("0");
+		}
+		return null;
+	}
+
+	/** 解锁截图 */
+	public ActionForward doOK(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response)
+			throws IOException {
+		try {
+			int id = Integer.parseInt(request.getParameter("id"));
+			Photo photo = (Photo) photoDao.getById(Photo.class, id);
+			photo.setStatus(0);
+			if (photoDao.modify(photo)) {
+				response.getWriter().write("1");
+			} else {
+				response.getWriter().write("0");
+			}
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			response.getWriter().write("0");
+		}
+		response.getWriter().flush();
+		return null;
+	}
+
+	/** 添加截图 */
+	public ActionForward doAdd(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response)
+			throws IOException {
+		int softId = Integer.parseInt(request.getParameter("softId"));
+		int flag = Integer.parseInt(request.getParameter("flag"));
+		Hashtable<?, ?> files = form.getMultipartRequestHandler()
+				.getFileElements();
+		int count = 0;
+		if (files != null & files.size() > 0) {
+			Enumeration<?> enums = files.keys();
+			String fileKey = null;
+			int i = 0;
+			String filePath = ProductConfig.realPath+ "upload/photo/"
+					+ DateUtils.getDate() + "/";
+			FileTools.createDateFile(filePath);
+			while (enums.hasMoreElements()) {
+				// 取得key
+				fileKey = (String) (enums.nextElement());
+				// 初始化每一个FormFile(接口)
+				FormFile file = (FormFile) files.get(fileKey);
+				// 分别上传
+				String name = file.getFileName();
+				if (name != null && !"".equals(name.trim())) {
+					String fileType = name.substring(name.lastIndexOf("."),
+							name.length());
+					if (!".png".equals(fileType.toLowerCase())
+							&& !".jpg".equals(fileType.toLowerCase())) {
+						request.setAttribute("msg", "已经添加成功了" + count
+								+ "张,图片类型错误,必须为PNG或JPG");
+						request.setAttribute("return",
+								"/admin/page/software_add_3.jsp&id=" + softId);
+						return mapping.findForward("admin_msg");
+					} else {
+						String photpName = UUID.randomUUID().toString();
+
+						InputStream in = file.getInputStream();
+
+						OutputStream out = new FileOutputStream(filePath
+								+ photpName);
+						out.write(file.getFileData(), 0, file.getFileSize());
+						in.close();
+						in = null;
+						out.close();
+						out = null;
+						
+						try {
+							FtpTools.uploadFtp(filePath+photpName, photpName, "photo", DateUtils.getDate());
+						} catch (Exception e) {
+							e.printStackTrace();
+						}
+						
+						Photo photo = new Photo();
+						photo.setPhoto(DateUtils.getDate() + "/" + photpName);
+						photo.setStatus(0);// 可用
+						photo.setFlag(flag);
+						photo.setSoftId(softId);
+						photo.setTime(new Timestamp(System.currentTimeMillis()));
+						int photoId = photoDao.save(photo);
+						if (photoId > 0) {
+							count++;
+						} else {
+							request.setAttribute("msg", "添加失败,(已经添加成功了" + count
+									+ "张)");
+							
+							request.setAttribute("return",
+									"software.do?method=toList");
+							
+							return mapping.findForward("admin_msg");
+						}
+					}
+				}
+				i++;
+			}
+
+		}
+		/*
+		if(soft.getIsCommodity()==1){
+			return mapping.findForward("goodsOther");
+		}
+		
+		if(soft.getType().getFlag()==7){
+			return mapping.findForward("infoOther");
+		}
+		*/
+		if(flag==1)
+		{
+			return mapping.findForward("goodsOther");
+		}
+		else if(flag==2)
+		{
+			return mapping.findForward("informationOther");
+		}
+		else
+		{
+			return mapping.findForward("other");
+		}
+	}
+	
+	public ActionForward setPhoto(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response)
+			throws IOException {
+		try{
+			String filePath = ProductConfig.realPath+ "upload/";
+			
+			int id = Integer.parseInt(request.getParameter("id"));
+			Photo photo = (Photo) photoDao.getById(Photo.class, id);
+			if(photo.getFlag()==2)
+			{
+				Information_Tab information = (Information_Tab)photoDao.getById(Information_Tab.class, photo.getSoftId());
+				information.setIcon(photo.getPhoto());
+				photoDao.modify(information);
+			}
+			
+//			photo.getSoftware().setIcon(photo.getPhoto());
+//			photoDao.modify(photo.getSoftware());
+			String path = photo.getPhoto();
+			
+			File iconMark = new File(filePath+"icon/"+path.substring(0,10));
+			
+			if(!iconMark.exists()){
+				iconMark.mkdir();
+			}
+			/*
+			File f = new File(filePath+"photo/"+photo.getPhoto());
+			File icon = new File(filePath+"icon/"+photo.getPhoto());
+			System.out.println("###:"+filePath+"photo/"+photo.getPhoto());
+			
+			FileInputStream fis = new FileInputStream(f);
+			FileOutputStream fos = new FileOutputStream(icon);
+			
+			byte[] bytes = new byte[1024];
+			int c;
+			while ((c = fis.read(bytes)) != -1) {
+				fos.write(bytes, 0, c);
+			}
+			fos.flush();
+			
+			fos.close();
+			fis.close();
+			*/
+			String newname = path.substring(path.indexOf("/")+1);
+			String date = path.substring(0, 10);
+			String filename = filePath+"icon/"+date+"/"+newname;
+			FtpTools.uploadFtp(filename,newname, "icon",date);
+			
+			response.getWriter().write("1");
+		}catch (Exception e){
+			response.getWriter().write("0");
+			e.printStackTrace();
+		}
+		return null;
+	}
+}

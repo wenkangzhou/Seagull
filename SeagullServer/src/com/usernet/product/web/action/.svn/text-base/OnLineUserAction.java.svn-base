@@ -1,0 +1,66 @@
+package com.usernet.product.web.action;
+
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+
+import org.apache.commons.lang.StringUtils;
+import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionForward;
+import org.apache.struts.action.ActionMapping;
+
+import com.opensymphony.oscache.util.StringUtil;
+import com.usernet.product.comm.BaseAction;
+import com.usernet.product.entity.Channel;
+import com.usernet.product.entity.OnLineUser;
+import com.usernet.product.utils.DateUtils;
+
+public class OnLineUserAction extends BaseAction{
+
+	public ActionForward toList(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response)
+			throws Exception {
+		String channelIdStr = request.getParameter("channelId");
+		
+		Channel admin = (Channel) request.getSession().getAttribute("admin");
+		
+		String channelId = admin.getChannel();
+		
+		String timeStr = request.getParameter("day");
+		if(StringUtil.isEmpty(timeStr)){
+			timeStr=DateUtils.getDate();
+		}
+		String hours = request.getParameter("hours");
+		String hql = "FROM OnLineUser where day = '"+timeStr+"'";
+		
+		if(admin.getType()==0){
+			hql = hql +" and channel like '%("+channelId+")%'";
+		}else if(channelIdStr!=null&&!channelIdStr.equals("0")){
+			hql = hql +" and channel like '%("+channelIdStr+")%'";
+		}
+		if(!StringUtil.isEmpty(hours)){
+			hql = hql + " and hours = "+hours;
+			request.setAttribute("hours", hours);
+		}
+		
+		hql = hql +" order by channel,hours asc";
+		
+		List<OnLineUser> list = channelDao.getAllByHql(hql);
+		
+		List<Channel> channels = getChannel(admin.getId(),admin.getType());//页面上显示的渠道
+		
+		if(admin.getType()==0){
+			channelIdStr = String.valueOf(admin.getChannel());
+		}
+		
+		request.setAttribute("channels", channels);
+		request.setAttribute("channelId", channelIdStr);
+		request.setAttribute("timeStr", timeStr);
+		request.setAttribute("list", list);
+		
+		return mapping.findForward("list");
+	}
+	
+}

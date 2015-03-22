@@ -1,0 +1,1208 @@
+package com.usernet.product.web.action;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.sql.Timestamp;
+import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.Hashtable;
+import java.util.List;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.apache.commons.beanutils.BeanUtils;
+import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionForward;
+import org.apache.struts.action.ActionMapping;
+import org.apache.struts.upload.FormFile;
+
+import com.usernet.product.comm.BaseAction;
+import com.usernet.product.entity.Channel;
+import com.usernet.product.entity.CommodityColorSize;
+import com.usernet.product.entity.Photo;
+import com.usernet.product.entity.Product;
+import com.usernet.product.entity.ProductPrice;
+import com.usernet.product.entity.Resources;
+import com.usernet.product.entity.Software;
+import com.usernet.product.entity.Type;
+import com.usernet.product.tools.APK;
+import com.usernet.product.tools.APKTools;
+import com.usernet.product.tools.FileTools;
+import com.usernet.product.tools.JSONTools;
+import com.usernet.product.tools.Property;
+import com.usernet.product.utils.DateUtils;
+import com.usernet.product.utils.Page;
+import com.usernet.product.utils.PageResult;
+import com.usernet.product.utils.ProductConfig;
+import com.usernet.product.utils.ProductUtils;
+import com.usernet.product.utils.StringUtils;
+import com.usernet.product.web.form.ProductForm;
+
+public class ProductAction extends BaseAction {
+
+	public ActionForward toList(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_ADVERT_PUT_MANAGER);
+
+		ProductForm mForm = (ProductForm) form;
+		// 2是全部
+		mForm.setIsRecommend(mForm.getIsRecommend() == 2 ? null : mForm
+				.getIsRecommend());
+		PageResult<Product> result = null;
+		Channel channel = (Channel) request.getSession().getAttribute("admin");
+		Page page = new Page();
+		// 分页信息
+		String pageNo = mForm.getPageNo();
+		String pageSize = mForm.getPageSize();
+		Integer[] intTemp = null;
+		String[] temp1 = request.getParameterValues("channelCheckBox");
+		if (temp1 != null && temp1.length > 0) {
+			List channelId = logDao.getChannelId(temp1);
+			if (channelId != null) {
+				intTemp = new Integer[channelId.size()];
+				for (int i = 0; i < channelId.size(); ++i) {
+					intTemp[i] = ((Integer) channelId.get(i)).intValue();
+				}
+			}
+		}
+		List<Channel> channelList = new ArrayList<Channel>();
+		if (pageSize != null)
+			page.setEveryPage(Integer.parseInt(pageSize.trim()));
+		if (pageNo != null)
+			page.setCurrentPage(Integer.parseInt(pageNo.trim()));
+
+		if (channel.getType() == 1) {
+			channelList = channelDao.getAll(null);
+			result = productDao.getPage(page, mForm.getName(),
+					mForm.getManufacturer(), mForm.getStatus(), null,
+					mForm.getIsRecommend(), intTemp);
+			if (result.getContent() != null) {
+				long curr = System.currentTimeMillis();
+				long m = 0;
+				for (Product c : result.getContent()) {
+					if (org.apache.commons.lang.StringUtils.isEmpty(c
+							.getContractTime())) // 无合同期限
+						continue;
+					m = DateUtils.stringToTimestampEnd(c.getContractTime())
+							.getTime() - curr;
+					c.setOver(m > ProductConfig.DAYS_TO_TIME ? 0 : (m <= 0 ? 1
+							: 2));
+				}
+			} else {
+				result = productDao.getPage(page, mForm.getName(),
+						mForm.getManufacturer(), mForm.getStatus(), null,
+						mForm.getIsRecommend(), intTemp);
+			}
+		} else if (channel.getType() == 0) {
+			channelList = channelDao
+					.getAll(channel.getParent() == null ? channel.getId()
+							: channel.getId());
+			channelList.add(channel);
+			Integer[] channelArray = new Integer[channelList.size()];
+			for (int i = 0; i < channelList.size(); i++) {
+
+				Channel temp = channelList.get(i);
+				channelArray[i] = temp.getId();
+			}
+			if (intTemp != null && intTemp.length > 0) {
+				result = productDao.getPage(page, mForm.getName(),
+						mForm.getManufacturer(), mForm.getStatus(), null,
+						mForm.getIsRecommend(), intTemp);
+			} else {
+				result = productDao.getPage(page, mForm.getName(),
+						mForm.getManufacturer(), mForm.getStatus(), null,
+						mForm.getIsRecommend(),
+						new Integer[] { Integer.valueOf(channel.getId()) });
+			}
+			if (result.getContent() != null) {
+				long curr = System.currentTimeMillis();
+				long m = 0;
+				for (Product c : result.getContent()) {
+					if (org.apache.commons.lang.StringUtils.isEmpty(c
+							.getContractTime())) // 无合同期限
+						continue;
+					m = DateUtils.stringToTimestampEnd(c.getContractTime())
+							.getTime() - curr;
+					c.setOver(m > ProductConfig.DAYS_TO_TIME ? 0 : (m <= 0 ? 1
+							: 2));
+				}
+			}
+		}
+		request.setAttribute("checkChannelIdList", temp1);
+		request.setAttribute("form", mForm);
+		request.setAttribute("channelList", channelList);
+		request.setAttribute("list", result.getContent());
+		request.setAttribute("page", result.getPage());
+		request.setAttribute("size", result.getSize());
+
+		return mapping.findForward("list");
+	}
+
+	public ActionForward toSoftList(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+
+		ProductForm mForm = (ProductForm) form;
+		// 查询条件
+		String softName = mForm.getSoftName();
+		int typeId = mForm.getTypeIds();
+		int resId = mForm.getResIds();
+		PageResult<Software> result = null;
+		Page page = new Page();
+		// 分页信息
+		String pageNo = mForm.getPageNo();
+		String pageSize = mForm.getPageSize();
+		if (pageSize != null) {
+			page.setEveryPage(Integer.parseInt(pageSize.trim()));
+		}
+		if (pageNo != null) {
+			page.setCurrentPage(Integer.parseInt(pageNo.trim()));
+		}
+		// 条件查询
+		if (softName != null || typeId != -1 || resId != -1) {
+			// 有条件
+			//result = productDao.getAllByParams(page, softName, typeId, resId,
+			//		new Integer[] { 1, 2 },null);
+		} else {
+			result = productDao.getAllByPage(page, new Integer[] { 1, 2 });
+		}
+
+		List<Type> typeList = typeDao.getAll(-1);
+		List<Resources> resourcesList = resourcesDao.getAll();
+		request.setAttribute("resourcesList", resourcesList);
+
+		request.setAttribute("form", mForm);
+		request.setAttribute("typeList", typeList);
+		request.setAttribute("list", result.getContent());
+		request.setAttribute("page", result.getPage());
+		request.setAttribute("size", result.getSize());
+		return mapping.findForward("softList");
+	}
+
+	public ActionForward toAdd0(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+
+		return mapping.findForward("add0");
+	}
+
+	public ActionForward doAdd0(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+
+		ProductForm mForm = (ProductForm) form;
+		Integer type = mForm.getSelectType();
+		if (type.intValue() == 1)
+			return mapping.findForward("add1");
+		else
+			return mapping.findForward("softs");
+	}
+
+	public ActionForward toAdd1(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+
+		return mapping.findForward("add1");
+	}
+
+	// 上传解析文件，apk及音频
+	public ActionForward doAdd1(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response)
+			throws FileNotFoundException, IOException {
+
+		ProductForm mForm = (ProductForm) form;
+		FormFile file = mForm.getIcon();
+		if (file != null && file.getFileSize() > 0) {
+			String name = file.getFileName();
+			String fileType = name.substring(name.lastIndexOf(".") + 1);
+			String datePath = DateUtils.getDate();
+			int type = FileTools.checkFileType(fileType);
+			if (type == -1) {
+				request.setAttribute("msg", "文件类型错误");
+				request.setAttribute("return", "product.do?method=toList");
+				return mapping.findForward("admin_msg");
+			} else {
+				String realPath = ProductConfig.realPath;
+				InputStream in = file.getInputStream();
+
+				String fileName = StringUtils.getUUID()
+						+ name.substring(name.lastIndexOf("."), name.length());
+				String filePath = realPath + "upload/software/" + datePath
+						+ "/";
+				String apkPath = filePath + fileName;
+				// 创建文件夹
+				FileTools.createDateFile(filePath);
+				try {
+					OutputStream out = new FileOutputStream(apkPath);
+					int fileSize = file.getFileSize();
+					String size = "";
+					// 计算文件大小
+					if (fileSize < 1024 * 1024) {
+						size = (fileSize / 1024) + "KB";
+					} else {
+						size = new DecimalFormat(".##")
+								.format((double) fileSize / (1024 * 1024))
+								+ "MB";
+					}
+					out.write(file.getFileData(), 0, fileSize);
+					in.close();
+					in = null;
+					out.close();
+					out = null;
+					APK apk = new APK();
+
+					String icon = null;
+					if (type == 0) {
+						apk = APKTools.getAPK(apkPath);
+						byte[] byteArr = APKTools.getIcon(apkPath,
+								apk.getIconPath());
+						if (byteArr != null) {
+							icon = StringUtils.getUUID();
+							String fileIconPath = realPath + "upload/icon/"
+									+ datePath + "/";
+							String iconPath = fileIconPath + icon;
+							// 创建文件夹
+							FileTools.createDateFile(fileIconPath);
+							out = new FileOutputStream(iconPath);
+							out.write(byteArr);
+							out.flush();
+							out.close();
+							out = null;
+							icon = datePath + "/" + icon;
+						}
+					} else if (type == 4)
+						icon = "music/music_icon";
+
+					apk.setType(type);
+					apk.setDownload(datePath + "/" + fileName);
+					apk.setSize(size); // 文件大小
+					apk.setIcon(icon);
+					List<Type> types = typeDao.getAll(type);
+					request.setAttribute("types", types);
+					List<Resources> resourcesList = resourcesDao.getAll();
+					request.setAttribute("resourcesList", resourcesList);
+					request.setAttribute("apk", apk); // 传递apk安装包信息
+				} catch (Exception ex) {
+					ex.printStackTrace();
+					File oldFile = new File(apkPath);
+					if (oldFile.exists()) {
+						oldFile.delete();
+					}
+				}
+			}
+		}
+
+		return mapping.findForward("add2");
+	}
+
+	// 添加应用信息
+	public ActionForward doAdd2(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+
+		String name = request.getParameter("name");
+		String version = request.getParameter("version");
+		String code = request.getParameter("code");
+		String sdk = request.getParameter("sdk");
+		String icon = request.getParameter("iconName");
+		int recommend = ProductConfig.DEFAULT_RECOMMEND; // 默认推荐顺序都为100000
+		int tops = Integer.parseInt(request.getParameter("tops"));// 不推荐和不顶置：0推荐：1；顶置：2
+		Timestamp time = new Timestamp(System.currentTimeMillis());
+		String size = request.getParameter("size");
+		String develope = request.getParameter("develope");
+		String remark = request.getParameter("remark");
+		int avg = Integer.parseInt(request.getParameter("avg"));
+		int share = Integer.parseInt(request.getParameter("share"));
+		String m = request.getParameter("money");
+		double money = 0.0;
+		if (!"".equals(m)) {
+			money = Double.parseDouble(m);
+		}
+		int count = ProductConfig.DEFAULT_DOWN_COUNT; // 默认下载次数0
+		int typeId = Integer.parseInt(request.getParameter("typeId"));
+		String download = request.getParameter("download");
+		String pinyin = ProductUtils.getFullChars(name);
+		String tag = request.getParameter("tag");
+		int recId = Integer.parseInt(request.getParameter("recId"));
+		String res = request.getParameter("res");
+		String package_ = request.getParameter("package_");
+		int status = ProductConfig.DEFAULT_AVG; // 默认状态可用
+		Channel admin = (Channel) request.getSession().getAttribute("admin");
+		String username = admin.getChannel();
+
+		Software soft = new Software();
+		soft.setName(name);
+		soft.setVersion(version);
+		soft.setCode(code);
+		soft.setSdk(sdk);
+		soft.setIcon(icon);
+		soft.setRecommend(recommend);
+		soft.setTops(tops);
+		soft.setTime(time);
+		soft.setSize(size);
+		soft.setDevelope(develope);
+		soft.setRemark(remark);
+		soft.setAvg(avg);
+		soft.setShare(share);
+		soft.setMoney(money);
+		soft.setCount(count);
+		Type type = new Type();
+		type.setId(typeId);
+		soft.setType(type);
+		soft.setDownload(download);
+		soft.setPinyin(pinyin);
+		soft.setTag(tag);
+		if (recId != 0) {
+			Resources rec = new Resources();
+			rec.setId(recId);
+			soft.setResources(rec);
+		}
+		soft.setRes(res);
+		soft.setPackage_(package_);
+		soft.setStatus(status);
+		soft.setUsername(username);
+
+		int id = productDao.save(soft);
+		if (id > 0) {
+			request.setAttribute("id", id);
+			return mapping.findForward("add3");
+		} else {
+			request.setAttribute("msg", "添加失败");
+			request.setAttribute("return", "software.do?method=toList");
+			return mapping.findForward("admin_msg");
+		}
+	}
+
+	public ActionForward toAdd3(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response)
+			throws FileNotFoundException, IOException {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_MEDIA);
+
+		request.setAttribute("id", request.getParameter("id"));
+		return mapping.findForward("add3");
+	}
+
+	// 添加截图信息
+	public ActionForward doAdd3(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response)
+			throws FileNotFoundException, IOException {
+
+		int softId = Integer.parseInt(request.getParameter("id"));
+		Hashtable<?, ?> files = form.getMultipartRequestHandler()
+				.getFileElements();
+		int count = 0;
+		if (files != null & files.size() > 0) {
+			Enumeration<?> enums = files.keys();
+			String fileKey = null;
+			int i = 0;
+			String filePath = ProductConfig.realPath + "upload/photo/"
+					+ DateUtils.getDate() + "/";
+			FileTools.createDateFile(filePath);
+			while (enums.hasMoreElements()) {
+				// 取得key
+				fileKey = (String) (enums.nextElement());
+				// 初始化每一个FormFile(接口)
+				FormFile file = (FormFile) files.get(fileKey);
+				// 分别上传
+				String name = file.getFileName();
+				if (name != null && !"".equals(name.trim())) {
+					String fileType = name.substring(name.lastIndexOf("."),
+							name.length());
+					if (!".png".equals(fileType.toLowerCase())
+							&& !".jpg".equals(fileType.toLowerCase())) {
+						request.setAttribute("msg", "已经添加成功了" + count
+								+ "张,图片类型错误,必须为PNG或JPG");
+						request.setAttribute("return",
+								"/admin/page/software_add_3.jsp&id=" + softId);
+						return mapping.findForward("admin_msg");
+					} else {
+						String photpName = StringUtils.getUUID();
+
+						InputStream in = file.getInputStream();
+
+						OutputStream out = new FileOutputStream(filePath
+								+ photpName);
+						out.write(file.getFileData(), 0, file.getFileSize());
+						in.close();
+						in = null;
+						out.close();
+						out = null;
+						Photo photo = new Photo();
+						photo.setPhoto(DateUtils.getDate() + "/" + photpName);
+						photo.setStatus(0);// 可用
+						Software soft = new Software();
+						soft.setId(softId);
+				//		photo.setSoftware(soft);
+						photo.setTime(new Timestamp(System.currentTimeMillis()));
+						int photoId = photoDao.save(photo);
+						if (photoId > 0) {
+							count++;
+						} else {
+							request.setAttribute("msg", "添加失败,(已经添加成功了" + count
+									+ "张)");
+							request.setAttribute("return",
+									"software.do?method=toList");
+							return mapping.findForward("admin_msg");
+						}
+					}
+				}
+				i++;
+			}
+		}
+		Product product = new Product();
+		product.setSoftId(softId);
+		product.setSoftName(((Software) productDao.getById(Software.class,
+				softId)).getName());
+		request.setAttribute("product", product);
+		return mapping.findForward("edit");
+	}
+
+	public ActionForward toEdit(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+
+		ProductForm mForm = (ProductForm) form;
+		Product product = mForm.getProduct();
+		String id = request.getParameter("id");
+		if (org.apache.commons.lang.StringUtils.isNotEmpty(id))
+			product = (Product) productDao.getById(Product.class,
+					Integer.parseInt(id));
+		product.setSoftName(((Software) productDao.getById(Software.class,
+				product.getSoftId())).getName());
+
+		request.setAttribute("product", product);
+		return mapping.findForward("edit");
+	}
+
+	public ActionForward save(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_MEDIA);
+
+		ProductForm mForm = (ProductForm) form;
+		Product p = mForm.getProduct();
+		Channel channel = (Channel) request.getSession().getAttribute("admin");
+		Integer channelId = channel.getId();
+		if (channel.getType() == 1) {
+			if (p.getId() != null && p.getId() != 0) {
+				Product product = (Product) productDao.getById(Product.class,
+						p.getId());
+				product.setChannelId(null);
+				try {
+					BeanUtils.copyProperties(product, p);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+				productDao.modify(product);
+			} else {
+				p.setId(null);
+				p.setChannelId(channelId);
+				productDao.save(p);
+			}
+
+		} else if (channel.getType() == 0) {
+			if (p.getId() != null && p.getId() != 0) {
+				Product product = (Product) productDao.getById(Product.class,
+						p.getId());
+				p.setChannelId(channelId);
+				try {
+					BeanUtils.copyProperties(product, p);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+				product.setChannelId(channelId);
+				productDao.modify(product);
+			} else {
+				p.setId(null);
+				p.setChannelId(channelId);
+				productDao.save(p);
+			}
+		}
+		return mapping.findForward("other");
+	}
+
+	@SuppressWarnings("unchecked")
+	public ActionForward toPhoto(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+
+		int id = Integer.parseInt(request.getParameter("id"));
+		List<Photo> photos = productDao
+				.getAllByHql("from Photo where software.id=" + id);
+
+		request.setAttribute("id", id);
+		request.setAttribute("photos", photos);
+		return mapping.findForward("photo");
+	}
+
+	/*
+	 * to修改
+	 */
+	public ActionForward toUpdate(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+
+		int id = Integer.parseInt(request.getParameter("id"));
+		Software software = (Software) productDao.getById(Software.class, id);
+		int flag = -1;
+		if (software.getType() != null) {
+			if (software.getType().getFlag() == 4
+					|| software.getType().getFlag() == 5)
+				flag = software.getType().getFlag();
+			else
+				flag = 0;
+		}
+		List<Type> types = typeDao.getAll(flag);
+		List<Resources> resourcesList = resourcesDao.getAll();
+
+		request.setAttribute("types", types);
+		request.setAttribute("resourcesList", resourcesList);
+		request.setAttribute("software", software);
+		return mapping.findForward("update");
+	}
+
+	/*
+	 * do修改
+	 */
+	public ActionForward doUpdate(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+
+		int id = Integer.parseInt(request.getParameter("id"));
+		Software software = (Software) productDao.getById(Software.class, id);
+
+		String name = request.getParameter("name");
+		String sdk = request.getParameter("sdk");
+		String develope = request.getParameter("develope");
+		String remark = request.getParameter("remark");
+		String share = request.getParameter("share");
+		String m = request.getParameter("money");
+		String typeId = request.getParameter("typeId");
+		String tag = request.getParameter("tag");
+		String recId = request.getParameter("recId");
+		String res = request.getParameter("res");
+
+		double money = 0.0;
+		if (!"".equals(m)) {
+			money = Double.parseDouble(m);
+		}
+
+		String pinyin = ProductUtils.getFullChars(name);
+		software.setName(name);
+		software.setSdk(sdk);
+		software.setDevelope(develope);
+		software.setRemark(remark);
+		software.setShare(Integer.parseInt(share));
+		software.setMoney(money);
+		Type type = new Type();
+		type.setId(Integer.parseInt(typeId));
+		software.setType(type);
+		software.setPinyin(pinyin);
+		software.setTag(tag);
+		int rid = Integer.parseInt(recId);
+		if (rid != 0) {
+			Resources rec = new Resources();
+			rec.setId(rid);
+			software.setResources(rec);
+		} else {
+			software.setResources(null);
+		}
+		software.setRes(res);
+		software.setTime(new Timestamp(System.currentTimeMillis()));// 更新时间
+
+		// 顶置推荐信息
+		int tops = Integer.parseInt(request.getParameter("tops"));
+		String recommend = request.getParameter("recommend");
+		if (!"".equals(recommend)) {
+			int recom = Integer.parseInt(recommend);
+			software.setRecommend(recom);
+		}
+		software.setTops(tops);
+		// 评分信息
+		int avg = Integer.parseInt(request.getParameter("avg"));
+		software.setAvg(avg);
+
+		if (productDao.modify(software)) {
+			return mapping.findForward("other");
+		} else {
+			request.setAttribute("msg", "修改失败");
+			request.setAttribute("return", "software.do?method=toList");
+			return mapping.findForward("admin_msg");
+		}
+	}
+
+	/** to重新上传APK */
+	public ActionForward toAPK(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+
+		int id = Integer.parseInt(request.getParameter("id"));
+		request.setAttribute("id", id);
+		return mapping.findForward("apk");
+	}
+
+	/** to重新上传ICON */
+	public ActionForward toICON(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+
+		int id = Integer.parseInt(request.getParameter("id"));
+		request.setAttribute("id", id);
+		return mapping.findForward("icon");
+	}
+
+	/** 重新上传APK */
+	public ActionForward doAPK(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response)
+			throws FileNotFoundException, IOException {
+
+		int id = Integer.parseInt(request.getParameter("id"));
+		Software software = (Software) productDao.getById(Software.class, id);
+		String oldApkPath = software.getDownload();
+		String oldIconPath = software.getIcon();
+		ProductForm mForm = (ProductForm) form;
+		FormFile file = mForm.getIcon();
+		if (file != null && file.getFileSize() > 0) {
+			String name = file.getFileName();
+			String fileType = name.substring(name.lastIndexOf(".") + 1);
+			String datePath = DateUtils.getDate();
+			int type = FileTools.checkFileType(fileType);
+			if (type == -1) {
+				request.setAttribute("msg", "应用类型错误,必须为APK");
+				request.setAttribute("return", "software.do?method=toList");
+				return mapping.findForward("admin_msg");
+			} else {
+				String realPath = ProductConfig.realPath;
+				InputStream in = file.getInputStream();
+
+				String fileName = StringUtils.getUUID()
+						+ name.substring(name.lastIndexOf("."), name.length());
+				String filePath = realPath + "upload/software/" + datePath
+						+ "/";
+				String apkPath = filePath + fileName;
+				// 创建文件夹
+				FileTools.createDateFile(filePath);
+				try {
+					OutputStream out = new FileOutputStream(apkPath);
+					int fileSize = file.getFileSize();
+					String size = "";
+					// 计算文件大小
+					if (fileSize < 1024 * 1024) {
+						size = (fileSize / 1024) + "KB";
+					} else {
+						size = new DecimalFormat(".##")
+								.format((double) fileSize / (1024 * 1024))
+								+ "MB";
+					}
+					out.write(file.getFileData(), 0, fileSize);
+					in.close();
+					in = null;
+					out.close();
+					out = null;
+					APK apk = new APK();
+
+					String icon = null;
+					if (type == 0) {
+						apk = APKTools.getAPK(apkPath);
+						byte[] byteArr = APKTools.getIcon(apkPath,
+								apk.getIconPath());
+						if (byteArr != null) {
+							icon = StringUtils.getUUID();
+							String fileIconPath = realPath + "upload/icon/"
+									+ datePath + "/";
+							String iconPath = fileIconPath + icon;
+							// 创建文件夹
+							FileTools.createDateFile(fileIconPath);
+							out = new FileOutputStream(iconPath);
+							out.write(byteArr);
+							out.flush();
+							out.close();
+							out = null;
+							icon = datePath + "/" + icon;
+						}
+					} else if (type == 4)
+						icon = "music_icon";
+					// 以下为要修改的信息
+					software.setSize(size); // 文件大小
+					software.setIcon(icon);
+					software.setDownload(datePath + "/" + fileName);
+					software.setPackage_(apk.getPackageName());
+					software.setCode(apk.getVersionCode());
+					software.setVersion(apk.getVersionName());
+					software.setSdk(apk.getSdkVersion());
+					software.setTime(new Timestamp(System.currentTimeMillis()));
+
+					if (productDao.modify(software)) {
+						File oldApk = new File(ProductConfig.realPath
+								+ "upload/software/" + oldApkPath);
+						if (oldApk.exists()) {
+							oldApk.delete();
+						}
+						File oldIcon = new File(ProductConfig.realPath
+								+ "upload/icon/" + oldIconPath);
+						if (oldIcon.exists()) {
+							oldIcon.delete();
+						}
+						return mapping.findForward("other");
+					}
+				} catch (Exception ex) {
+					ex.printStackTrace();
+				}
+			}
+		}
+
+		request.setAttribute("msg", "重新上传失败");
+		request.setAttribute("return", "software.do?method=toList");
+		return mapping.findForward("admin_msg");
+	}
+
+	/** 重新上传ICON */
+	public ActionForward doICON(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response)
+			throws FileNotFoundException, IOException {
+
+		int id = Integer.parseInt(request.getParameter("id"));
+		Software software = (Software) productDao.getById(Software.class, id);
+		String oldIconPath = software.getIcon();
+		ProductForm mForm = (ProductForm) form;
+		FormFile file = mForm.getIcon();
+		if (file != null && file.getFileSize() > 0) {
+			String name = file.getFileName();
+			String fileType = name.substring(name.lastIndexOf("."),
+					name.length());
+			if (!".png".equals(fileType.toLowerCase())
+					&& !".jpg".equals(fileType.toLowerCase())) {
+				request.setAttribute("msg", "应用类型错误,必须为png或jpg");
+				request.setAttribute("return", "software.do?method=toList");
+				return mapping.findForward("admin_msg");
+			} else {
+				try {
+					String realPath = ProductConfig.realPath + "upload/icon/"
+							+ DateUtils.getDate() + "/";
+					// 创建文件
+					FileTools.createDateFile(realPath);
+					InputStream in = file.getInputStream();
+					String fileName = StringUtils.getUUID();
+					OutputStream out = new FileOutputStream(realPath + fileName);
+					out.write(file.getFileData(), 0, file.getFileSize());
+					in.close();
+					in = null;
+					out.close();
+					out = null;
+
+					// 一下为要修改的信息
+					software.setIcon(DateUtils.getDate() + "/" + fileName);
+					software.setTime(new Timestamp(System.currentTimeMillis()));
+
+					if (productDao.modify(software)) {
+						File oldIcon = new File(ProductConfig.realPath
+								+ "upload/icon/" + oldIconPath);
+						if (oldIcon.exists()) {
+							oldIcon.delete();
+						}
+						return mapping.findForward("other");
+					}
+				} catch (Exception ex) {
+					ex.printStackTrace();
+				}
+			}
+		}
+		request.setAttribute("msg", "重新上传ICON失败");
+		request.setAttribute("return", "software.do?method=toList");
+		return mapping.findForward("admin_msg");
+	}
+
+	public ActionForward toPriceList(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+
+		ProductForm mForm = (ProductForm) form;
+
+		Page page = new Page();
+		// 分页信息
+		String pageNo = mForm.getPageNo();
+		String pageSize = mForm.getPageSize();
+		if (pageSize != null)
+			page.setEveryPage(Integer.parseInt(pageSize.trim()));
+		if (pageNo != null)
+			page.setCurrentPage(Integer.parseInt(pageNo.trim()));
+
+		PageResult<ProductPrice> result = productDao.getPricePage(page, mForm
+				.getProduct().getId(),
+				mForm.getYear() == null ? 0 : mForm.getYear());
+
+		Product product = (Product) productDao.getById(Product.class, mForm
+				.getProduct().getId());
+		Software soft = (Software) productDao.getById(Software.class,
+				product.getSoftId());
+		mForm.setSoftName(soft.getName());
+
+		request.setAttribute("form", mForm);
+		request.setAttribute("product", product);
+		request.setAttribute("list", result.getContent());
+		request.setAttribute("page", result.getPage());
+		request.setAttribute("size", result.getSize());
+
+		return mapping.findForward("priceList");
+	}
+
+	public ActionForward toPrice(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+
+		ProductForm mForm = (ProductForm) form;
+		String id = request.getParameter("id");
+		Product product = (Product) productDao.getById(Product.class, mForm
+				.getProduct().getId());
+		if (org.apache.commons.lang.StringUtils.isNotEmpty(id)) {
+			mForm.setPrice((ProductPrice) productDao.getById(
+					ProductPrice.class, Integer.parseInt(id)));
+			String[] time = mForm.getPrice().getTime().split("-");
+			mForm.setYear(Integer.parseInt(time[0]));
+			mForm.setMonth(Integer.parseInt(time[1]));
+		}
+		mForm.setSoftName(((Software) productDao.getById(Software.class,
+				product.getSoftId())).getName());
+		mForm.getPrice().setProductId(mForm.getProduct().getId());
+
+		request.setAttribute("form", mForm);
+		request.setAttribute("product", product);
+		request.setAttribute("price", mForm.getPrice());
+		return mapping.findForward("price");
+	}
+
+	/** 保存产品单价 */
+	public ActionForward doPrice(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+
+		ProductForm mForm = (ProductForm) form;
+		ProductPrice price = mForm.getPrice();
+		price.setTime(mForm.getYear()
+				+ "-"
+				+ (mForm.getMonth() < 10 ? "0" + mForm.getMonth() : mForm
+						.getMonth()));
+		boolean isExist = productDao.checkPrice(price.getProductId(),
+				price.getTime(), price.getId());
+		if (isExist) {
+			request.setAttribute("price", price);
+			request.setAttribute("form", mForm);
+			request.setAttribute("errMsg", "产品在所选择的时间已存在单价");
+			return mapping.findForward("price");
+		}
+		if (price.getId() != null && price.getId().intValue() != 0) {
+			ProductPrice p = (ProductPrice) productDao.getById(
+					ProductPrice.class, price.getId());
+			p.setTime(price.getTime());
+			p.setPrice(price.getPrice());
+			p.setOperateMode(price.getOperateMode());
+			productDao.modify(p);
+		} else
+			productDao.save(price);
+		ActionForward forward = new ActionForward(
+				"product.do?method=toPriceList&product.id="
+						+ price.getProductId());
+		forward.setRedirect(true);
+		return forward;
+	}
+
+	/***
+	 * 检查增值产品是否已经添加过
+	 * 
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 * @throws IOException
+	 */
+	public ActionForward checkProductIsExist(ActionMapping mapping,
+			ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) throws IOException {
+
+		String softId = request.getParameter("softId");
+		int i = productDao.checkProductIsExist(Integer.valueOf(softId));
+
+		response.setCharacterEncoding("UTF-8");
+		response.getWriter().write(String.valueOf(i));
+
+		return null;
+	}
+
+	// 去增值产品统计页面
+	public ActionForward toProductStatistics(ActionMapping mapping,
+			ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_DATA_SERVER);
+
+		ProductForm mForm = (ProductForm) form;
+		request.setAttribute("form", mForm);
+		return mapping.findForward("productStatistics");
+	}
+
+	// 统计增值产品
+	public ActionForward productStatistics(ActionMapping mapping,
+			ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_DATA_SERVER);
+
+		ProductForm mForm = (ProductForm) form;
+
+		String startTime = request.getParameter("startTime");
+		String endTime = request.getParameter("endTime");
+		String softName = request.getParameter("softName");
+
+		Channel admin = (Channel) request.getSession().getAttribute("admin");
+//		List<Channel> channels = channelDao.getAll(admin.getType() == 0 ? admin
+//				.getId() : null);
+
+		List<Channel> channels = getChannel(admin.getId(),admin.getType());//页面上显示的渠道
+		
+		Integer[] channelIdArray = getChannelsArray(request, admin);
+		
+		List productList = (List) productDao.getAllByStatistics(channelIdArray, softName,
+				startTime, endTime);
+
+		request.setAttribute("form", mForm);
+		request.setAttribute("channels", channels);
+		request.setAttribute("list", productList);
+		return mapping.findForward("productStatistics");
+	}
+
+	// 去增值产品下载趋势页面
+	public ActionForward toProductDownloadTrend(ActionMapping mapping,
+			ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_DATA_SERVER);
+
+		Channel admin = (Channel) request.getSession().getAttribute("admin");
+		List<Channel> channels = channelDao.getAll(admin.getType() == 0 ? admin
+				.getId() : null);
+
+		request.setAttribute("channels", channels);
+		return mapping.findForward("productDownloadTrend");
+	}
+
+	// 增值产品下载趋势图
+	public ActionForward doProductDownloadTrend(ActionMapping mapping,
+			ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) throws IOException {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_DATA_SERVER);
+
+		String softName = request.getParameter("softName");
+		String channelId = request.getParameter("channelIdArray");
+
+		Channel admin = (Channel) request.getSession().getAttribute("admin");
+		String[] channelIdArray = null;
+		if (org.apache.commons.lang.StringUtils.isNotEmpty(channelId)) {
+
+			if (channelId.indexOf(",") > 0) {
+
+				channelIdArray = channelId.split(",");
+			} else {
+
+				channelIdArray = new String[] { channelId };
+			}
+		} else {
+
+			// 如果是渠道商则默认只显示自己渠道和子渠道的数据
+			if (admin.getType() == 0) {
+
+				List<Channel> channelList = channelDao.getAll(admin.getId());
+				if (channelList != null && channelList.size() > 0) {
+
+					channelIdArray = new String[channelList.size()];
+					for (int i = 0; i < channelList.size(); i++) {
+
+						Channel temp = channelList.get(i);
+						channelIdArray[i] = String.valueOf(temp.getId());
+					}
+				} else {
+
+					channelIdArray = new String[] { String.valueOf(admin
+							.getId()) };
+				}
+			}
+		}
+
+		List<Object[]> dataList = (List) productDao.getProductDownloadTrend(
+				channelIdArray, softName);
+
+		// 获取30天的日期
+		List<String> dayList = DateUtils.getCurrentMonthAndPreMonth();
+		String result = "";
+		String date = "";
+		String productDownloadCount = "";
+
+		for (int i = dayList.size() - 1; i >= 0; i--) {
+
+			if (i == -1)
+				break;
+
+			String day = dayList.get(i);
+
+			boolean flag = false;
+
+			if (dataList != null && dataList.size() > 0) {
+
+				for (Object[] obj : dataList) {
+
+					if (day.equals(String.valueOf(obj[0]))) {
+
+						date += "\'"
+								+ DateUtils.subDate(String.valueOf(obj[0]))
+								+ "\',";
+						productDownloadCount += String.valueOf(obj[1]) + ",";
+						flag = true;
+					}
+				}
+
+			}
+			if (!flag) {
+
+				date += "\'" + DateUtils.subDate(day) + "\',";
+				productDownloadCount += 0 + ",";
+			}
+		}
+		date = date.substring(0, date.length() - 1);
+		productDownloadCount = productDownloadCount.substring(0,
+				productDownloadCount.length() - 1);
+
+		result += "{'date' : [" + date + "],productDownloadCount : ["
+				+ productDownloadCount + "]}";
+
+		response.setCharacterEncoding("UTF-8");
+		response.getWriter().write(result);
+
+		return null;
+	}
+
+	/**
+	 * 根据ID获取应用 暂时用于推送应用
+	 * 
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 * @throws IOException
+	 */
+	public ActionForward getSoftwareById(ActionMapping mapping,
+			ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) throws IOException {
+
+		String downloadPath = Property.getPara("resources", "download_path");
+		String imagesPath = Property.getPara("resources", "images_path");
+
+		String softId = request.getParameter("softId");
+		String flag = request.getParameter("flag");
+
+		// Software sw = (Software) productDao.getById(Software.class,
+		// Integer.valueOf(softId));
+		StringBuilder sb = new StringBuilder();
+		
+		List list = softwareDao.getSoftwareById(Integer.valueOf(softId),Integer.valueOf(flag));
+		
+		
+		if (list != null && list.size() > 0) {
+
+			Object[] obj = (Object[]) list.get(0);
+			int flag1 = Integer.valueOf(String.valueOf(obj[0]));
+			
+			sb.append("{flag:");
+			sb.append(flag1);
+			sb.append(",softId:");
+			sb.append(obj[1]);
+			sb.append(",url:\"");
+			sb.append(obj[8]);
+			sb.append("\",name:\"");
+			String name = JSONTools.string2Json(String.valueOf(obj[3])).toString();
+			if(flag1 == 1 || flag1 == 2){
+				
+				name += ".apk";
+			}
+			sb.append(name);
+			sb.append("\",content:\"");
+			sb.append(JSONTools.string2Json(String.valueOf(obj[4])));
+			sb.append("\",download:\"");
+			sb.append(downloadPath + String.valueOf(obj[5]));
+			sb.append("\",pushIcon:\"");
+			sb.append(obj[6] == null ? "" : obj[6]);
+			sb.append("\",phoneNumber:\"");
+			sb.append(obj[7]);
+			sb.append("\",url:\"");
+			sb.append(obj[8]);
+			sb.append("\",fromSource:\"");
+			sb.append(obj[9]);
+			sb.append("\",isChannel:");
+			sb.append(obj[10] == null ? 0 : 1);
+			sb.append(",issave:0");
+			sb.append(",existImg:");
+			sb.append(obj[11]);
+			sb.append(",time:\"");
+			sb.append(obj[12]);
+			sb.append("\",isCommodity:");
+			int isCommodity = String.valueOf(obj[13]).equals("true") ? 1 : 0;
+			sb.append(isCommodity);
+
+			if (isCommodity == 1) {
+
+				sb.append(",isPanicBuying:");
+				sb.append(String.valueOf(obj[14]).equals("true") ? 1 : 0);
+				sb.append(",originalPrice:");
+				sb.append(obj[15]);
+				sb.append(",currentPrice:");
+				sb.append(obj[16]);
+				sb.append(",discount:");
+				sb.append(obj[17] == null ? 0.0 : obj[17]);
+				if (obj[19] != null) {
+
+					long surplusTime = ((Timestamp)obj[19]).getTime() - System.currentTimeMillis();
+					sb.append(",surplusTime:");
+					sb.append(surplusTime);
+				}
+				sb.append(",colorSize:[");
+				// 颜色尺码
+				List<CommodityColorSize> colorSizeList = softwareDao
+						.findCommodityColorSizeByCommdityId(Integer.valueOf(String.valueOf(obj[1])));
+				for (int i = 0; i < colorSizeList.size(); i++) {
+
+					CommodityColorSize colorSize = colorSizeList.get(i);
+					sb.append("\"" + colorSize.getColor() + " " + colorSize.getSize() + "\"");
+					if (i < colorSizeList.size() - 1) {
+						sb.append(",");
+					}
+				}
+				
+
+				sb.append("]");
+				sb.append(",count:"+obj[21]);
+			}
+			sb.append(",isWebContent:");
+			sb.append(obj[20]);
+			sb.append("}");
+		}
+		System.out.println("##:"+sb.toString());
+		log.info("得到推送文字");
+		response.setCharacterEncoding("UTF-8");
+		response.getWriter().write(sb.toString());
+		return null;
+	}
+
+	// 逻辑删除
+	public ActionForward doDeletedByLogic(ActionMapping mapping,
+			ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_MEDIA);
+		String id = request.getParameter("id");
+		Product product = (Product) productDao.getById(Product.class,
+				Integer.parseInt(id));
+
+		product.setDeleted(1);
+
+		Software sf = product.getSoftware();
+		sf.setStatus(1);
+
+		productDao.modify(sf);
+		productDao.modify(product);
+
+		return mapping.findForward("other");
+	}
+}

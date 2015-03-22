@@ -1,0 +1,50 @@
+package com.usernet.product.entity;
+
+import java.sql.Timestamp;
+import java.util.Date;
+
+public class MicroBlogUser implements java.io.Serializable {
+	private static final long serialVersionUID = 2528266176717099240L;
+	
+	private Integer id;
+
+	private String name;
+	/**
+	 * 多个标签ID使用','隔开
+	 */
+	private String tag_id;
+	
+	private Timestamp time = new Timestamp(new Date().getTime());
+	
+	public Integer getId() {
+		return id;
+	}
+
+	public void setId(Integer id) {
+		this.id = id;
+	}
+
+	public String getTag_id() {
+		return tag_id;
+	}
+
+	public void setTag_id(String tag_id) {
+		this.tag_id = tag_id;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public Timestamp getTime() {
+		return time;
+	}
+
+	public void setTime(Timestamp time) {
+		this.time = time;
+	}
+}

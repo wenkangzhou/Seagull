@@ -1,0 +1,114 @@
+package com.usernet.product.web.action;
+
+import java.sql.Timestamp;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.commons.lang.StringUtils;
+import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionForward;
+import org.apache.struts.action.ActionMapping;
+
+import com.usernet.product.comm.BaseAction;
+import com.usernet.product.entity.ConfigBase;
+import com.usernet.product.utils.Page;
+import com.usernet.product.utils.PageResult;
+import com.usernet.product.utils.ProductConfig;
+import com.usernet.product.web.form.ConfigBaseForm;
+
+public class ConfigBaseAction extends BaseAction {
+
+	public ActionForward toAdd(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+
+		return mapping.findForward("toAdd");
+	}
+
+	public ActionForward doAdd(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		ConfigBaseForm mForm = (ConfigBaseForm) form;
+		String property = mForm.getProperty();
+		String value = mForm.getValue();
+		ConfigBase configBase = new ConfigBase();
+		configBase.setProperty(property);
+		configBase.setValue(value);
+		configBase.setTime(new Timestamp(System.currentTimeMillis()));
+		
+		configBaseDao.save(configBase);
+		
+		return mapping.findForward("other");
+	}
+
+	public ActionForward toEdit(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		ConfigBaseForm mForm = (ConfigBaseForm) form;
+		Integer id = mForm.getId();
+		ConfigBase configBase = (ConfigBase) configBaseDao.getById(ConfigBase.class, id);
+		
+		request.setAttribute("item", configBase);
+		return mapping.findForward("toEdit");
+	}
+
+	public ActionForward doEdit(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		ConfigBaseForm mForm = (ConfigBaseForm) form;
+		Integer id = mForm.getId();
+		
+		ConfigBase configBase = (ConfigBase) configBaseDao.getById(ConfigBase.class, id);
+		
+		String property = mForm.getProperty();
+		String value = mForm.getValue();
+		
+		configBase.setProperty(property);
+		configBase.setValue(value);
+		
+		configBaseDao.modify(configBase);
+		
+		return mapping.findForward("other");
+	}
+	
+	public ActionForward toList(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_SYSTEM_MANAGER);
+		
+		ConfigBaseForm mForm = (ConfigBaseForm) form;
+		
+		PageResult<ConfigBase> result = null;
+		Page page = new Page();
+		// 分页信息
+		String pageNo = mForm.getPageNo();
+		String pageSize = mForm.getPageSize();
+		if (pageSize != null) {
+			page.setEveryPage(Integer.parseInt(pageSize.trim()));
+		}
+		if (pageNo != null) {
+			page.setCurrentPage(Integer.parseInt(pageNo.trim()));
+		}
+		
+		result = configBaseDao.getAllByPage(page, mForm.getProperty());
+		
+		request.setAttribute("form", mForm);
+		request.setAttribute("list", result.getContent());
+		request.setAttribute("page", result.getPage());
+		request.setAttribute("size", result.getSize());
+		
+		return mapping.findForward("list");
+	}
+
+	public ActionForward doDelete(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+
+		String id = request.getParameter("id");
+		if (StringUtils.isNotEmpty(id)) {
+			
+			ConfigBase configBase = new ConfigBase();
+			configBase.setId(Integer.valueOf(id));
+			configBaseDao.delete(configBase);
+		}
+
+		return mapping.findForward("other");
+	}
+
+}

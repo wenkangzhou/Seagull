@@ -1,0 +1,91 @@
+/*圆形样式*/
+.audiojs { 
+    margin: 10px 10px 10px;
+    width:286px;
+ }
+em { 
+    font-style: normal; 
+    color: #b1aca0; 
+    padding-right: 3px; 
+}
+/*圆形样式*/
+span::-moz-selection{
+    background:#4ca5ab;
+    color:#fff;
+}
+span::selection {
+    background:#4ca5ab;
+    color:#fff;
+    }
+::-moz-selection{
+    background:#bedb5b;
+    color:#fefbea;
+}
+::selection {
+    background:#bedb5b;
+    color:#fefbea;
+}
+.round_bg {
+    /*background: none repeat scroll 0 0 #FFFFFF;*/
+    border-radius: 300px 300px 300px 300px;
+    height: 300px;
+    opacity: 0.4;
+    position: absolute;
+    width: 300px;
+    z-index: 1;
+}
+.round_wrapper img{
+	border-radius: 300px 300px 300px 300px;
+	width: 300px;
+	height:300px;
+}
+/*图片滚动停止*/
+.round_wrapper img{
+    -webkit-animation-delay:0s; 
+    -webkit-animation: swing 30.5s infinite linear;
+    -webkit-animation-play-state:paused;
+}
+/*图片滚动开始*/
+.round_wrapper_Go img{
+    -webkit-animation-delay:0s; 
+    -webkit-animation: swing 30.5s infinite linear;
+    -webkit-animation-play-state:running;
+}
+/*歌曲描述信息*/
+.track-details {
+    clear: both;
+    text-align: center;
+    height: 20px;
+    width: 290px;
+    padding: 1px 6px;
+    background: #eee;
+    color: #222;
+    font-family: monospace;
+    font-size: 11px;
+    line-height: 20px;
+    -webkit-box-shadow: inset 1px 1px 5px rgba(0, 0, 0, 0.15);
+    -moz-box-shadow: inset 1px 1px 5px rgba(0, 0, 0, 0.15);
+}
+/*播放提示*/
+.tips {
+    clear: both;
+    height: 20px;
+    width: 290px;
+    color: rgba(9, 131, 243, 0.61);
+    font-size: 12px;
+    text-align: center;
+    margin-top: 5px;
+}
+/*播放加载*/
+.jq-controls-loading{
+    margin-left: 23px;
+    margin-top: 23px;
+}
+/*旋转帧*/
+@-webkit-keyframes swing 
+{
+    0%   {-webkit-transform: rotate(0deg);}
+    /*25%  {-webkit-transform: rotate(120deg);}
+    50%  {-webkit-transform: rotate(240deg);}*/
+    100% {-webkit-transform: rotate(360deg);}
+}

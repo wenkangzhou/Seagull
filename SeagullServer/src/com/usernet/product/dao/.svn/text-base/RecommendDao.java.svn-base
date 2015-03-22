@@ -1,0 +1,150 @@
+package com.usernet.product.dao;
+
+import java.util.Date;
+import java.util.List;
+
+import org.hibernate.Query;
+import org.hibernate.Session;
+import org.hibernate.Transaction;
+
+import com.usernet.product.comm.BaseDao;
+import com.usernet.product.entity.Product;
+import com.usernet.product.entity.Recommend;
+import com.usernet.product.utils.DateUtils;
+import com.usernet.product.utils.Page;
+import com.usernet.product.utils.PageResult;
+import com.usernet.product.utils.ProductConfig;
+import com.usernet.product.utils.ProductUtils;
+
+public class RecommendDao extends BaseDao {
+	/**
+	 * 查询
+	 * 
+	 * @return
+	 */
+	public PageResult<Recommend> RecommendList(Page page, String title,Integer[] id) {
+
+		String hql = "select r from Recommend r where 1=1";
+		
+		if(title!=null){
+			hql += " and r.title like '%"+ title +"%'";
+		}
+		
+		if (id != null) {
+			hql += " and (r.channel.id=" + id[0];
+			for (int i = 1; i < id.length; i++) {
+				hql += " OR r.channel.id = " + id[i];
+			}
+			hql +=" )";
+		}
+
+		hql += " order by r.isTop desc,r.time desc";
+		return super.getAllByPageAndHql(page, hql);
+	}
+
+	/**
+	 * 过期日期推荐
+	 * 
+	 * @return
+	 */
+	public PageResult<Recommend> expiredRecommendList(Page page, Integer[] id) {
+
+		String hql = "select r from Recommend r where r.deadline < '"
+				+ DateUtils.getToday(new Date()) + "'";
+
+		if (id != null) {
+
+			hql += " and (channelId=" + id[0] + "";
+
+			for (int i = 1; i < id.length; i++) {
+
+				hql += " OR channelId = " + id[i];
+			}
+			hql += ");";
+		}
+
+		hql += "order by time desc";
+		return super.getAllByPageAndHql(page, hql);
+	}
+
+	/***
+	 * 修改推荐数据
+	 * @param recommend
+	 */
+	public void updateRecommend(Recommend recommend) {
+
+		Session session = getSession();
+		Transaction tr = null;
+		try {
+			tr = session.beginTransaction();
+
+			session.update(recommend);
+			tr.commit();
+		} catch (Exception ex) {
+			if (tr != null)
+				tr.rollback();
+			ex.printStackTrace();
+		}
+	}
+
+	/**
+	 * 删除一条数据
+	 * 
+	 * @param id
+	 * @return
+	 */
+	public int deleteRecommend(Integer id) {
+		Session session = getSession();
+		Transaction tr = null;
+		try {
+			tr = session.beginTransaction();
+
+			String hql = "delete Recommend where id = " + id;
+			Query query = session.createQuery(hql);
+			int num = query.executeUpdate();
+			tr.commit();
+			return num;
+		} catch (Exception ex) {
+			if (tr != null)
+				tr.rollback();
+			ex.printStackTrace();
+			return 0;
+		}
+	}
+	
+	public void updateRecommendMsgBySoftwareId(Integer softwareId,String msg,String title,String develope){
+		String hql = "FROM Recommend AS r where r.software.id = "+softwareId;
+		
+		List<Recommend> l = this.getAllByHql(hql);
+		for(Recommend r:l){
+			r.setMsg(msg);
+			r.setBriefMsg(msg.length()>150?msg.substring(0,150):msg);
+			r.setTitle(title);
+			r.setFromWhere(develope);
+			this.modify(r);
+		}
+	}
+	
+	public void updateRecommendMsgBySoftwareId(Integer softwareId,String msg,String title){
+		updateRecommendMsgBySoftwareId(softwareId, msg, title,ProductConfig.FORM);
+	}
+	
+	public int getTopNum(String channelId) {
+		Session session = getSession();
+		Transaction tr = null;
+		try {
+			tr = session.beginTransaction();
+
+			String hql = "select count(*) from Recommend where isTop >0 and channelId = "+channelId;
+			Query query = session.createQuery(hql);
+			int num = (Integer) query.uniqueResult();
+			tr.commit();
+			return num;
+		} catch (Exception ex) {
+			if (tr != null)
+				tr.rollback();
+			ex.printStackTrace();
+			return -1;
+		}
+	}
+}

@@ -1,0 +1,59 @@
+package com.usernet.product.web.action;
+
+import java.io.IOException;
+import java.sql.Timestamp;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.log4j.Logger;
+import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionForward;
+import org.apache.struts.action.ActionMapping;
+import org.apache.struts.actions.DispatchAction;
+
+import com.usernet.product.dao.ConfigBaseDao;
+import com.usernet.product.entity.ConfigBase;
+
+import weibo4j.Oauth;
+import weibo4j.model.WeiboException;
+
+public class WeiboOAuthAction extends DispatchAction {
+	private static Logger logger = Logger.getLogger(WeiboOAuthAction.class);
+	public ActionForward getCode(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response)
+			throws IOException, WeiboException {
+		Oauth oauth = new Oauth();
+		String url = oauth.authorize("code");
+		request.setAttribute("url", url);
+		
+		return mapping.findForward("code");
+	}
+	
+	public ActionForward getKey(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response)
+			throws IOException {
+		Oauth oauth = new Oauth();
+		String message = "操作完成";
+		
+		
+		String code = request.getParameter("code").trim();
+		String key;
+		try {
+			key = oauth.getAccessTokenByCode(code).getAccessToken();
+			logger.info(key);
+			ConfigBaseDao configBaseDao = new ConfigBaseDao();
+			ConfigBase configBase = configBaseDao.getAllByProperty("sinaCode");
+			configBase.setProperty("sinaCode");
+			configBase.setValue(key);
+			configBase.setTime(new Timestamp(System.currentTimeMillis()));
+
+			configBaseDao.modify(configBase);
+		} catch (WeiboException e) {
+			message = "出现错误，请重新操作";
+			e.printStackTrace();
+		}
+		request.setAttribute("message", message);
+		return mapping.findForward("key");
+	}
+}

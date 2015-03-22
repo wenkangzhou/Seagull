@@ -1,0 +1,271 @@
+package com.usernet.product.dao;
+
+import java.util.List;
+
+import org.apache.commons.lang.StringUtils;
+import org.hibernate.HibernateException;
+import org.hibernate.Query;
+import org.hibernate.Session;
+import org.hibernate.Transaction;
+import com.usernet.product.comm.BaseDao;
+import com.usernet.product.utils.Page;
+import com.usernet.product.utils.PageResult;
+
+public class ChannelPvDao extends BaseDao {
+
+	/***
+	 * 根据渠道和时间获取PV浏览数
+	 * @param channelId
+	 * @param time
+	 * @return
+	 */
+	public int findAllPvCount(Integer[] channelIdArray,String time,Boolean isIndependenceIp){
+		
+		Session session = getSession();
+		Transaction tr = null;
+		try {
+			tr = session.beginTransaction();
+			
+			StringBuilder hql = new StringBuilder();
+			
+			if(isIndependenceIp == true)
+				hql.append(" select count(s.c) from (");
+			
+			hql.append("select count(*) as c from Channel_Pv where id is not null");
+			if(StringUtils.isNotEmpty(time)){
+				
+				hql.append(" and time = '" + time + "'");
+			}
+			if (channelIdArray != null && channelIdArray.length > 0) {
+
+				hql.append(" and (channelId = " + channelIdArray[0]);
+				for (int i = 1; i < channelIdArray.length; i++) {
+
+					hql.append(" OR channelId = " + channelIdArray[i]);
+				}
+				hql.append(" )");
+			}
+			
+			if(isIndependenceIp == true)
+				hql.append(" group by ip ) s");
+			
+			
+			Query query = session.createSQLQuery(hql.toString());
+			int count = (Integer) query.uniqueResult();
+			
+			tr.commit();
+			return count;
+		} catch (Exception ex) {
+			if (tr != null)
+				tr.rollback();
+			ex.printStackTrace();
+			return 0;
+		}
+	}
+	
+	/***
+	 * 数据PV统计
+	 * @param timeTime
+	 * @param endTime
+	 * @param name
+	 * @return
+	 */
+	public List SoftPvStatistics(String startTime,String endTime,String name,int flag){
+		
+		StringBuffer sb = new StringBuffer();
+		sb.append("select top 50 s.name,count(cp.id) as spv,");
+		//独立IP
+		sb.append(" (select count(*) from (select count(p.ip) as ip from channel_pv p  where p.soft_id = s.id ");
+		
+		if(StringUtils.isNotEmpty(startTime)){
+			
+			sb.append(" and p.time >= '" + startTime + "'");
+		}
+		if(StringUtils.isNotEmpty(endTime)){
+			
+			sb.append(" and p.time <= '" + endTime + "'");
+		}
+		sb.append(" group by p.ip) as ipNum) as ipCount");
+		
+		//独立用户
+		sb.append(" ,(select count(*) from (select count(p.user_id) as uid from channel_pv p  where p.soft_id = s.id ");
+		
+		if(StringUtils.isNotEmpty(startTime)){
+			
+			sb.append(" and p.time >= '" + startTime + "'");
+		}
+		if(StringUtils.isNotEmpty(endTime)){
+			
+			sb.append(" and p.time <= '" + endTime + "'");
+		}
+		sb.append(" group by p.user_id) as userNum) as userCount");
+		//收藏数
+		sb.append(",(select count(*) from collect_soft where softid = s.id) as collectCount");
+		
+		sb.append(" from software s ");
+		sb.append(" inner join channel_pv cp on cp.soft_id = s.id");
+		sb.append(" inner join type t on t.id = s.typeId");
+		
+		if(StringUtils.isNotEmpty(name) || StringUtils.isNotEmpty(startTime) || StringUtils.isNotEmpty(endTime)){
+			
+			sb.append(" where s.id is not null");
+		}
+
+		if(StringUtils.isNotEmpty(name)){
+			
+			sb.append(" and s.name like '%" + name + "%'");
+		}
+		if(StringUtils.isNotEmpty(startTime)){
+			
+			sb.append(" and cp.time >= '" + startTime + "'");
+		}
+		
+		if(StringUtils.isNotEmpty(endTime)){
+			
+			sb.append(" and cp.time <= '" + endTime + "'");
+		}
+		if(flag == 8){
+			
+			sb.append(" and s.isCommodity = 1");
+		}
+		if(flag != 0 && flag != 8){
+			
+			sb.append(" and t.flag = " + flag);
+		}
+		sb.append(" group by s.id,s.name");
+		sb.append(" order by ipCount desc");
+		return super.getAllByPageAndSql(sb.toString());
+	}
+	/***
+	 * 资讯PV统计
+	 * @param timeTime
+	 * @param endTime
+	 * @param name
+	 * @return
+	 */
+	public List InformationPvStatistics(String startTime,String endTime,String name){
+		
+		StringBuffer sb = new StringBuffer();
+		sb.append("select top 50 s.title,count(cp.id) as spv,");
+		//独立IP
+		sb.append(" (select count(*) from (select count(p.ip) as ip from channel_pv p  where p.soft_id = s.id and p.flag=2");
+		
+		if(StringUtils.isNotEmpty(startTime)){
+			
+			sb.append(" and p.time >= '" + startTime + "'");
+		}
+		if(StringUtils.isNotEmpty(endTime)){
+			
+			sb.append(" and p.time <= '" + endTime + "'");
+		}
+		sb.append(" group by p.ip) as ipNum) as ipCount");
+		
+		//独立用户
+		sb.append(" ,(select count(*) from (select count(p.user_id) as uid from channel_pv p  where p.soft_id = s.id and p.flag=2");
+		
+		if(StringUtils.isNotEmpty(startTime)){
+			
+			sb.append(" and p.time >= '" + startTime + "'");
+		}
+		if(StringUtils.isNotEmpty(endTime)){
+			
+			sb.append(" and p.time <= '" + endTime + "'");
+		}
+		sb.append(" group by p.user_id) as userNum) as userCount");
+		sb.append(" from information_tab s ");
+		sb.append(" inner join channel_pv cp on cp.soft_id = s.id where flag=2 ");
+		
+		if(StringUtils.isNotEmpty(name) || StringUtils.isNotEmpty(startTime) || StringUtils.isNotEmpty(endTime)){
+			
+			sb.append(" and  s.id is not null");
+		}
+
+		if(StringUtils.isNotEmpty(name)){		
+			sb.append(" and s.title like '%" + name + "%'");
+		}
+		if(StringUtils.isNotEmpty(startTime)){
+			
+			sb.append(" and cp.time >= '" + startTime + "'");
+		}
+		
+		if(StringUtils.isNotEmpty(endTime)){
+			
+			sb.append(" and cp.time <= '" + endTime + "'");
+		}
+		sb.append(" group by s.id,s.title");
+		sb.append(" order by ipCount desc");
+		return super.getAllByPageAndSql(sb.toString());
+	}
+	/***
+	 * 商品PV统计
+	 * @param timeTime
+	 * @param endTime
+	 * @param name
+	 * @return
+	 */
+	public List CommodityPvStatistics(String startTime,String endTime,String name){
+		
+		StringBuffer sb = new StringBuffer();
+		sb.append("select top 50 s.name,count(cp.id) as spv,");
+		//独立IP
+		sb.append(" (select count(*) from (select count(p.ip) as ip from channel_pv p  where p.soft_id = s.id and flag=1 ");
+		
+		if(StringUtils.isNotEmpty(startTime)){
+			
+			sb.append(" and p.time >= '" + startTime + "'");
+		}
+		if(StringUtils.isNotEmpty(endTime)){
+			
+			sb.append(" and p.time <= '" + endTime + "'");
+		}
+		sb.append(" group by p.ip) as ipNum) as ipCount");
+		
+		//独立用户
+		sb.append(" ,(select count(*) from (select count(p.user_id) as uid from channel_pv p  where p.soft_id = s.id and flag=1 ");
+		
+		if(StringUtils.isNotEmpty(startTime)){
+			
+			sb.append(" and p.time >= '" + startTime + "'");
+		}
+		if(StringUtils.isNotEmpty(endTime)){
+			
+			sb.append(" and p.time <= '" + endTime + "'");
+		}
+		sb.append(" group by p.user_id) as userNum) as userCount");
+		sb.append(" from commodity_tab s ");
+		sb.append(" inner join channel_pv cp on cp.soft_id = s.id where  flag=1");
+		
+		if(StringUtils.isNotEmpty(name) || StringUtils.isNotEmpty(startTime) || StringUtils.isNotEmpty(endTime)){
+			
+			sb.append(" and s.id is not null");
+		}
+
+		if(StringUtils.isNotEmpty(name)){		
+			sb.append(" and s.name like '%" + name + "%'");
+		}
+		if(StringUtils.isNotEmpty(startTime)){
+			
+			sb.append(" and cp.time >= '" + startTime + "'");
+		}
+		
+		if(StringUtils.isNotEmpty(endTime)){
+			
+			sb.append(" and cp.time <= '" + endTime + "'");
+		}
+		sb.append(" group by s.id,s.name");
+		sb.append(" order by ipCount desc");
+		return super.getAllByPageAndSql(sb.toString());
+	}	
+	public PageResult findPvBySoftId(Integer soft_id,Page page,Integer flag){
+		String hql = "";
+		if(flag==2)
+		{
+			hql = "select s.title,c.channel,pv.ip,pv.time,pv.imei from channel_pv as pv,channel as c,information_tab as s where pv.channelid=c.id and pv.soft_id=s.id and s.id ="+soft_id+" order by time desc";
+		}
+		else
+		{
+			hql = "select s.name,c.channel,pv.ip,pv.time,pv.imei from channel_pv as pv,channel as c,software as s where pv.channelid=c.id and pv.soft_id=s.id and s.id ="+soft_id+" order by time desc";
+		}
+		return super.getAllByPageAndSql(page,hql);
+	}
+}

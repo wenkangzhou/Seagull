@@ -1,0 +1,41 @@
+package com.usernet.product.dao;
+
+import java.util.List;
+
+import org.apache.commons.lang.StringUtils;
+
+import com.usernet.product.comm.BaseDao;
+import com.usernet.product.entity.ConfigBase;
+import com.usernet.product.utils.Page;
+import com.usernet.product.utils.PageResult;
+
+public class ConfigBaseDao extends BaseDao  {
+
+	@SuppressWarnings("unchecked")
+	public PageResult<ConfigBase> getAllByPage(Page page,String keyword) {
+		
+		String hql = "from ConfigBase where 1=1";
+		if(StringUtils.isNotEmpty(keyword)){
+			
+			hql += " and  property like '%" + keyword + "%'";
+		}
+		hql += " order by time DESC " ;
+		return super.getAllByPageAndHql(page,hql);
+	} 
+	
+	public ConfigBase getAllByProperty(String property) {
+		
+		String hql = "from ConfigBase";
+		if(StringUtils.isNotEmpty(property)){
+			
+			hql += " where property = '" + property + "'";
+		}
+		@SuppressWarnings("rawtypes")
+		List l = (List) super.getAllByHql(hql);
+		ConfigBase base = null;
+		if(l!=null&&!l.isEmpty()){
+			base = (ConfigBase) l.get(0);
+		}
+		return base;
+	} 
+}

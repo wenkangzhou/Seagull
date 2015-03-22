@@ -1,0 +1,61 @@
+package com.usernet.product.web.form;
+
+import com.usernet.product.comm.BaseForm;
+
+public class StatForm extends BaseForm{
+	private Integer pageNo;
+	private Integer pageSize;
+	private String time;
+	private Integer day;
+	
+	private Integer t_id;
+	private Integer goodsId;
+	
+	public Integer getPageNo() {
+		if(pageNo==null||pageNo==0){
+			pageNo=1;
+		}
+		return pageNo;
+	}
+	public void setPageNo(Integer pageNo) {
+		this.pageNo = pageNo;
+	}
+	public Integer getPageSize() {
+		if(pageSize==null||pageSize==0){
+			pageSize=200;
+		}
+		return pageSize;
+	}
+	
+	public void setPageSize(Integer pageSize) {
+		this.pageSize = pageSize;
+	}
+	public void setTime(String time) {
+		this.time = time;
+	}
+	public String getTime() {
+		return time;
+	}
+	public void setDay(Integer day) {
+		this.day = day;
+	}
+	public Integer getDay() {
+		if(day==null||day==0){
+			day=1;
+		}
+		return day;
+	}
+	public void setT_id(Integer t_id) {
+		this.t_id = t_id;
+	}
+	public Integer getT_id() {
+		return t_id;
+	}
+	public void setGoodsId(Integer goodsId) {
+		this.goodsId = goodsId;
+	}
+	public Integer getGoodsId() {
+		return goodsId;
+	}
+	
+}

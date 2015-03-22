@@ -1,0 +1,187 @@
+package com.usernet.product.web.action;
+
+import java.io.IOException;
+import java.sql.Timestamp;
+import java.util.List;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionForward;
+import org.apache.struts.action.ActionMapping;
+import com.usernet.product.comm.BaseAction;
+import com.usernet.product.entity.Channel;
+import com.usernet.product.entity.ClientPushMessage;
+import com.usernet.product.entity.Push;
+import com.usernet.product.entity.Software;
+import com.usernet.product.utils.AndroidPnService;
+import com.usernet.product.utils.Page;
+import com.usernet.product.utils.PageResult;
+import com.usernet.product.utils.ProductConfig;
+import com.usernet.product.web.form.PushForm;
+
+public class PushAction extends BaseAction{
+	
+	public ActionForward toAdd(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_MEDIA);
+		PushForm mForm = (PushForm) form;
+		String type = mForm.getType();
+		// 查询条件
+		String softName = mForm.getName();
+
+		PageResult<Software> result = null;
+		Page page = new Page();
+		// 分页信息
+		String pageNo = mForm.getPageNo();
+		String pageSize = mForm.getPageSize();
+		if (pageSize != null) {
+			page.setEveryPage(Integer.parseInt(pageSize.trim()));
+		}
+		if (pageNo != null) {
+			page.setCurrentPage(Integer.parseInt(pageNo.trim()));
+		}
+		if("sp".equals(type)){
+			result = productDao.getGoodsOrInfo(page, softName, "1");
+		}else{
+			if (softName != null) {
+				// 有条件
+				result = productDao.getAllBySoftware(page, softName, -1, -1,
+						new Integer[] { Integer.valueOf(type) },null);
+			} else {
+				result = productDao.getAllByPage(page, new Integer[] { Integer.valueOf(type) });
+			}
+		}
+		Channel channel = (Channel) request.getSession().getAttribute("admin");
+		List<Channel> channels = getChannel(channel.getId(),channel.getType());//页面上显示的渠道
+		request.setAttribute("channels", channels);
+		
+		request.setAttribute("type", type);
+		request.setAttribute("form", mForm);
+		request.setAttribute("list", result.getContent());
+		request.setAttribute("page", result.getPage());
+		request.setAttribute("size", result.getSize());
+		
+		return mapping.findForward("toAdd");
+	}
+	
+	public ActionForward doAdd(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		PushForm mForm = (PushForm) form;
+		Integer action = mForm.getAction();
+		Integer[] softId = mForm.getSoftId();
+		String channel = mForm.getChannel();
+		//同一action,channelID内只能推送一个
+		if (pushDao.isRePush(action, channel,mForm.getDay())) {
+			
+			pushDao.insertAll(action,channel,softId, mForm.getDay());
+		}else{
+			
+			return mapping.findForward("error");
+		}
+		return mapping.findForward("other");
+	}
+
+	public ActionForward toEdit(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		PushForm mForm = (PushForm) form;
+		Integer id = mForm.getId();
+		Push push = (Push) pushDao.getById(Push.class, id);
+		
+		request.setAttribute("push", push);
+		return mapping.findForward("toEdit");
+	}
+	
+	public ActionForward doEdit(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		PushForm mForm = (PushForm) form;
+		Integer id = mForm.getId();
+		Integer action = mForm.getAction();
+		Push push = (Push) pushDao.getById(Push.class, id);
+		push.setAction(action);
+		push.setDay(mForm.getDay());
+		
+		pushDao.modify(push);
+		return mapping.findForward("other");
+	}
+	
+	public ActionForward toList(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		PushForm mForm = (PushForm) form;
+		String sName=mForm.getName();
+		List<Push> list = pushDao.getAll(sName);	
+		request.setAttribute("list", list);
+		request.setAttribute("form", mForm);
+		return mapping.findForward("list");
+	}
+
+	public ActionForward doDelete(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		PushForm mForm = (PushForm) form;
+		Integer id = mForm.getId();
+		pushDao.delete(pushDao.getById(Push.class, id));
+		return mapping.findForward("other");
+	}
+	
+	/***
+	 * 推送接口 
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 * @throws IOException 
+	 */
+	public ActionForward pushInterface(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) throws IOException {
+		
+		String title = request.getParameter("title");
+		String message = request.getParameter("message");
+		String channel = request.getParameter("channel");
+		String softId = request.getParameter("softId");
+		String twoGOR3GisDownload = request.getParameter("twoGOR3GisDownload");
+		twoGOR3GisDownload = twoGOR3GisDownload == null ? "0" : twoGOR3GisDownload;
+		
+		AndroidPnService.sendToUser(channel, title, message, softId,twoGOR3GisDownload);
+		
+		Channel ch = (Channel)channelDao.getChannelByChannel(channel);
+		ClientPushMessage pushMessage = new ClientPushMessage();
+		pushMessage.setTime(new Timestamp(System.currentTimeMillis()));
+		pushMessage.setSoftware((Software)softwareDao.getById(Software.class, Integer.valueOf(softId)));
+		pushMessage.setChannelId(ch == null ? 0 : ch.getId());
+		clientPushMessageDao.save(pushMessage);
+		
+		response.setCharacterEncoding("UTF-8");
+		response.getWriter().write("推送成功");
+		
+		return null;
+	}
+	
+	/***
+	 * 推送接口 
+	 */
+	public ActionForward pushInterfaceByImei(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) throws IOException {
+		
+		String title = request.getParameter("title");
+		String message = request.getParameter("message");
+		String imei = request.getParameter("imei");
+		String twoGOR3GisDownload = request.getParameter("twoGOR3GisDownload");
+		twoGOR3GisDownload = twoGOR3GisDownload == null ? "0" : twoGOR3GisDownload;
+		
+		imei = imei.trim();
+		imei = imei.replace("，", ",");
+		String[] imeis = imei.split(",");
+		
+		for(String i:imeis){
+			if(!"".equals(i)){
+				AndroidPnService.sendByImei(i.trim(), title, message,twoGOR3GisDownload);
+			}
+		}
+		
+		response.setCharacterEncoding("UTF-8");
+		response.getWriter().write("推送成功");
+		
+		return null;
+	}
+}

@@ -1,0 +1,231 @@
+package com.usernet.product.dao;
+
+import java.util.List;
+
+import org.hibernate.Query;
+import org.hibernate.Session;
+
+import com.usernet.product.comm.BaseDao;
+import com.usernet.product.comm.HibernateSessionFactory;
+import com.usernet.product.utils.DateUtils;
+import com.usernet.product.utils.Page;
+import com.usernet.product.utils.PageResult;
+import com.usernet.product.utils.PageUtils;
+
+public class StatDao extends BaseDao {
+	
+	public PageResult openNote(Page page,String time){
+		String sql = 
+		"select u.id,u.niceName,u.imei,u.address,u.mobile,v.num "+
+		"from users u , "+
+		"(select count(imei) num,imei from reback Where Convert(varchar(10),[time],120) = :time group by imei ) v "+
+		"where v.imei = u.imei "+
+		"order by v.num desc";
+		
+		String countSql = 
+			"select count(1) from "+
+			"(select imei from reback Where Convert(varchar(10),[time],120) = :time group by imei) as v";
+		
+		Session session = HibernateSessionFactory.getSessionFactory().openSession();
+		try{
+			Query q = session.createSQLQuery(countSql);
+			q.setString("time", time);
+			
+			Integer count = (Integer) q.uniqueResult();
+			page = PageUtils.createPage(page, count);
+			
+			q = session.createSQLQuery(sql);
+			q.setString("time", time);
+			
+			q.setFirstResult(page.getBeginIndex());
+			q.setMaxResults(page.getEveryPage());
+			
+			List content = q.list();
+			
+			return new PageResult(page, content);
+		}catch (Exception e) {
+			e.printStackTrace();
+		}finally{
+			session.close();
+		}
+		return null;
+	}
+	
+	public PageResult openContinuouNote(Page page,Integer day){
+		String d = DateUtils.getBeDay(day);
+		String sql = 
+		"select u.id,u.niceName,u.imei,u.address,u.mobile,v.num "+
+		"from users u , "+
+		"(select count(imei) num,imei from reback Where Convert(varchar(10),[time],120) > :day group by imei ) v "+
+		"where v.imei = u.imei "+
+		"order by v.num desc";
+		
+		String countSql = 
+			"select count(1) from "+
+			"(select imei from reback Where Convert(varchar(10),[time],120) > :day group by imei) as v";
+		
+		Session session = HibernateSessionFactory.getSessionFactory().openSession();
+		try{
+			Query q = session.createSQLQuery(countSql);
+			q.setString("day", d);
+			
+			Integer count = (Integer) q.uniqueResult();
+			page = PageUtils.createPage(page, count);
+			
+			q = session.createSQLQuery(sql);
+			q.setString("day", d);
+			
+			q.setFirstResult(page.getBeginIndex());
+			q.setMaxResults(page.getEveryPage());
+			
+			List content = q.list();
+			
+			return new PageResult(page, content);
+		}catch (Exception e) {
+			e.printStackTrace();
+		}finally{
+			session.close();
+		}
+		return null;
+	}
+	
+	public PageResult notUseNote(Page page,Integer day){
+		String d = DateUtils.getBeDay(day);
+		d = d +" 00:00:00";
+		String sql = 
+		"select u.id,u.niceName,u.imei,u.address,u.mobile "+
+		"from users as u "+
+		"where imei not in "+
+		"(select imei from reback Where [time]>:time)";
+		
+		String countSql = 
+		"(select count(1) "+
+		"from users as u "+
+		"where imei not in "+
+		"(select imei from reback Where [time]>:time))";
+		
+		Session session = HibernateSessionFactory.getSessionFactory().openSession();
+		try{
+			Query q = session.createSQLQuery(countSql);
+			q.setString("time", d);
+			
+			Integer count = (Integer) q.uniqueResult();
+			page = PageUtils.createPage(page, count);
+			
+			q = session.createSQLQuery(sql);
+			q.setString("time", d);
+			
+			q.setFirstResult(page.getBeginIndex());
+			q.setMaxResults(page.getEveryPage());
+			
+			List content = q.list();
+			
+			return new PageResult(page, content);
+		}catch (Exception e) {
+			e.printStackTrace();
+		}finally{
+			session.close();
+		}
+		return null;
+	}
+	
+	public PageResult typeClick(Page page,Integer t_id){
+		String sql = 
+		"select s.id,user_id,s.name,c.time from "+
+		"channel_pv as c,software as s,software_tag as st "+
+		"where s.id = st.s_id and c.soft_id = s.id and st.t_id = :t_id";
+		
+		String countSql = 
+		"select count(1) from "+
+		"channel_pv as c,software as s,software_tag as st "+
+		"where s.id = st.s_id and c.soft_id = s.id and st.t_id = :t_id";
+		
+		Session session = HibernateSessionFactory.getSessionFactory().openSession();
+		try{
+			Query q = session.createSQLQuery(countSql);
+			q.setInteger("t_id", t_id);
+			
+			Integer count = (Integer) q.uniqueResult();
+			page = PageUtils.createPage(page, count);
+			
+			q = session.createSQLQuery(sql);
+			q.setInteger("t_id", t_id);
+			
+			q.setFirstResult(page.getBeginIndex());
+			q.setMaxResults(page.getEveryPage());
+			
+			List content = q.list();
+			
+			return new PageResult(page, content);
+		}catch (Exception e) {
+			e.printStackTrace();
+		}finally{
+			session.close();
+		}
+		return null;
+	}
+	
+	public PageResult goodsClick(Page page,Integer goodsId){
+		String sql = 
+		"select pv.user_id,pv.ip,pv.time,u.niceName,u.address,u.mobile from channel_pv as pv,users as u "+
+		"where soft_id = :goodsId and pv.user_id = u.id";
+		
+		String countSql = 
+		"select count(1) from channel_pv as pv,users as u "+
+		"where soft_id = :goodsId and pv.user_id = u.id";
+		
+		Session session = HibernateSessionFactory.getSessionFactory().openSession();
+		try{
+			Query q = session.createSQLQuery(countSql);
+			q.setInteger("goodsId", goodsId);
+			
+			Integer count = (Integer) q.uniqueResult();
+			page = PageUtils.createPage(page, count);
+			
+			q = session.createSQLQuery(sql);
+			q.setInteger("goodsId", goodsId);
+			
+			q.setFirstResult(page.getBeginIndex());
+			q.setMaxResults(page.getEveryPage());
+			
+			List content = q.list();
+			
+			return new PageResult(page, content);
+		}catch (Exception e) {
+			e.printStackTrace();
+		}finally{
+			session.close();
+		}
+		return null;
+	}
+	
+	public PageResult getTypeClickNum(Page page){
+		
+		String sql = "select t_name,pvm.pv,uvm.uv from tag t,";
+		sql+="(select c.CATEGORY_ID,count(c.IP) as pv  from CATEGORY_CLICK_TAB c group by c.CATEGORY_ID) pvm ,";
+		sql+="(select c.CATEGORY_ID,COUNT(distinct(c.ip)) as uv from CATEGORY_CLICK_TAB c  group by c.CATEGORY_ID) uvm";
+		sql+=" where uvm.CATEGORY_ID=t.id and pvm.CATEGORY_ID=t.id";
+		
+		String countSql = "select count(t_name) from tag t,";
+		countSql+="(select c.CATEGORY_ID,count(c.IP) as pv  from CATEGORY_CLICK_TAB c group by c.CATEGORY_ID) pvm ,";
+		countSql+="(select c.CATEGORY_ID,COUNT(distinct(c.ip)) as uv from CATEGORY_CLICK_TAB c  group by c.CATEGORY_ID) uvm";
+		countSql+=" where uvm.CATEGORY_ID=t.id and pvm.CATEGORY_ID=t.id";
+		
+		Session session = HibernateSessionFactory.getSessionFactory().openSession();
+		try{	
+			Query q = session.createSQLQuery(countSql);	
+			Integer count = (Integer) q.uniqueResult();
+			page = PageUtils.createPage(page, count);
+			q = session.createSQLQuery(sql);
+			q.setFirstResult(page.getBeginIndex());
+			q.setMaxResults(page.getEveryPage());	
+			List content = q.list();
+			return new PageResult(page, content);
+		}catch (Exception e) {
+			e.printStackTrace();
+		}finally{
+			session.close();
+		}
+		return null;
+	}
+}

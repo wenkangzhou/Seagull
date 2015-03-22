@@ -1,0 +1,53 @@
+package com.usernet.product.entity;
+
+import java.sql.Timestamp;
+
+public class TaskFinish implements java.io.Serializable {
+	private static final long serialVersionUID = -6854566594067729209L;
+
+	private Integer id;
+	private Integer taskId;
+	private Integer userId;
+	private Timestamp finishTime;
+
+	public TaskFinish() {
+	}
+
+	public TaskFinish(Integer taskId, Integer userId, Timestamp finishTime) {
+		this.taskId = taskId;
+		this.userId = userId;
+		this.finishTime = finishTime;
+	}
+
+	public Integer getId() {
+		return this.id;
+	}
+
+	public void setId(Integer id) {
+		this.id = id;
+	}
+
+	public Integer getTaskId() {
+		return taskId;
+	}
+
+	public void setTaskId(Integer taskId) {
+		this.taskId = taskId;
+	}
+
+	public Integer getUserId() {
+		return userId;
+	}
+
+	public void setUserId(Integer userId) {
+		this.userId = userId;
+	}
+
+	public Timestamp getFinishTime() {
+		return finishTime;
+	}
+
+	public void setFinishTime(Timestamp finishTime) {
+		this.finishTime = finishTime;
+	}
+}

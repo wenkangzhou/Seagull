@@ -1,0 +1,83 @@
+package com.usernet.product.web.form;
+
+import org.apache.struts.upload.FormFile;
+
+import com.usernet.product.comm.BaseForm;
+
+public class LogForm extends BaseForm {
+	private static final long serialVersionUID = 4451729817495441435L;
+	private String pageNo;
+	private String pageSize;
+
+	private Integer channelId;
+	private String  modelName;
+	private String  startTime;
+	private String  endTime;
+	private String  channelName;
+	private String  manufacturer;
+	private String  orderBy;
+	private FormFile file;
+	
+	public String getPageNo() {
+		return pageNo;
+	}
+	public void setPageNo(String pageNo) {
+		this.pageNo = pageNo;
+	}
+	public String getPageSize() {
+		return pageSize;
+	}
+	public void setPageSize(String pageSize) {
+		this.pageSize = pageSize;
+	}
+	public Integer getChannelId() {
+		return channelId;
+	}
+	public void setChannelId(Integer channelId) {
+		this.channelId = channelId;
+	}
+	public String getModelName() {
+		return modelName;
+	}
+	public void setModelName(String modelName) {
+		this.modelName = modelName;
+	}
+	public String getStartTime() {
+		return startTime;
+	}
+	public void setStartTime(String startTime) {
+		this.startTime = startTime;
+	}
+	public String getEndTime() {
+		return endTime;
+	}
+	public void setEndTime(String endTime) {
+		this.endTime = endTime;
+	}
+	public String getChannelName() {
+		return channelName;
+	}
+	public void setChannelName(String channelName) {
+		this.channelName = channelName;
+	}
+	public String getManufacturer() {
+		return manufacturer;
+	}
+	public void setManufacturer(String manufacturer) {
+		this.manufacturer = manufacturer;
+	}
+	public String getOrderBy() {
+		return orderBy;
+	}
+	public void setOrderBy(String orderBy) {
+		this.orderBy = orderBy;
+	}
+	public FormFile getFile() {
+		return file;
+	}
+	public void setFile(FormFile file) {
+		this.file = file;
+	}
+
+	
+}

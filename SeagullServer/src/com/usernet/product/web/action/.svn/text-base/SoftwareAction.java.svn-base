@@ -1,0 +1,648 @@
+package com.usernet.product.web.action;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.sql.Timestamp;
+import java.text.DecimalFormat;
+import java.util.Enumeration;
+import java.util.Hashtable;
+import java.util.List;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionForward;
+import org.apache.struts.action.ActionMapping;
+import org.apache.struts.upload.FormFile;
+import org.hibernate.HibernateException;
+import org.hibernate.Query;
+import org.hibernate.Session;
+import org.hibernate.Transaction;
+
+import com.opensymphony.oscache.util.StringUtil;
+import com.usernet.product.comm.BaseAction;
+import com.usernet.product.comm.HibernateSessionFactory;
+import com.usernet.product.entity.App_Tab;
+import com.usernet.product.entity.Channel;
+import com.usernet.product.entity.Photo;
+import com.usernet.product.entity.Type;
+import com.usernet.product.tools.APK;
+import com.usernet.product.tools.APKTools;
+import com.usernet.product.tools.FileTools;
+import com.usernet.product.tools.FtpTools;
+import com.usernet.product.utils.DateUtils;
+import com.usernet.product.utils.MakeFileHash;
+import com.usernet.product.utils.Page;
+import com.usernet.product.utils.PageResult;
+import com.usernet.product.utils.ProductConfig;
+import com.usernet.product.utils.StringUtils;
+import com.usernet.product.web.form.SoftwareForm;
+
+public class SoftwareAction extends BaseAction {
+
+	public ActionForward toList(ActionMapping mapping, ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) {
+		super.settingCurrentNavigation(request.getSession(), ProductConfig.PAGE_MEDIA);	
+		SoftwareForm mForm = (SoftwareForm) form;
+		// 查询条件
+		String softName = mForm.getSoftName();
+		int typeId = mForm.getTypeIds();
+		int isTops = mForm.getIsTops();
+		int isUsed = mForm.getIsUsed();
+		Channel channel = (Channel) request.getSession().getAttribute("admin");
+		Integer[] channelIdArray = getChannelsArray(request, channel);
+		List<Channel> channels = getChannel(channel.getId(),channel.getType());//页面上显示的渠道
+		request.setAttribute("channels", channels);
+		PageResult<App_Tab> result = null;
+		Page page = new Page();
+		// 分页信息
+		String pageNo = mForm.getPageNo();
+		String pageSize = mForm.getPageSize();
+		if (pageSize != null) {
+			page.setEveryPage(Integer.parseInt(pageSize.trim()));
+		}
+		if (pageNo != null) {
+			page.setCurrentPage(Integer.parseInt(pageNo.trim()));
+		}
+		result = appTabDao.getAllByParams(page, softName, typeId, isTops, isUsed, channelIdArray);
+		List<Type> typeList = typeDao.getAll(-1);
+		request.setAttribute("form", mForm);
+		request.setAttribute("typeList", typeList);
+		request.setAttribute("list", result.getContent());
+		request.setAttribute("page", result.getPage());
+		request.setAttribute("size", result.getSize());
+		return mapping.findForward("list");
+	}
+
+	public ActionForward toAdd1(ActionMapping mapping, ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) {
+		return mapping.findForward("add1");
+	}
+
+	// 上传解析文件，apk及音频
+	public ActionForward doAdd1(ActionMapping mapping, ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) throws FileNotFoundException, IOException {	
+		SoftwareForm mForm = (SoftwareForm) form;
+		FormFile file = mForm.getIcon();
+		if (file != null && file.getFileSize() > 0) {
+			String name = file.getFileName();
+			String fileType = name.substring(name.lastIndexOf(".") + 1);
+			String datePath = DateUtils.getDate();
+		   // if(!fileType.toLowerCase().equals("apk"))
+				   
+			int type = FileTools.checkFileType(fileType);
+			if (type == -1) {
+				request.setAttribute("msg", "文件类型错误");
+				request.setAttribute("return", "software.do?method=toList");
+				return mapping.findForward("admin_msg");
+			} else {
+				String realPath = ProductConfig.realPath;
+				InputStream in = file.getInputStream();
+				String fileName = StringUtils.getUUID() + name.substring(name.lastIndexOf("."), name.length());
+				String filePath = realPath + "upload/software/" + datePath + "/";
+				String apkPath = filePath + fileName;
+				// 创建文件夹
+				FileTools.createDateFile(filePath);
+				try {
+					OutputStream out = new FileOutputStream(apkPath);
+					int fileSize = file.getFileSize();
+					String size = "";
+					// 计算文件大小
+					if (fileSize < 1024 * 1024) {
+						size = (fileSize / 1024) + "KB";
+					} else {
+						size = new DecimalFormat(".##").format((double) fileSize / (1024 * 1024)) + "MB";
+					}
+					out.write(file.getFileData(), 0, fileSize);
+					in.close();
+					in = null;
+					out.close();
+					out = null;			
+					try {
+						FtpTools.uploadFtp(filePath+fileName, fileName, "software", DateUtils.getDate());
+					} catch (Exception e) {
+						e.printStackTrace();
+					}			
+					APK apk = new APK();			
+					String icon = null;
+					if (type == 0) {
+					//	apk = APKTools.getAPK(apkPath);//正式库打开这句
+//                      for测试					
+						apk.setIcon("XX1");
+						apk.setName("XX2");
+						apk.setVersionCode("XX3");
+						apk.setVersionName("XX4");					
+						apk.setFileSize(String.valueOf(file.getFileSize()));
+						byte[] byteArr = APKTools.getIcon(apkPath, apk.getIconPath());
+						if (byteArr != null) {
+							icon = StringUtils.getUUID();
+							String fileIconPath = realPath + "upload/icon/" + datePath + "/";
+							String iconPath = fileIconPath + icon;
+							// 创建文件夹
+							FileTools.createDateFile(fileIconPath);
+							out = new FileOutputStream(iconPath);
+							out.write(byteArr);
+							out.flush();
+							out.close();
+							out = null;		
+							try {
+								FtpTools.uploadFtp(iconPath, icon, "icon", DateUtils.getDate());
+							} catch (Exception e) {
+								e.printStackTrace();
+							}
+							
+							icon = datePath + "/" + icon;
+						}
+					} else if (type == 4)
+						icon = "music/music_icon";			
+					apk.setType(type);
+					apk.setDownload(datePath + "/" + fileName);
+					apk.setFileSize(String.valueOf(file.getFileSize()));
+					//生成文件哈希码
+					apk.setFileHashCode(MakeFileHash.getFileSHA1(filePath + "/" + fileName));
+					apk.setSize(size); // 文件大小
+					apk.setIcon(icon);
+					List<Type> types = typeDao.getAll(type);
+					request.setAttribute("types", types);
+					request.setAttribute("apk", apk); // 传递apk安装包信息
+				} catch (Exception ex) {
+					ex.printStackTrace();
+					File oldFile = new File(apkPath);
+					if (oldFile.exists()) {
+						oldFile.delete();
+					}
+				}
+				
+			}
+		}
+		Channel channel = (Channel) request.getSession().getAttribute("admin");
+		if(channel.getType()==1){
+			List<Channel> channels = getChannel(channel.getId(),channel.getType());//页面上显示的渠道
+			request.setAttribute("channels", channels);
+		}	
+		return mapping.findForward("add2");
+	}
+
+	// 添加应用信息
+	public ActionForward doAdd2(ActionMapping mapping, ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) {		
+		String name = request.getParameter("name");
+		String version = request.getParameter("version");
+		String code = request.getParameter("code");
+		String sdk = request.getParameter("sdk");
+		String icon = request.getParameter("iconName");
+		Timestamp time = new Timestamp(System.currentTimeMillis());
+		String size = request.getParameter("size");
+		String develope = request.getParameter("develope");
+		String remark = request.getParameter("remark");
+		int avg = Integer.parseInt(request.getParameter("avg"));
+		int count = ProductConfig.DEFAULT_DOWN_COUNT; // 默认下载次数0
+		String countStr = request.getParameter("count");
+		if(!StringUtil.isEmpty(countStr)){
+			try{
+				count = Integer.parseInt(countStr);
+			}catch (Exception e) {
+				count=0;
+			}
+		}
+		int typeId = Integer.parseInt(request.getParameter("typeId"));
+		String download = request.getParameter("download");
+		String package_ = request.getParameter("package_");
+		int status = ProductConfig.DEFAULT_AVG; // 默认状态可用
+		Channel admin = (Channel) request.getSession().getAttribute("admin");
+		App_Tab app_tab = new App_Tab();
+		String channelIdStr = request.getParameter("channelId");
+		if(!StringUtil.isEmpty(channelIdStr)&&!"0".equals(channelIdStr)){
+			app_tab.setChannelId(Integer.valueOf(channelIdStr));
+		}else{
+			app_tab.setChannelId(admin.getId());
+		}	
+		app_tab.setName(name);
+		app_tab.setVersion_name(version);
+		app_tab.setCode(code);
+		app_tab.setSdk(sdk);
+		app_tab.setIcon(icon);
+		app_tab.setCreate_time(time);
+		app_tab.setSize(size);
+		app_tab.setFrom_source(develope);
+		app_tab.setRemark(remark);
+		app_tab.setAvg(avg);
+		app_tab.setCount(count);
+		Type type = new Type();
+		type.setId(typeId);
+		app_tab.setType(type);
+		app_tab.setType_Id(typeId);
+		app_tab.setDownload(download);
+		app_tab.setPackage_name(package_);
+		app_tab.setStatus(status);
+		app_tab.setTag_id(27);//默认设置为27
+		int id = appTabDao.save(app_tab);
+		if (id > 0) {
+			request.setAttribute("id", id);
+			return mapping.findForward("add3");
+		} else {
+			request.setAttribute("msg", "添加失败");
+			request.setAttribute("return", "software.do?method=toList");
+			return mapping.findForward("admin_msg");
+		}
+	}
+
+	public ActionForward toAdd3(ActionMapping mapping, ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) throws FileNotFoundException, IOException {
+		request.setAttribute("id", request.getParameter("id"));
+		return mapping.findForward("add3");
+	}
+
+	// 添加截图信息
+	public ActionForward doAdd3(ActionMapping mapping, ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) throws FileNotFoundException, IOException {
+		int softId = Integer.parseInt(request.getParameter("id"));
+		Hashtable<?, ?> files = form.getMultipartRequestHandler().getFileElements();
+		int count = 0;
+		if (files != null & files.size() > 0) {
+			Enumeration<?> enums = files.keys();
+			String fileKey = null;
+			int i = 0;
+			String filePath =  ProductConfig.realPath+ "upload/photo/" + DateUtils.getDate() + "/";
+			log.info("开始FTP上传文件: " + filePath);
+			FileTools.createDateFile(filePath);
+			while (enums.hasMoreElements()) {
+				// 取得key
+				fileKey = (String) (enums.nextElement());
+				// 初始化每一个FormFile(接口)
+				FormFile file = (FormFile) files.get(fileKey);
+				// 分别上传
+				String name = file.getFileName();
+				if (name != null && !"".equals(name.trim())) {
+					String fileType = name.substring(name.lastIndexOf("."), name.length());
+					if (!".png".equals(fileType.toLowerCase()) && !".jpg".equals(fileType.toLowerCase())) {
+						request.setAttribute("msg", "已经添加成功了" + count + "张,图片类型错误,必须为PNG或JPG");
+						request.setAttribute("return", "/admin/page/software_add_3.jsp&id=" + softId);
+						return mapping.findForward("admin_msg");
+					} else {
+						String photpName = StringUtils.getUUID();
+
+						InputStream in = file.getInputStream();
+
+						OutputStream out = new FileOutputStream(filePath + photpName);
+						out.write(file.getFileData(), 0, file.getFileSize());
+						in.close();
+						in = null;
+						out.close();
+						out = null;
+						
+						try {
+							log.info("开始FTP上传文件: " + photpName);
+							FtpTools.uploadFtp(filePath+photpName, photpName, "photo", DateUtils.getDate());
+						} catch (Exception e) {
+							e.printStackTrace();
+						}
+						
+						Photo photo = new Photo();
+						photo.setPhoto(DateUtils.getDate() + "/" + photpName);
+						photo.setStatus(0);// 可用
+						photo.setFlag(3);
+						photo.setSoftId(softId);
+						photo.setTime(new Timestamp(System.currentTimeMillis()));
+						int photoId = photoDao.save(photo);
+						if (photoId > 0) {
+							count++;
+						} else {
+							request.setAttribute("msg", "添加失败,(已经添加成功了" + count + "张)");
+							request.setAttribute("return", "software.do?method=toList");
+							return mapping.findForward("admin_msg");
+						}
+					}
+				}
+				i++;
+			}
+
+		}
+		return mapping.findForward("other");
+	}
+
+	/*
+	 * 删除软件
+	 */
+	public ActionForward doDelete(ActionMapping mapping, ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) {
+		int id = Integer.parseInt(request.getParameter("id"));
+		Session session = HibernateSessionFactory.getSession();
+		Transaction tr = null;
+		try {
+			tr = session.beginTransaction();
+			Query query = session.createQuery("update App_Tab set status = 1 where id=" + id);
+			query.executeUpdate();
+			tr.commit();
+			return mapping.findForward("other");
+		} catch (HibernateException e) {
+			if (tr != null) {
+				tr.rollback();
+			}
+			e.printStackTrace();
+			request.setAttribute("msg", "删除失败," + e.getMessage());
+			request.setAttribute("return", "software.do?method=toList");
+			return mapping.findForward("admin_msg");
+		}
+	}
+	/*
+	 * 是还原软件
+	 */
+	public ActionForward doRecovery(ActionMapping mapping, ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) {
+		int id = Integer.parseInt(request.getParameter("id"));
+		Session session = HibernateSessionFactory.getSession();
+		Transaction tr = null;
+		try {
+			tr = session.beginTransaction();
+			Query query = session.createQuery("update App_Tab set status = 0 where id=" + id);
+			query.executeUpdate();
+			tr.commit();
+			return mapping.findForward("other");
+		} catch (HibernateException e) {
+			if (tr != null) {
+				tr.rollback();
+			}
+			e.printStackTrace();
+			request.setAttribute("msg", "还原失败," + e.getMessage());
+			request.setAttribute("return", "software.do?method=toList");
+			return mapping.findForward("admin_msg");
+		}
+	}
+	@SuppressWarnings("unchecked")
+	public ActionForward toPhoto(ActionMapping mapping, ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) {
+		int id = Integer.parseInt(request.getParameter("id"));
+		List<Photo> photos = appTabDao.getAllByHql("from Photo where softId='" + id +"' and flag = 3");
+		request.setAttribute("id", id);
+		request.setAttribute("flag", "3");
+		request.setAttribute("photos", photos);
+		return mapping.findForward("photo");
+	}
+
+	/*
+	 * to修改
+	 */
+	public ActionForward toUpdate(ActionMapping mapping, ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) {
+		int id = Integer.parseInt(request.getParameter("id"));
+		App_Tab app_tab = (App_Tab)appTabDao.getById(App_Tab.class, id);
+		int flag = -1;
+		if (app_tab.getType() != null) {
+			if (app_tab.getType().getFlag() == 4 || app_tab.getType().getFlag() == 5)
+				flag = app_tab.getType().getFlag();
+			else
+				flag = 0;
+		}
+		Channel channel = (Channel) request.getSession().getAttribute("admin");
+		if(channel.getType()==1){
+			List<Channel> channels = getChannel(channel.getId(),channel.getType());//页面上显示的渠道
+			request.setAttribute("channels", channels);
+		}	
+		List<Type> types = typeDao.getAll(flag);
+		request.setAttribute("types", types);
+		request.setAttribute("app_tab", app_tab);	
+		return mapping.findForward("update");
+	}
+
+	/*
+	 * do修改
+	 */
+	public ActionForward doUpdate(ActionMapping mapping, ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) {
+		int id = Integer.parseInt(request.getParameter("id"));
+		App_Tab app_tab = (App_Tab)appTabDao.getById(App_Tab.class, id);
+		String name = request.getParameter("name");
+		String develope = request.getParameter("develope");
+		String remark = request.getParameter("remark");
+		String typeId = request.getParameter("typeId");
+		
+		String channelIdStr = request.getParameter("channelId");
+		if(!StringUtil.isEmpty(channelIdStr)&&!"0".equals(channelIdStr)){
+			app_tab.setChannelId(Integer.valueOf(channelIdStr));
+		}
+		int count = app_tab.getCount();
+		String countStr = request.getParameter("count");
+		if(!StringUtil.isEmpty(countStr)){
+			try{
+				count = Integer.parseInt(countStr);
+			}catch (Exception e) {
+				count=app_tab.getCount();
+			}
+		}
+		app_tab.setCount(count);
+		app_tab.setName(name);
+		app_tab.setFrom_source(develope);
+		app_tab.setRemark(remark);
+		Type type = new Type();
+		type.setId(Integer.parseInt(typeId));
+		app_tab.setType(type);
+		app_tab.setCreate_time(new Timestamp(System.currentTimeMillis()));// 更新时间
+
+		// 评分信息
+		int avg = Integer.parseInt(request.getParameter("avg"));
+		app_tab.setAvg(avg);
+
+		if (appTabDao.modify(app_tab)) {
+			return mapping.findForward("other");
+		} else {
+			request.setAttribute("msg", "修改失败");
+			request.setAttribute("return", "software.do?method=toList");
+			return mapping.findForward("admin_msg");
+		}
+	}
+
+	/** to重新上传APK */
+	public ActionForward toAPK(ActionMapping mapping, ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) {
+		int id = Integer.parseInt(request.getParameter("id"));
+		request.setAttribute("id", id);
+		return mapping.findForward("apk");
+	}
+
+	/** to重新上传ICON */
+	public ActionForward toICON(ActionMapping mapping, ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) {
+		int id = Integer.parseInt(request.getParameter("id"));
+		request.setAttribute("id", id);
+		return mapping.findForward("icon");
+	}
+	
+	/** 上传图片 */
+	public ActionForward toUpload(ActionMapping mapping, ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) throws FileNotFoundException, IOException {	
+		return mapping.findForward("");
+	}
+
+	/** 重新上传APK */
+	public ActionForward doAPK(ActionMapping mapping, ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) throws FileNotFoundException, IOException {
+		int id = Integer.parseInt(request.getParameter("id"));
+		App_Tab app_tab = (App_Tab) appTabDao.getById(App_Tab.class, id);
+		String oldApkPath = app_tab.getDownload();
+		String oldIconPath = app_tab.getIcon();
+		SoftwareForm mForm = (SoftwareForm) form;
+		FormFile file = mForm.getIcon();
+		if (file != null && file.getFileSize() > 0) {
+			String name = file.getFileName();
+			String fileType = name.substring(name.lastIndexOf(".") + 1);
+			String datePath = DateUtils.getDate();
+			int type = FileTools.checkFileType(fileType);
+			if (type == -1) {
+				request.setAttribute("msg", "应用类型错误,必须为APK");
+				request.setAttribute("return", "software.do?method=toList");
+				return mapping.findForward("admin_msg");
+			} else {
+				String realPath = ProductConfig.realPath;
+				InputStream in = file.getInputStream();
+				String fileName = StringUtils.getUUID() + name.substring(name.lastIndexOf("."), name.length());
+				String filePath = realPath + "upload/software/" + datePath + "/";
+				String apkPath = filePath + fileName;
+				
+				int fileSize = 0;
+				// 创建文件夹
+				FileTools.createDateFile(filePath);
+				try {
+					OutputStream out = new FileOutputStream(apkPath);
+					fileSize = file.getFileSize();
+					String size = "";
+					// 计算文件大小
+					if (fileSize < 1024 * 1024) {
+						size = (fileSize / 1024) + "KB";
+					} else {
+						size = new DecimalFormat(".##").format((double) fileSize / (1024 * 1024)) + "MB";
+					}
+					out.write(file.getFileData(), 0, fileSize);
+					in.close();
+					in = null;
+					out.close();
+					out = null;
+					
+					try {
+						FtpTools.uploadFtp(filePath+fileName, fileName, "app_tab", DateUtils.getDate());
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+					
+					APK apk = new APK();
+//                  for测试
+//					app_tab.setPackage_name("1");
+//					app_tab.setCode("1");
+//					app_tab.setVersion_name("1");
+//					app_tab.setSdk("1");
+//					type=3;
+					String icon = null;
+					if (type == 0) {
+						apk = APKTools.getAPK(apkPath);
+						byte[] byteArr = APKTools.getIcon(apkPath, apk.getIconPath());
+						if (byteArr != null) {
+							icon = StringUtils.getUUID();
+							String fileIconPath = realPath + "upload/icon/" + datePath + "/";
+							String iconPath = fileIconPath + icon;
+							// 创建文件夹
+							FileTools.createDateFile(fileIconPath);
+							out = new FileOutputStream(iconPath);
+							out.write(byteArr);
+							out.flush();
+							out.close();
+							out = null;
+							
+							try {
+								FtpTools.uploadFtp(iconPath, icon, "icon", DateUtils.getDate());
+							} catch (Exception e) {
+								e.printStackTrace();
+							}
+							
+							icon = datePath + "/" + icon;
+						}
+					} else if (type == 4)
+						icon = "music_icon";
+					// 以下为要修改的信息
+					app_tab.setSize(size); // 文件大小
+					app_tab.setIcon(icon);
+					app_tab.setDownload(datePath + "/" + fileName);
+					app_tab.setPackage_name(apk.getPackageName());
+					app_tab.setCode(apk.getVersionCode());
+					app_tab.setVersion_name(apk.getVersionName());
+					app_tab.setSdk(apk.getSdkVersion());
+					app_tab.setCreate_time(new Timestamp(System.currentTimeMillis()));
+					if (appTabDao.modify(app_tab)) {
+						File oldApk = new File(ProductConfig.realPath + "upload/software/" + oldApkPath);
+						if (oldApk.exists()) {
+							oldApk.delete();
+						}
+						File oldIcon = new File(ProductConfig.realPath + "upload/icon/" + oldIconPath);
+						if (oldIcon.exists()) {
+							oldIcon.delete();
+						}
+						return mapping.findForward("other");
+					}
+				} catch (Exception ex) {
+					ex.printStackTrace();
+				}
+			}
+		}
+		request.setAttribute("msg", "重新上传失败");
+		request.setAttribute("return", "software.do?method=toList");
+		return mapping.findForward("admin_msg");
+	}
+
+	/** 重新上传ICON */
+	public ActionForward doICON(ActionMapping mapping, ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) throws FileNotFoundException, IOException {
+		int id = Integer.parseInt(request.getParameter("id"));
+		App_Tab app_tab = (App_Tab) appTabDao.getById(App_Tab.class, id);
+		String oldIconPath = app_tab.getIcon();
+		SoftwareForm mForm = (SoftwareForm) form;
+		FormFile file = mForm.getIcon();
+		if (file != null && file.getFileSize() > 0) {
+			String name = file.getFileName();
+			String fileType = name.substring(name.lastIndexOf("."), name.length());
+			if (!".png".equals(fileType.toLowerCase()) && !".jpg".equals(fileType.toLowerCase())) {
+				request.setAttribute("msg", "应用类型错误,必须为png或jpg");
+				request.setAttribute("return", "software.do?method=toList");
+				return mapping.findForward("admin_msg");
+			} else {
+				try {
+					String realPath = ProductConfig.realPath + "upload/icon/" + DateUtils.getDate() + "/";
+					// 创建文件
+					FileTools.createDateFile(realPath);
+					InputStream in = file.getInputStream();
+					String fileName = StringUtils.getUUID();
+					OutputStream out = new FileOutputStream(realPath + fileName);
+					out.write(file.getFileData(), 0, file.getFileSize());
+					in.close();
+					in = null;
+					out.close();
+					out = null;
+
+					try {
+						FtpTools.uploadFtp(realPath+fileName, fileName, "icon", DateUtils.getDate());
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+					
+					// 一下为要修改的信息
+					app_tab.setIcon(DateUtils.getDate() + "/" + fileName);
+					app_tab.setCreate_time(new Timestamp(System.currentTimeMillis()));
+
+					if (appTabDao.modify(app_tab)) {
+						File oldIcon = new File(ProductConfig.realPath + "upload/icon/" + oldIconPath);
+						if (oldIcon.exists()) {
+							oldIcon.delete();
+						}
+						return mapping.findForward("other");
+					}
+				} catch (Exception ex) {
+					ex.printStackTrace();
+				}
+			}
+		}
+		request.setAttribute("msg", "重新上传ICON失败");
+		request.setAttribute("return", "software.do?method=toList");
+		return mapping.findForward("admin_msg");
+	}
+}

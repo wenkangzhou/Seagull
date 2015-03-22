@@ -1,0 +1,97 @@
+package com.usernet.product.web.form;
+
+import com.usernet.product.comm.BaseForm;
+
+public class PushForm extends BaseForm{
+	private static final long serialVersionUID = -6427890040831622007L;
+
+	private String pageNo;
+
+	private String pageSize;
+	
+	private Integer id;
+	
+	private Integer[] softId;
+	
+	private Integer action;
+
+	private String channel;
+	
+	private String name;
+	
+	private String type;
+	
+	private String day;
+	
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public String getType() {
+		return type;
+	}
+
+	public void setType(String type) {
+		this.type = type;
+	}
+
+	public Integer getId() {
+		return id;
+	}
+
+	public void setId(Integer id) {
+		this.id = id;
+	}
+
+	public Integer[] getSoftId() {
+		return softId;
+	}
+
+	public void setSoftId(Integer[] softId) {
+		this.softId = softId;
+	}
+
+	public Integer getAction() {
+		return action;
+	}
+
+	public void setAction(Integer action) {
+		this.action = action;
+	}
+
+	public String getPageNo() {
+		return pageNo;
+	}
+
+	public void setPageNo(String pageNo) {
+		this.pageNo = pageNo;
+	}
+
+	public String getPageSize() {
+		return pageSize;
+	}
+
+	public void setPageSize(String pageSize) {
+		this.pageSize = pageSize;
+	}
+
+	public String getChannel() {
+		return channel;
+	}
+
+	public void setChannel(String channel) {
+		this.channel = channel;
+	}
+
+	public String getDay() {
+		return day;
+	}
+
+	public void setDay(String day) {
+		this.day = day;
+	}
+}

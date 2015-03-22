@@ -1,0 +1,83 @@
+package com.usernet.product.tools;
+
+import java.io.FileInputStream;
+import java.io.IOException;
+
+import com.usernet.product.tools.rmi.FileAcceptedClient;
+
+import sun.net.TelnetOutputStream;
+import sun.net.ftp.FtpClient;
+
+public class FtpTools {
+	public static void main(String[] args) throws Exception {
+		String filename = "c:/bt_top.png";
+		String newname = "2.png";
+		String date = "2012-08-31";
+		
+		uploadFtp(filename, newname,"icon",date);
+	}
+	
+	public static void uploadFtp(String filename, String newname,String type,String date)
+			throws Exception {
+		System.out.println("rmi");
+		FileAcceptedClient.acceptedClient(filename, newname, type, date);
+//		String url = "114.80.193.37";
+//		int port = 21;
+//		String username = "tang";
+//		String password = "tang";
+//		FtpClient ftp = uploadFile(url, port, username, password);
+//		uploadFile(filename, newname,type,date,ftp);
+//		ftp.closeServer();
+	}
+
+//	private static FtpClient uploadFile(String url, int port, String username,
+//			String password) throws IOException {
+//		FtpClient ftp = new FtpClient(url, port);
+//		try {
+//			ftp.login(username, password);
+//			ftp.binary();
+//		} catch (IOException e) {
+//			e.printStackTrace();
+//		}
+//		return ftp;
+//	}
+
+//	private static long uploadFile(String filename, String newname,String type,String date, FtpClient ftp)
+//			throws Exception {
+//		long result = 0;
+//		TelnetOutputStream os = null;
+//		FileInputStream is = null;
+//		try {
+//			java.io.File file_in = new java.io.File(filename);
+//			if (!file_in.exists())
+//				return 1;
+//			
+//			ftp.sendServer("MKD " + type + "\r\n");
+//			ftp.readServerResponse();
+//			ftp.cd(type);
+//			
+//			if(date!=null){
+//				ftp.sendServer("MKD " + date + "\r\n");
+//				ftp.readServerResponse();
+//				ftp.cd(date);
+//			}
+//			
+//			os = ftp.put(newname);
+//			result = file_in.length();
+//			is = new FileInputStream(file_in);
+//			byte[] bytes = new byte[1024];
+//			int c;
+//			while ((c = is.read(bytes)) != -1) {
+//				os.write(bytes, 0, c);
+//			}
+//		} finally {
+//			if (is != null) {
+//				is.close();
+//			}
+//			if (os != null) {
+//				os.close();
+//			}
+//		}
+//		return result;
+//	}
+}

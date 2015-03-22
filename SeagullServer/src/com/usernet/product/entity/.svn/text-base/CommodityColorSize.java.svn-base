@@ -1,0 +1,57 @@
+package com.usernet.product.entity;
+
+public class CommodityColorSize implements java.io.Serializable {
+	private static final long serialVersionUID = -322945095269529419L;
+	
+	private Integer id;
+
+	private Integer commodity_id;
+	
+	private String color;
+	
+	private String size;
+
+	private Integer inventory;
+	
+	public Integer getId() {
+		return id;
+	}
+
+	public void setId(Integer id) {
+		this.id = id;
+	}
+
+	public Integer getCommodity_id() {
+		return commodity_id;
+	}
+
+	public void setCommodity_id(Integer commodity_id) {
+		this.commodity_id = commodity_id;
+	}
+
+
+	public String getColor() {
+		return color;
+	}
+
+	public void setColor(String color) {
+		this.color = color;
+	}
+
+	public String getSize() {
+		return size;
+	}
+
+	public void setSize(String size) {
+		this.size = size;
+	}
+
+	public Integer getInventory() {
+		return inventory;
+	}
+
+	public void setInventory(Integer inventory) {
+		this.inventory = inventory;
+	}
+	
+}

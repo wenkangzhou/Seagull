@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>TAO</title>
+    <link rel="stylesheet" href="css/common.css" >  
+    <link rel="stylesheet" href="css/tao.css" >  
+    <link rel="stylesheet" href="css/scroll.css" media="all"> 
+    <link rel="shortcut icon" type="image/x-icon" href="img/sys/fac.png" >
+    <meta name="viewport" content="width=device-width,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  </head>
+  <body>
+    
+    <div id="header">
+      <h2 class="title">SEAGULL</h2>
+      <a onclick="toshare()"><img src="img/sys/share.png"/></a>
+    </div>
+    
+    <div id="wrapper">
+      <div id="hscroller">
+        
+      </div>  
+    </div>    
+
+    <script type="text/javascript" src="js/footer_offline.js"></script>
+    <script type="text/javascript" src="js/jquery.js"></script>
+    <script type="text/javascript" src="js/iscroll.js"></script>
+    <script type="text/javascript" src="js/myAndroidJs.js"></script>
+    <script type="text/javascript" src="js/vhscroll.js"></script>
+    <script type="text/javascript" src="js/share.js"></script>
+    <script type="text/javascript" >
+      $(document).ready(function(){
+         $("a").removeClass("active");
+         $("#foot_tao").addClass("active");
+         var tao = window.localStorage.getItem("tao");
+         showTaoData(tao);
+      })
+      function toshare(){
+          var nowStyle=$("#hscroller").css("-webkit-transform");
+          var nowPosition=nowStyle.substring(nowStyle.indexOf("(")+1,nowStyle.indexOf("px"));
+          var nowPage=Math.abs(nowPosition)/320;
+          var etc=$(".etc").eq(nowPage).html();//eq() 赞
+          var photoSrc=$("#page"+(nowPage+1) +" img").attr("src");
+          etc=etc.substring(0,etc.indexOf("。")).trim();
+          etc="分享了一件商品："+etc;
+          share(etc,photoSrc); 
+      }
+      function showTaoData(result){
+        var data = eval('('+ result +')').data;//注意要加（）
+        var sHtml="<ul>";
+        for(var i=0;i<data.length;i++){
+          sHtml+= "<li><div class=\"standard\" id=\"page"+(i+1)+"\"><div class=\"vscroller\"><div class=\"container\">";
+          if(i==0) 
+            sHtml+= "<a onclick=\"openUrl('"+data[i].websrc+"')\"><img  src="+data[i].coversrc+" data-original="+data[i].coversrc+"></a>"; 
+          else
+            sHtml+= "<a onclick=\"openUrl('"+data[i].websrc+"')\"><img  src=\"img/sys/loading.gif\" data-original="+data[i].coversrc+"></a>"; 
+          sHtml+= "<div class=\"etc\">"+data[i].etc+"</div>";                          
+              sHtml+= "</div></div></div></li>";
+        }
+        sHtml+="</ul>";
+        $("#hscroller").html(sHtml);
+      }      
+    </script>
+  </body>
+</html>

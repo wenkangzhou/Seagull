@@ -1,0 +1,79 @@
+package com.usernet.product.entity;
+
+import java.sql.Timestamp;
+import java.util.Set;
+
+public class Tag implements java.io.Serializable{
+
+	private static final long serialVersionUID = 1L;
+	
+	private Integer id;
+	
+	private String t_name;
+	
+	private Timestamp time; // 添加时间或更新时间
+
+	private Set<Software> software;
+	
+	private Tag parent;
+	
+	private Channel channel;
+	
+	private Integer isOld = 0;
+	
+	public Channel getChannel() {
+		return channel;
+	}
+
+	public void setChannel(Channel channel) {
+		this.channel = channel;
+	}
+
+	public Integer getId() {
+		return id;
+	}
+
+	public void setId(Integer id) {
+		this.id = id;
+	}
+
+	public String getT_name() {
+		return t_name;
+	}
+
+	public void setT_name(String t_name) {
+		this.t_name = t_name;
+	}
+
+	public Timestamp getTime() {
+		return time;
+	}
+
+	public void setTime(Timestamp time) {
+		this.time = time;
+	}
+
+	public Set<Software> getSoftware() {
+		return software;
+	}
+
+	public void setSoftware(Set<Software> software) {
+		this.software = software;
+	}
+
+	public void setParent(Tag parent) {
+		this.parent = parent;
+	}
+
+	public Tag getParent() {
+		return parent;
+	}
+
+	public void setIsOld(Integer isOld) {
+		this.isOld = isOld;
+	}
+
+	public Integer getIsOld() {
+		return isOld;
+	}
+}

@@ -1,0 +1,62 @@
+package com.usernet.product.entity;
+
+import java.sql.Timestamp;
+
+public class Search implements java.io.Serializable {
+	private static final long serialVersionUID = -2499304361774989127L;
+
+	private Integer id;
+	private String tel;
+	private String search;
+	private Timestamp time;
+	private Integer status;
+	private Integer flag; // 与software同
+
+	public Integer getId() {
+		return id;
+	}
+
+	public void setId(Integer id) {
+		this.id = id;
+	}
+
+	public String getTel() {
+		return tel;
+	}
+
+	public void setTel(String tel) {
+		this.tel = tel;
+	}
+
+	public String getSearch() {
+		return search;
+	}
+
+	public void setSearch(String search) {
+		this.search = search;
+	}
+
+	public Timestamp getTime() {
+		return time;
+	}
+
+	public void setTime(Timestamp time) {
+		this.time = time;
+	}
+
+	public Integer getStatus() {
+		return status;
+	}
+
+	public void setStatus(Integer status) {
+		this.status = status;
+	}
+
+	public Integer getFlag() {
+		return flag;
+	}
+
+	public void setFlag(Integer flag) {
+		this.flag = flag;
+	}
+}

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>feedbackList</title>
+    <link rel="stylesheet" href="css/common.css" >  
+    <link rel="stylesheet" href="css/feedbackList.css" > 
+    <link rel="stylesheet" href="css/titlebarButton.css" > 
+    <link rel="shortcut icon" type="image/x-icon" href="img/sys/fac.png" >
+    <meta name="viewport" content="width=device-width,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  </head>
+  <body>
+    <div id="header">
+         <a  href="javascript:window.location.href='More_Offline.html'">
+            <div class="zh-backtotop" style="opacity: 1;">
+              <div class="arrow"></div>
+              <div class="stick"></div>
+            </div>
+         </a>
+         <h2 class="title">SEAGULL</h2>
+         <a href="javascript:window.location.href='feedback_Offline.html'"><img src="img/sys/add.png"/></a>
+    </div> 
+    <div id="wrapper">
+      <div id="scroller">
+        <div class="container">
+            <ul>
+                <li ><span class="content">test </span><span class="time">2013-01-01 12:12</span></li>
+                <li ><span class="content">test</span><span class="time">2013-01-01 12:12</span></li>
+                <li ><span class="content">test</span><span class="time">2013-01-01 12:12</span></li>
+            </ul>
+        </div>
+      </div>
+    </div>
+    <script type="text/javascript" src="js/jquery.js"></script>
+    <script type="text/javascript" src="js/iscroll.js"></script>
+    <script type="text/javascript" src="js/vscroll.js"></script>
+    <script type="text/javascript" SRC="js/feedbackDAO.js"></script>
+    <script type="text/javascript" >
+     $(function() { 
+        init();
+        findAll();
+     });
+    </script>
+  </body>
+</html>

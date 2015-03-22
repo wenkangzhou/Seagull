@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+"http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+<hibernate-mapping>
+	<class name="com.usernet.product.entity.CommodityDetailedTab" table="commodity_detailed_tab">
+		<cache usage="read-write" />
+		<id name="id" type="java.lang.Integer">
+			<column name="id" />
+			<generator class="native" />
+		</id>
+		<property name="software_Id" type="java.lang.Integer">
+			<column name="software_Id" />
+		</property>
+		<property name="introduction" type="java.lang.String">
+			<column name="introduction" />
+		</property>
+		<property name="specification" type="java.lang.String">
+			<column name="specification" />
+		</property>
+		<property name="special_note" type="java.lang.String">
+			<column name="special_note" />
+		</property>
+		<property name="recommended_reason" type="java.lang.String">
+			<column name="recommended_reason" />
+		</property>
+		<property name="review" type="java.lang.String">
+			<column name="review" />
+		</property>
+		<property name="commodity_size_description" type="java.lang.String">
+			<column name="commodity_size_description" />
+		</property>
+		<property name="use_method" type="java.lang.String">
+			<column name="use_method" />
+		</property>
+		<property name="detailed_parameters" type="java.lang.String">
+			<column name="detailed_parameters" />
+		</property>
+	</class>
+</hibernate-mapping>

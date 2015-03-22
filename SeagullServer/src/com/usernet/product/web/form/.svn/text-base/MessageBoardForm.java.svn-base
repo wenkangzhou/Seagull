@@ -1,0 +1,73 @@
+package com.usernet.product.web.form;
+
+import com.usernet.product.comm.BaseForm;
+
+public class MessageBoardForm extends BaseForm{
+	
+	private static final long serialVersionUID = 1L;
+	
+	private String pageNo;
+	
+	private String pageSize;
+	
+	private Integer channelId;
+	
+	private String nickName;
+	
+	private String searchId;
+	
+	private Integer type;
+
+	public String getPageNo() {
+		return pageNo;
+	}
+
+	public void setPageNo(String pageNo) {
+		this.pageNo = pageNo;
+	}
+
+	public String getPageSize() {
+		return pageSize;
+	}
+
+	public void setPageSize(String pageSize) {
+		this.pageSize = pageSize;
+	}
+
+	public Integer getChannelId() {
+		return channelId;
+	}
+
+	public void setChannelId(Integer channelId) {
+		this.channelId = channelId;
+	}
+
+	public String getNickName() {
+		return nickName;
+	}
+
+	public void setNickName(String nickName) {
+		this.nickName = nickName;
+	}
+
+
+
+	public String getSearchId() {
+		return searchId;
+	}
+
+	public void setSearchId(String searchId) {
+		this.searchId = searchId;
+	}
+
+	public Integer getType() {
+		return type;
+	}
+
+	public void setType(Integer type) {
+		this.type = type;
+	}
+	
+	
+
+}

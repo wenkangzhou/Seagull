@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<something-else-entirely>
+	<proxool>
+		<alias>proxool</alias>
+		<driver-url>    
+	 jdbc:jtds:sqlserver://192.168.1.199:1433;DatabaseName=AppMarket 
+	<!--  jdbc:jtds:sqlserver://localhost;DatabaseName=AppMarket	 -->  
+<!--jdbc:mysql://127.0.0.1:3306/AppMarket?setUnicode=true&amp;characterEncoding=utf-8-->
+<!--		jdbc:jtds:sqlserver://127.0.0.1;DatabaseName=AppMarket-->
+<!--jdbc:mysql://127.0.0.1:3306/AppMarket?setUnicode=true&amp;characterEncoding=utf-8-->
+		</driver-url>
+		<driver-class>net.sourceforge.jtds.jdbc.Driver</driver-class>
+		<driver-properties>
+			<property name="user" value="sa" />
+		<!--	 <property name="password" value="87303205" />-->
+			 <property name="password" value="123qwe!" />
+		</driver-properties>
+<!--		<driver-class>com.mysql.jdbc.Driver</driver-class>-->
+<!--		<driver-class>net.sourceforge.jtds.jdbc.Driver</driver-class>-->
+<!--		<driver-properties>-->
+<!--			<property name="user" value="root" />-->
+<!--			<property name="password" value="" />-->
+<!--		</driver-properties>-->
+<!--		<driver-class>com.mysql.jdbc.Driver</driver-class>--> 
+<!-- 
+		<driver-properties>
+			<property name="user" value="sa" />
+			<property name="password" value="sa" />
+		</driver-properties>
+		 -->
+		<maximum-connection-count>1000</maximum-connection-count>
+		<minimum-connection-count>20</minimum-connection-count>
+		<house-keeping-sleep-time>300000</house-keeping-sleep-time>
+		<simultaneous-build-throttle>200</simultaneous-build-throttle>
+		<prototype-count>5</prototype-count>
+        <maximum-active-time>172800000</maximum-active-time>   
+        <maximum-connection-lifetime>180000000</maximum-connection-lifetime>
+		<test-before-use>false</test-before-use>
+		<house-keeping-test-sql>select CURRENT_DATE</house-keeping-test-sql>
+	</proxool>
+</something-else-entirely>

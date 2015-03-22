@@ -1,0 +1,158 @@
+package com.usernet.product.entity;
+
+public class ClientModel implements java.io.Serializable {
+	private static final long serialVersionUID = 4516014800563330612L;
+
+	private Integer id;
+	private String model;
+	private String manufacturer;
+	private Integer screenWidth;
+	private Integer screenHeight;
+
+	private String display;
+	private String product;
+	private String device;
+	private String board;
+	private String brand;
+	private String time;
+	private String users;
+	private String host;
+	private String versionSdk;
+	private String versionRelease;
+	private String phoneNumber;
+
+	public ClientModel() {
+	}
+
+	public ClientModel(Integer id) {
+		this.id = id;
+	}
+
+	public Integer getId() {
+		return id;
+	}
+
+	public String getDisplay() {
+		return display;
+	}
+
+	public void setDisplay(String display) {
+		this.display = display;
+	}
+
+	public String getProduct() {
+		return product;
+	}
+
+	public void setProduct(String product) {
+		this.product = product;
+	}
+
+	public String getDevice() {
+		return device;
+	}
+
+	public void setDevice(String device) {
+		this.device = device;
+	}
+
+	public String getBoard() {
+		return board;
+	}
+
+	public void setBoard(String board) {
+		this.board = board;
+	}
+
+	public String getBrand() {
+		return brand;
+	}
+
+	public void setBrand(String brand) {
+		this.brand = brand;
+	}
+
+	public String getTime() {
+		return time;
+	}
+
+	public void setTime(String time) {
+		this.time = time;
+	}
+
+	public String getUsers() {
+		return users;
+	}
+
+	public void setUsers(String users) {
+		this.users = users;
+	}
+
+	public String getHost() {
+		return host;
+	}
+
+	public void setHost(String host) {
+		this.host = host;
+	}
+
+	public String getVersionSdk() {
+		return versionSdk;
+	}
+
+	public void setVersionSdk(String versionSdk) {
+		this.versionSdk = versionSdk;
+	}
+
+	public String getVersionRelease() {
+		return versionRelease;
+	}
+
+	public void setVersionRelease(String versionRelease) {
+		this.versionRelease = versionRelease;
+	}
+
+	public String getPhoneNumber() {
+		return phoneNumber;
+	}
+
+	public void setPhoneNumber(String phoneNumber) {
+		this.phoneNumber = phoneNumber;
+	}
+
+	public void setId(Integer id) {
+		this.id = id;
+	}
+
+	public String getModel() {
+		return model;
+	}
+
+	public void setModel(String model) {
+		this.model = model;
+	}
+
+	public String getManufacturer() {
+		return manufacturer;
+	}
+
+	public void setManufacturer(String manufacturer) {
+		this.manufacturer = manufacturer;
+	}
+
+	public Integer getScreenWidth() {
+		return screenWidth;
+	}
+
+	public void setScreenWidth(Integer screenWidth) {
+		this.screenWidth = screenWidth;
+	}
+
+	public Integer getScreenHeight() {
+		return screenHeight;
+	}
+
+	public void setScreenHeight(Integer screenHeight) {
+		this.screenHeight = screenHeight;
+	}
+}

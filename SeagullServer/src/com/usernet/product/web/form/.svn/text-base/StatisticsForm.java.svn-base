@@ -1,0 +1,98 @@
+package com.usernet.product.web.form;
+
+import com.usernet.product.comm.BaseForm;
+
+public class StatisticsForm extends BaseForm {
+	private static final long serialVersionUID = 4451729817495441435L;
+	private String pageNo;
+	private String pageSize;
+
+	private Integer channelId;
+	private String channel;
+	private String imei;
+	private String softName;
+	private String startTime;
+	private String endTime;
+	private String settle;
+	private String time;
+
+	public String getPageNo() {
+		return pageNo;
+	}
+
+	public void setPageNo(String pageNo) {
+		this.pageNo = pageNo;
+	}
+
+	public String getPageSize() {
+		return pageSize;
+	}
+
+	public void setPageSize(String pageSize) {
+		this.pageSize = pageSize;
+	}
+
+	public Integer getChannelId() {
+		return channelId;
+	}
+
+	public void setChannelId(Integer channelId) {
+		this.channelId = channelId;
+	}
+
+	public String getChannel() {
+		return channel;
+	}
+
+	public void setChannel(String channel) {
+		this.channel = channel;
+	}
+
+	public String getImei() {
+		return imei;
+	}
+
+	public void setImei(String imei) {
+		this.imei = imei;
+	}
+
+	public String getSoftName() {
+		return softName;
+	}
+
+	public void setSoftName(String softName) {
+		this.softName = softName;
+	}
+
+	public String getStartTime() {
+		return startTime;
+	}
+
+	public void setStartTime(String startTime) {
+		this.startTime = startTime;
+	}
+
+	public String getEndTime() {
+		return endTime;
+	}
+
+	public void setEndTime(String endTime) {
+		this.endTime = endTime;
+	}
+
+	public String getSettle() {
+		return settle;
+	}
+
+	public void setSettle(String settle) {
+		this.settle = settle;
+	}
+
+	public String getTime() {
+		return time;
+	}
+
+	public void setTime(String time) {
+		this.time = time;
+	}
+}

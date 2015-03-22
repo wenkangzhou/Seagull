@@ -1,0 +1,488 @@
+package com.usernet.product.web.action;
+
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.apache.commons.lang.StringUtils;
+import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionForward;
+import org.apache.struts.action.ActionMapping;
+import com.usernet.product.comm.BaseAction;
+import com.usernet.product.entity.Channel;
+import com.usernet.product.entity.Recommend;
+import com.usernet.product.entity.Resources;
+import com.usernet.product.entity.Software;
+import com.usernet.product.entity.Type;
+import com.usernet.product.tools.JSONTools;
+import com.usernet.product.utils.DateUtils;
+import com.usernet.product.utils.Page;
+import com.usernet.product.utils.PageResult;
+import com.usernet.product.utils.ProductConfig;
+import com.usernet.product.web.form.RecommendForm;
+
+public class RecommendAction extends BaseAction {
+
+	/**
+	 * 首页推荐管理
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 */
+	public ActionForward toList(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_MEDIA);
+		RecommendForm mForm = (RecommendForm) form;
+		String channelId = request.getParameter("channelId");
+		PageResult<Recommend> result = null;
+		Page page = new Page();
+		// 分页信息
+		String pageNo = mForm.getPageNo();
+		String pageSize = mForm.getPageSize();
+		if (pageSize != null)
+			page.setEveryPage(Integer.parseInt(pageSize.trim()));
+		if (pageNo != null)
+			page.setCurrentPage(Integer.parseInt(pageNo.trim()));
+		Channel channel = (Channel) request.getSession().getAttribute("admin");
+		List<Channel> channels = channelDao.getAll(channel.getType() == 0 ? channel.getId() : null);
+		if (channels == null)
+			channels = new ArrayList<Channel>();
+		if (channel.getType() != 1)
+			channels.add(0, channel);
+		request.setAttribute("channels", channels);
+		if(channelId!=null&&!channelId.equals("")){
+			channel = (Channel) channelDao.getById(Channel.class, Integer.parseInt(channelId));
+			request.setAttribute("channelId", channelId);
+		}else{
+			channelId = channel.getId().toString();
+		}	
+		Integer[] channelIdArray = getChannelIdArray(request, channel);
+		Integer[] channelIdArrayCopy = null;
+		if(channelIdArray!=null){
+				channelIdArrayCopy = new Integer[channelIdArray.length+1];
+				if(channelId!=null&&!channelId.equals(""))
+				channelIdArrayCopy[0] = Integer.parseInt(channelId);
+				System.arraycopy(channelIdArray, 0, channelIdArrayCopy, 1, channelIdArray.length);
+		}
+		result = recommendDao.RecommendList(page,mForm.getTitle1(),channelIdArrayCopy);
+		request.setAttribute("list", result.getContent());
+		request.setAttribute("form", form);
+		request.setAttribute("page", result.getPage());
+		request.setAttribute("size", result.getSize());
+		return mapping.findForward("recommendList");
+	}
+
+	public ActionForward dorecommendAdd(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_MEDIA);
+		return mapping.findForward("dorecommendAdd");
+	}
+
+	public ActionForward doRecommend(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_MEDIA);
+		RecommendForm mForm = (RecommendForm) form;
+		String type = request.getParameter("type");
+		// 查询条件
+		String softName = mForm.getSoftName();
+		PageResult<Software> result = null;
+		Page page = new Page();
+		// 分页信息
+		String pageNo = mForm.getPageNo();
+		String pageSize = mForm.getPageSize();
+		if (pageSize != null) {
+			page.setEveryPage(Integer.parseInt(pageSize.trim()));
+		}
+		if (pageNo != null) {
+			page.setCurrentPage(Integer.parseInt(pageNo.trim()));
+		}
+		if("sp".equals(type)){
+			result = productDao.getGoodsOrInfo(page, softName, "1");
+		}else{
+			// 条件查询
+			if (softName != null) {
+				// 有条件
+				result = productDao.getAllBySoftware(page, softName, -1, -1,
+						new Integer[] { Integer.valueOf(type) },null);
+			} else {
+				result = productDao.getAllByPage(page, new Integer[] { Integer.valueOf(type) });
+			}
+		}
+		List<Type> typeList = typeDao.getAll(-1);
+		List<Resources> resourcesList = resourcesDao.getAll();
+		request.setAttribute("resourcesList", resourcesList);
+		request.setAttribute("type", type);
+		request.setAttribute("form", mForm);
+		request.setAttribute("typeList", typeList);
+		request.setAttribute("list", result.getContent());
+		request.setAttribute("page", result.getPage());
+		request.setAttribute("size", result.getSize());	
+		return mapping.findForward("toInformation");
+	}
+
+
+	/** 新增推荐资讯 
+	 * @throws ParseException **/
+	public ActionForward doInformation(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) throws ParseException {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_MEDIA);
+		String id = request.getParameter("id");
+		String title = null;
+		String msg = null;
+		Channel channel = (Channel) request.getSession().getAttribute("admin");
+
+		Software software = (Software) softwareDao.getById(Software.class,
+				Integer.valueOf(id));
+		title = software.getName();
+		msg = software.getRemark();
+
+		String briefMsg = JSONTools.replace(software.getRemark().toString());
+		String color = request.getParameter("color");
+		
+		String showFrequency = request.getParameter("showFrequency");
+		String deadline = request.getParameter("deadline");
+		Recommend re = new Recommend();
+		re.setTitle(title);
+		re.setMsg(msg);
+		re.setSoftware(software);
+		re.setBriefMsg(briefMsg);
+		re.setColor(color);
+		re.setShowFrequency(Integer.parseInt(showFrequency));
+		if(!"0".equals(showFrequency)){
+			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+			re.setDeadline(sdf.parse(deadline));
+		}
+		if (channel.getType() == 0) {
+			re.setChannelId(channel.getId());
+		} else {
+			re.setChannelId(0);
+		}
+//		re.setChannelId(software.getChannelId());
+		re.setFromWhere("官方资讯");
+		re.setTime(new Date());
+
+		recommendDao.save(re);
+
+		return mapping.findForward("list");
+	}
+
+	/** 软件列表 **/
+	public ActionForward toSoftList(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_MEDIA);
+
+		RecommendForm mForm = (RecommendForm) form;
+
+		// 查询条件
+		String softName = mForm.getSoftName();
+
+		PageResult<Software> result = null;
+		Page page = new Page();
+		// 分页信息
+		String pageNo = mForm.getPageNo();
+		String pageSize = mForm.getPageSize();
+		if (pageSize != null) {
+
+			page.setEveryPage(Integer.parseInt(pageSize.trim()));
+		}
+		if (pageNo != null) {
+
+			page.setCurrentPage(Integer.parseInt(pageNo.trim()));
+		}
+		// 条件查询
+		if (softName != null) {
+			// 有条件
+		//	result = productDao.getAllByParams(page, softName, -1, -1,
+		//			new Integer[] { 1, 2 },null);
+		} else {
+
+			result = productDao.getAllByPage(page, new Integer[] { 1, 2 });
+		}
+
+		List<Type> typeList = typeDao.getAll(-1);
+		List<Resources> resourcesList = resourcesDao.getAll();
+		request.setAttribute("resourcesList", resourcesList);
+
+		request.setAttribute("form", mForm);
+		request.setAttribute("typeList", typeList);
+		request.setAttribute("list", result.getContent());
+		request.setAttribute("page", result.getPage());
+		request.setAttribute("size", result.getSize());
+
+		return mapping.findForward("toSoftList");
+	}
+
+	/**
+	 * 新增
+	 * 
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 */
+
+	public ActionForward dorecommend(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_MEDIA);
+		String id = request.getParameter("id");
+		Software software = (Software) softwareDao.getById(Software.class,
+				Integer.valueOf(id));
+		int typeId = software.getType().getFlag();
+		request.setAttribute("softId", software.getId());
+		request.setAttribute("typeId", typeId);
+		return mapping.findForward("dorecommend");
+	}
+
+	public ActionForward torecommend(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response) {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_MEDIA);
+		RecommendForm mForm = (RecommendForm) form;
+
+		Channel channel = (Channel) request.getSession().getAttribute("admin");
+		// 星期
+		String type = request.getParameter("type");
+
+		Software software = (Software) softwareDao.getById(Software.class,
+				mForm.getSoftId());
+
+		Recommend re = new Recommend();
+
+		re.setTitle(mForm.getTitle1());
+		re.setMsg(mForm.getMsg());
+		re.setSoftware(software);
+		if (channel.getType() == 0) {
+
+			re.setChannelId(channel.getId());
+		} else {
+
+			re.setChannelId(0);
+		}
+		re.setTime(new Date());
+		re.setShowFrequency(0);
+
+		if (StringUtils.isNotEmpty(mForm.getDeadline())) {
+
+			re.setDeadline(new Date(mForm.getDeadline()));
+		}
+
+		// 如果是渠道商
+		if (channel.getType() == 0) {
+
+			re.setChannel(channel);
+		}
+
+		if (software.getType().getFlag() == 7) {
+
+			re.setFromWhere("官方资讯");
+		} else {
+
+			re.setFromWhere("We蛋壳");
+		}
+
+		recommendDao.save(re);
+
+		return mapping.findForward("dorecommend");
+	}
+
+	/**
+	 * 过期推荐
+	 * 
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 */
+	public ActionForward expiredRecommend(ActionMapping mapping,
+			ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) {
+		super.settingCurrentNavigation(request.getSession(),
+				ProductConfig.PAGE_MEDIA);
+		RecommendForm mForm = (RecommendForm) form;
+
+		PageResult<Recommend> result = null;
+		Page page = new Page();
+		// 分页信息
+		String pageNo = mForm.getPageNo();
+		String pageSize = mForm.getPageSize();
+		if (pageSize != null)
+			page.setEveryPage(Integer.parseInt(pageSize.trim()));
+		if (pageNo != null)
+			page.setCurrentPage(Integer.parseInt(pageNo.trim()));
+
+		Channel channel = (Channel) request.getSession().getAttribute("admin");
+		List<Channel> channelList = new ArrayList<Channel>();
+
+		if (channel.getType() == 1) {
+
+			result = recommendDao.expiredRecommendList(page, null);
+		} else if (channel.getType() == 0) {
+
+			channelList = channelDao
+					.getAll(channel.getParent() == null ? channel.getId()
+							: channel.getId());
+			channelList.add(channel);
+			Integer[] channelArray = new Integer[channelList.size()];
+			for (int i = 0; i < channelList.size(); i++) {
+
+				Channel temp = channelList.get(i);
+				channelArray[i] = temp.getId();
+			}
+			result = recommendDao.expiredRecommendList(page, channelArray);
+		}
+		request.setAttribute("list", result.getContent());
+		request.setAttribute("form", mForm);
+		request.setAttribute("page", result.getPage());
+		request.setAttribute("size", result.getSize());
+		return mapping.findForward("expiredRecommendList");
+	}
+	
+	
+	public ActionForward toEdit(ActionMapping mapping,
+			ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) {
+		
+		String id = request.getParameter("id");
+		
+		Recommend re = (Recommend)recommendDao.getById(Recommend.class, Integer.valueOf(id));
+		
+		request.setAttribute("recommend", re);
+		return mapping.findForward("toEdit");
+	}
+	
+	public ActionForward doEdit(ActionMapping mapping,
+			ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) {
+		
+		RecommendForm recommendForm = (RecommendForm)form;
+		Recommend re = (Recommend)recommendDao.getById(Recommend.class, recommendForm.getId());
+//		re.setTitle(recommendForm.getTitle1());
+//		re.setMsg(recommendForm.getMsg());
+//		re.setBriefMsg(JSONTools.replace(recommendForm.getMsg()));
+		re.setColor(request.getParameter("color"));
+		re.setShowFrequency(Integer.parseInt(request.getParameter("showFrequency")));
+		re.setTime(new Date());
+		if(StringUtils.isNotEmpty(recommendForm.getDeadline())){
+			re.setDeadline(DateUtils.stringToDate(recommendForm.getDeadline(), "yyyy-MM-dd"));
+		}
+		
+		re.setFromWhere(recommendForm.getFromWhere());
+		
+		recommendDao.updateRecommend(re);
+		return mapping.findForward("list");
+	}
+
+	/**
+	 * 删除推荐
+	 * 
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 */
+	public ActionForward deleteRecommend(ActionMapping mapping,
+			ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) {
+
+		String id = request.getParameter("id");
+		recommendDao.deleteRecommend(Integer.valueOf(id));
+		return mapping.findForward("list");
+	}
+	
+	/**
+	 * 删除推荐
+	 * 
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 */
+	public ActionForward toTop(ActionMapping mapping,
+			ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) {
+
+		String id = request.getParameter("id");
+		Channel channel = (Channel) request.getSession().getAttribute("admin");
+		List<Channel> channels = channelDao.getAll(channel.getType() == 0 ? channel.getId() : null);
+		if (channels == null)
+			channels = new ArrayList<Channel>();
+		if (channel.getType() != 1)
+			channels.add(0, channel);
+		request.setAttribute("channels", channels);
+		request.setAttribute("id", id);
+		
+		return mapping.findForward("toTop");
+	}
+	
+	/**
+	 * 置顶
+	 * 
+	 * @param mapping
+	 * @param form
+	 * @param request
+	 * @param response
+	 * @return
+	 */
+	public ActionForward doTop(ActionMapping mapping,
+			ActionForm form, HttpServletRequest request,
+			HttpServletResponse response) {
+		RecommendForm recommendForm = (RecommendForm)form;
+		Recommend re = (Recommend)recommendDao.getById(Recommend.class, recommendForm.getId());
+		String channelId = request.getParameter("channelId");
+		Integer isTop = re.getIsTop();
+		if(isTop==null){
+			isTop=0;
+		}
+		String message = "";
+		
+		if(isTop==0){
+			int num = recommendDao.getTopNum(channelId);
+			if(num==-1){
+				message="服务器错误";
+				
+			}else if(num>=3){
+				message="本渠道置顶数目超过最大限制3条";
+			}else{
+				isTop=1;
+				re.setIsTop(isTop);
+				re.setChannelId(Integer.valueOf(channelId));
+				re.setColor(request.getParameter("color"));
+				recommendDao.modify(re);		
+				Software sf = re.getSoftware();
+				sf.setChannelId(Integer.valueOf(channelId));		
+				recommendDao.modify(sf);	
+				message="true";
+			}
+		}else{
+			isTop=0;
+			re.setIsTop(isTop);
+			recommendDao.modify(re);
+			message="true";
+		}
+		PrintWriter pw;
+		try {
+			pw = response.getWriter();
+			pw.write(message);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+}

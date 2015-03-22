@@ -1,0 +1,90 @@
+package com.usernet.product.web.action;
+
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionForward;
+import org.apache.struts.action.ActionMapping;
+import org.apache.struts.upload.FormFile;
+
+import com.usernet.product.comm.BaseAction;
+import com.usernet.product.entity.ClientStartImg;
+import com.usernet.product.tools.FileTools;
+import com.usernet.product.utils.MakeFileHash;
+import com.usernet.product.web.form.ClientStartImgForm;
+
+public class StartImgAction extends BaseAction{
+	
+	public ActionForward toEdit(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response)
+			throws IOException {
+		try {
+			int id = Integer.parseInt(request.getParameter("id"));
+			ClientStartImg clientStartImg = (ClientStartImg) softwareDao.getById(ClientStartImg.class, id);
+			request.setAttribute("item", clientStartImg);
+		} catch (Exception ex) {
+		
+		}
+		return mapping.findForward("edit");
+	}
+	
+	public ActionForward doEdit(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response)
+			throws IOException {
+		try {
+			ClientStartImgForm clientStartImgForm = (ClientStartImgForm) form;	
+			FormFile iconFile = clientStartImgForm.getIconFile();
+			int id = Integer.parseInt(request.getParameter("id"));	
+			if(iconFile.getFileSize()>0){
+				String realPath = request.getSession().getServletContext().getRealPath("/")+"channelClientFolder/DEFAULT/";
+				// 创建文件
+				FileTools.createDateFile(realPath);
+				String fileName = null;
+				if(id==1){
+					fileName = "logo_main.jpg";
+				}else{
+					fileName = "startPic1.jpg";
+				}
+				try {
+					InputStream is = iconFile.getInputStream();
+					OutputStream out = new FileOutputStream(realPath + fileName);
+					out.write(iconFile.getFileData(), 0, iconFile.getFileSize());
+					is.close();
+					is = null;
+					out.flush();
+					out.close();
+					out = null;
+				} catch (IOException e) {
+					e.printStackTrace();
+				}	
+				ClientStartImg clientStartImg = (ClientStartImg) softwareDao.getById(ClientStartImg.class, id);
+				clientStartImg.setHash_code(MakeFileHash.getFileSHA1(realPath + fileName));
+				softwareDao.modify(clientStartImg);
+			}
+			
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+		return mapping.findForward("other");
+	}
+	
+	public ActionForward toList(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response)
+			throws IOException {
+		try {
+			@SuppressWarnings("unchecked")
+			List<ClientStartImg> list = softwareDao.getAllByHql("FROM ClientStartImg");		
+			request.setAttribute("list", list);
+		} catch (Exception ex) {
+			
+		}
+		return mapping.findForward("list");
+	}
+}

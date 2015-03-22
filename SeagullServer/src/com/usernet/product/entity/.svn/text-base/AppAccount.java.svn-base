@@ -1,0 +1,60 @@
+package com.usernet.product.entity;
+
+/***
+ * App账目
+ * @author tangdehao
+ *
+ */
+public class AppAccount {
+
+	private Integer id;
+	
+	private Product product;
+	
+	private String time;
+	
+	private Double money;
+	
+	private Integer isSettlement;
+
+	public Integer getId() {
+		return id;
+	}
+
+	public void setId(Integer id) {
+		this.id = id;
+	}
+
+	public Product getProduct() {
+		return product;
+	}
+
+	public void setProduct(Product product) {
+		this.product = product;
+	}
+
+	public String getTime() {
+		return time;
+	}
+
+	public void setTime(String time) {
+		this.time = time;
+	}
+
+	public Double getMoney() {
+		return money;
+	}
+
+	public void setMoney(Double money) {
+		this.money = money;
+	}
+
+	public Integer getIsSettlement() {
+		return isSettlement;
+	}
+
+	public void setIsSettlement(Integer isSettlement) {
+		this.isSettlement = isSettlement;
+	}
+	
+}
